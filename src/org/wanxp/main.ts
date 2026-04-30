@@ -110,17 +110,27 @@ export default class DoubanPlugin extends Plugin {
 		const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
 		const {subject} = result;
 		const {content} = result;
+		// 构建完整文件路径（用于更新缓存）
+		const fullFilePath = filePath + '.md';
 		if (Action.Sync == context.action) {
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
+				// 在force模式下，先检查是否存在该doubanId的旧文件
+				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
+				if (existingFilePath && existingFilePath !== fullFilePath) {
+					// 存在旧文件且路径不同，先删除旧文件
+					await this.fileHandler.deleteFile(existingFilePath);
+					// 从缓存中移除旧记录
+					syncStatus.removeFromExistingCache(subject.id);
+				}
 				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
 				if (exists) {
-					syncStatus != null ? syncStatus.replace(subject.id, subject.title):null;
+					syncStatus != null ? syncStatus.replace(subject.id, subject.title, fullFilePath):null;
 				}else {
-					syncStatus != null ?syncStatus.create(subject.id, subject.title):null;
+					syncStatus != null ?syncStatus.create(subject.id, subject.title, fullFilePath):null;
 				}
 			}else {
 				const created:boolean = await this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate, false);
-				created ?syncStatus.create(subject.id, subject.title):syncStatus.exists(subject.id, subject.title);
+				created ?syncStatus.create(subject.id, subject.title, fullFilePath):syncStatus.exists(subject.id, subject.title, fullFilePath);
 			}
 		}else {
 			await this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate);

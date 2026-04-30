@@ -79,7 +79,23 @@ export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<Dou
 		let detailDom = html(html("dl.thing-attr").get(0));
 		let dt = detailDom.find("dt");
 		let image = html(html("#content > div > div.article > div.mod.item-subject > div.item-subject-info > div > a > img").get(0)).attr("src");
-		let desc = html(html("#link-report > p").get(0)).text();
+		// 获取所有#link-report > p元素，选择最长的（完整版简介）
+		// 豆瓣页面可能同时存在折叠部分和完整部分，选择最长的避免重复
+		const descElements = html("#link-report > p").get();
+		let desc = '';
+		for (const p of descElements) {
+			const text = html(p).text().trim();
+			if (text.length > desc.length) {
+				desc = text;
+			}
+		}
+		// fallback: 从 meta 标签获取简介
+		if (!desc) {
+			const metaDesc = html("head > meta[property='og:description']").get(0);
+			if (metaDesc) {
+				desc = html(metaDesc).attr("content") || '';
+			}
+		}
 
 		let url = `https://www.douban.com/game/${id}/`;
 		let valueMap = new Map<string, any>();

@@ -11,8 +11,6 @@ import {i18nHelper} from "../../../lang/helper";
 import {DoubanTeleplaySyncHandler} from "./DoubanTeleplaySyncHandler";
 import {SyncConditionType} from "../../../constant/Constsant";
 import {DoubanGameSyncHandler} from "./DoubanGameSyncHandler";
-import {DataField} from "../../../utils/model/DataField";
-import {VariableUtil} from "../../../utils/VariableUtil";
 import {FileUtil} from "../../../utils/FileUtil";
 
 export default class SyncHandler {
@@ -24,24 +22,23 @@ export default class SyncHandler {
 	private defaultSyncHandler: DoubanSyncHandler;
 
 
-	 constructor(app: App, plugin: DoubanPlugin, syncConfig: SyncConfig, context: HandleContext) {
+	constructor(app: App, plugin: DoubanPlugin, syncConfig: SyncConfig, context: HandleContext) {
 		this.app = app;
 		this.plugin = plugin;
 		this.syncConfig = syncConfig;
 		this.context = context;
 		this.defaultSyncHandler = new DoubanOtherSyncHandler(plugin);
-		this.syncHandlers =
-			 [
-				 new DoubanMovieSyncHandler(plugin),
-				 new DoubanBookSyncHandler(plugin),
-				 // new DoubanBroadcastSyncHandler(plugin),
-				 // new DoubanNoteSyncHandler(plugin),
-				 new DoubanMusicSyncHandler(plugin),
-				 new DoubanTeleplaySyncHandler(plugin),
-				 new DoubanGameSyncHandler(plugin),
-				 this.defaultSyncHandler
-			 ];
-	 }
+		this.syncHandlers = [
+			new DoubanMovieSyncHandler(plugin),
+			new DoubanBookSyncHandler(plugin),
+			// new DoubanBroadcastSyncHandler(plugin),
+			// new DoubanNoteSyncHandler(plugin),
+			new DoubanMusicSyncHandler(plugin),
+			new DoubanTeleplaySyncHandler(plugin),
+			new DoubanGameSyncHandler(plugin),
+			this.defaultSyncHandler
+		];
+	}
 
 	async sync() {
 		if (this.syncConfig && this.syncConfig.syncType && this.syncConfig.scope) {
@@ -49,7 +46,7 @@ export default class SyncHandler {
 				this.context.syncStatusHolder.syncStatus.setMessage(this.checkSyncConfig());
 				return;
 			}
-			let syncHandler = this.syncHandlers.find(handler => handler.support(this.syncConfig.syncType));
+			const syncHandler = this.syncHandlers.find(handler => handler.support(this.syncConfig.syncType));
 			if (syncHandler) {
 				await syncHandler.sync(this.syncConfig, this.context);
 			} else {
@@ -83,8 +80,8 @@ export default class SyncHandler {
 `
 
 
-		let summary:string
-			= `${i18nHelper.getMessage('110053', i18nHelper.getMessage('110050'), i18nHelper.getMessage('110051'), i18nHelper.getMessage('110052'))} 
+		let summary
+			= `${i18nHelper.getMessage('110053', i18nHelper.getMessage('110050'), i18nHelper.getMessage('110051'), i18nHelper.getMessage('110052'))}
 |-----|----|----------------------------------|
 `;
 		summary += `${i18nHelper.getMessage('110053', i18nHelper.getMessage('syncall'), syncStatus.getTotal(), i18nHelper.getMessage('syncall_desc'))}
@@ -96,41 +93,58 @@ export default class SyncHandler {
 		}
 		summary += `${i18nHelper.getMessage('110053', i18nHelper.getMessage('notsync'), syncStatus.getTotal()-syncStatus.getHasHandle(), i18nHelper.getMessage('notsync_desc'))}
 `;
-		let details:string = '';
-		for (const [key, value] of syncResultMap) {
+		let details = '';
+		for (const [, value] of syncResultMap) {
 			if (value.status == 'unHandle') {
 				// @ts-ignore
 				details+= `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}
 `;
 			}else {
+				// 使用保存的实际文件名生成链接
+				// fileName 可能是完整路径，需要提取文件名（不含扩展名）
+				let linkName = value.fileName;
+				if (linkName) {
+					// 从路径中提取文件名（最后一个 / 或 \ 之后的部分）
+					const lastSlash = Math.max(linkName.lastIndexOf('/'), linkName.lastIndexOf('\\'));
+					if (lastSlash >= 0) {
+						linkName = linkName.substring(lastSlash + 1);
+					}
+					// 移除 .md 扩展名
+					if (linkName.endsWith('.md')) {
+						linkName = linkName.substring(0, linkName.length - 3);
+					}
+				} else {
+					// 回退到使用 title
+					linkName = FileUtil.replaceSpecialCharactersForFileName(value.title);
+				}
 				// @ts-ignore
-				details+= `${value.id}-[[${FileUtil.replaceSpecialCharactersForFileName(value.title)}]]:  ${i18nHelper.getMessage(value.status)}
+				details+= `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}
 `;
 			}
 
 		}
-		const result : string = i18nHelper.getMessage('110037', condition, summary, details);
+		const result = i18nHelper.getMessage('110037', condition, summary, details);
 		const resultFileName = `${i18nHelper.getMessage('110038')}_${moment(new Date()).format('YYYYMMDDHHmmss')}`
 		await this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
 	}
 
 	private checkSyncConfig() {
-		 const {syncConfig} = this;
-		 switch (syncConfig.syncConditionType) {
-			 case SyncConditionType.CUSTOM_ITEM:
-				 if (syncConfig.syncConditionCountFromValue && syncConfig.syncConditionCountToValue) {
-					 if (syncConfig.syncConditionCountFromValue > syncConfig.syncConditionCountToValue) {
-						 return i18nHelper.getMessage('110044');
-					 }
-				 }
-			 	break;
-			 case SyncConditionType.CUSTOM_TIME:
-				 if (syncConfig.syncConditionDateToValue && syncConfig.syncConditionDateFromValue) {
-					 if (syncConfig.syncConditionDateFromValue > syncConfig.syncConditionDateToValue) {
-						 return i18nHelper.getMessage('110045');
-					 }
-				 }
+		const {syncConfig} = this;
+		switch (syncConfig.syncConditionType) {
+			case SyncConditionType.CUSTOM_ITEM:
+				if (syncConfig.syncConditionCountFromValue && syncConfig.syncConditionCountToValue) {
+					if (syncConfig.syncConditionCountFromValue > syncConfig.syncConditionCountToValue) {
+						return i18nHelper.getMessage('110044');
+					}
+				}
+				break;
+			case SyncConditionType.CUSTOM_TIME:
+				if (syncConfig.syncConditionDateToValue && syncConfig.syncConditionDateFromValue) {
+					if (syncConfig.syncConditionDateFromValue > syncConfig.syncConditionDateToValue) {
+						return i18nHelper.getMessage('110045');
+					}
+				}
 
-		 }
+		}
 	}
 }

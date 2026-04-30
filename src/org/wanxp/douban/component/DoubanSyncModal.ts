@@ -517,8 +517,8 @@ function showCustomInputCount(containerEl: HTMLElement, config: SyncConfig, disa
 	fromEl.addClass('obsidian_douban_settings_input')
 	fromEl.style.width ='20%';
 	containerEl.appendChild(fromEl);
-	const lang = window.localStorage.getItem('language');
-	if (lang == 'zh') {
+	const lang = window.localStorage.getItem('language') || 'en';
+	if (lang === 'zh' || lang === 'zh-CN' || lang === 'zh-TW') {
 		containerEl.createEl('span', {text: i18nHelper.getMessage('110073')})
 	}
 
@@ -542,7 +542,7 @@ function showCustomInputCount(containerEl: HTMLElement, config: SyncConfig, disa
 	toEl.addClass('obsidian_douban_settings_input')
 	toEl.style.width ='20%';
 	containerEl.appendChild(toEl);
-	if (lang == 'zh') {
+	if (lang === 'zh' || lang === 'zh-CN' || lang === 'zh-TW') {
 		containerEl.createEl('span', {text: i18nHelper.getMessage('110073')})
 	}
 	containerEl.createEl('span', {text: '  '})

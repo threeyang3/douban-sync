@@ -279,6 +279,10 @@ export class VariableUtil {
 
 	private static handleText(v: string, targetType: TargetType, dataField: DataField = null): string {
 		if (targetType === 'yml_text') {
+			// 对于 desc 字段，使用多行文本处理
+			if (dataField && dataField.name === 'desc') {
+				return YamlUtil.handleMultiLineText(v);
+			}
 			return YamlUtil.handleText(v, dataField);
 		}
 		if (targetType === 'text') {

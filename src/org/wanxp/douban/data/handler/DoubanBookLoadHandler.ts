@@ -103,10 +103,69 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanBookSubject {
-		let desc = html(".intro p").text();
-		if (!desc) {
-			desc = html(html("head > meta[property= 'og:description']").get(0)).attr("content");
+		// 获取内容简介 - 精确定位"内容简介"部分
+		// 豆瓣页面结构：内容简介在 <h2>内容简介</h2> 后面的 <div class="indent"> 中
+		// 需要与作者简介区分开
+		let desc = '';
+
+		// 方式1: 通过标题定位内容简介部分
+		// 查找包含"内容简介"的 h2 标题，然后获取其后面的内容
+		const contentIntro = html("h2:contains('内容简介')").parent().find(".indent").first();
+		if (contentIntro.length > 0) {
+			// 检查是否有隐藏的完整内容
+			const hiddenContent = contentIntro.find("span.all.hidden").text().trim();
+			if (hiddenContent) {
+				desc = hiddenContent;
+			} else {
+				// 获取所有段落内容
+				const paragraphs = contentIntro.find("p").get();
+				let fullText = '';
+				for (const p of paragraphs) {
+					const text = html(p).text().trim();
+					if (text) {
+						fullText += (fullText ? '\n' : '') + text;
+					}
+				}
+				if (fullText) {
+					desc = fullText;
+				} else {
+					// 如果没有 p 标签，直接获取 div 内容
+					desc = contentIntro.text().trim();
+				}
+			}
 		}
+
+		// 方式2: 通过 #link-report 定位（内容简介通常在这个区域）
+		if (!desc) {
+			const linkReport = html("#link-report .intro").first();
+			if (linkReport.length > 0) {
+				const hiddenContent = linkReport.find("span.all.hidden").text().trim();
+				if (hiddenContent) {
+					desc = hiddenContent;
+				} else {
+					const paragraphs = linkReport.find("p").get();
+					let fullText = '';
+					for (const p of paragraphs) {
+						const text = html(p).text().trim();
+						if (text) {
+							fullText += (fullText ? '\n' : '') + text;
+						}
+					}
+					if (fullText) {
+						desc = fullText;
+					}
+				}
+			}
+		}
+
+		// 方式3: 最后使用 og:description 作为备用
+		if (!desc) {
+			const metaDesc = html("head > meta[property='og:description']").attr("content");
+			if (metaDesc) {
+				desc = metaDesc;
+			}
+		}
+
 		const image = html(html("head > meta[property= 'og:image']").get(0)).attr("content");
 		let item = html(html("head > script[type='application/ld+json']").get(0)).text();
 		item = super.html_decode(item);
@@ -205,7 +264,6 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 
 
 }
-
 
 
 

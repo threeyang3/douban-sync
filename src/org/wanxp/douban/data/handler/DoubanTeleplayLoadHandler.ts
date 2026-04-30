@@ -166,7 +166,16 @@ export class DoubanTeleplayLoadHandler extends DoubanAbstractLoadHandler<DoubanT
 
 		this.handlePersonNameByMeta(html, teleplay,  context, 'video:actor', 'actor');
 		this.handlePersonNameByMeta(html, teleplay,  context, 'video:director', 'director');
-		const desc:string = html("span[property='v:summary']").text();
+		// 获取所有summary元素，选择最长的（完整版简介）
+		// 豆瓣页面可能同时存在折叠部分和完整部分，选择最长的避免重复
+		const summaries = html("span[property='v:summary']").get();
+		let desc = '';
+		for (const s of summaries) {
+			const text = html(s).text().trim();
+			if (text.length > desc.length) {
+				desc = text;
+			}
+		}
 		if (desc) {
 			teleplay.desc = desc;
 		}

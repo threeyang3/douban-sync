@@ -88,10 +88,10 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	}
 
 	async getByTimeLimit(syncConfig: SyncConfig, context: HandleContext): Promise<SubjectListItem[]> {
-		let startDate = syncConfig.syncConditionDateFromValue
+		const startDate = syncConfig.syncConditionDateFromValue
 			? new Date(syncConfig.syncConditionDateFromValue)
 			: null;
-		let endDate = syncConfig.syncConditionDateToValue
+		const endDate = syncConfig.syncConditionDateToValue
 			? new Date(syncConfig.syncConditionDateToValue)
 			: null;
 		if (!startDate && !endDate) {
@@ -99,7 +99,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			return;
 		}
 		const cacheList = new Map<number, SearchPageTypeOf<SubjectListItem>>();
-		let searchPage = await this.getItems(syncConfig, context);
+		const searchPage = await this.getItems(syncConfig, context);
 		if (!searchPage) {
 			return;
 		}
@@ -205,7 +205,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			return;
 		}
 
-		let subjectListItems = await this.removeExists(
+		const subjectListItems = await this.removeExists(
 			items,
 			syncConfig,
 			context,
@@ -256,32 +256,48 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			return;
 		}
 		const { syncStatus } = context.syncStatusHolder;
+		const { syncConfig } = context;
 		syncStatus.totalNum(searchPage.total);
 		const needHandled: number =
 			syncStatus.getTotal() - syncStatus.getHasHandle();
 		syncStatus.setNeedHandled(needHandled);
+
+		// 在处理前预先构建本地文件索引，避免每次检查都遍历
+		const dataFilePath = syncConfig?.dataFilePath || '';
+		await syncStatus.buildExistingFilesCache(dataFilePath);
+
 		for (const item of items) {
 			if (!context.plugin.statusHolder.syncing()) {
 				return;
 			}
 			try {
+				// 先检查缓存
 				if (syncStatus.shouldSync(item.id)) {
-					let subject: DoubanSubject =
+					// 缓存中没有，检查本地文件是否存在（使用预构建的索引）
+					const localExists = syncStatus.checkLocalExists(item.id);
+					if (localExists && !syncConfig.force) {
+						// 本地已存在且未开启强制替换，标记为已存在
+						syncStatus.exists(item.id, item.title, syncStatus.getExistingFilePath(item.id));
+					} else {
+						// 本地不存在或开启了强制替换，执行同步
 						await this.doubanSubjectLoadHandler.handle(
-							item.id,
-							context,
-						);
+								item.id,
+								context,
+							);
 
-					await sleepRange(
-						BasicConst.CALL_DOUBAN_DELAY,
-						BasicConst.CALL_DOUBAN_DELAY +
-							BasicConst.CALL_DOUBAN_DELAY_RANGE,
-					);
+						await sleepRange(
+							BasicConst.CALL_DOUBAN_DELAY,
+							BasicConst.CALL_DOUBAN_DELAY +
+								BasicConst.CALL_DOUBAN_DELAY_RANGE,
+						);
+					}
 				} else {
 					syncStatus.unHandle(item.id, item.title);
 				}
 			} catch (e) {
+				log.error(`Failed to sync item ${item.id}: ${e}`, e);
 				log.notice(i18nHelper.getMessage("130120"));
+				syncStatus.fail(item.id, item.title);
 			}
 		}
 	}
@@ -296,7 +312,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		let isFirstStep = true;
 		let handleCount = 0;
 		do {
-			let searchPage = await this.getItems(syncConfig, context);
+			const searchPage = await this.getItems(syncConfig, context);
 			if (!context.plugin.statusHolder.syncing()) {
 				break;
 			}
@@ -364,7 +380,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 				await sleepRange(
 					BasicConst.CALL_DOUBAN_DELAY,
 					BasicConst.CALL_DOUBAN_DELAY +
-					BasicConst.CALL_DOUBAN_DELAY_RANGE,
+						BasicConst.CALL_DOUBAN_DELAY_RANGE,
 				);
 				continue;
 			}
@@ -377,7 +393,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			await sleepRange(
 				BasicConst.CALL_DOUBAN_DELAY,
 				BasicConst.CALL_DOUBAN_DELAY +
-				BasicConst.CALL_DOUBAN_DELAY_RANGE,
+					BasicConst.CALL_DOUBAN_DELAY_RANGE,
 			);
 		} while (handleCount < needHandleTotalCustomItem);
 	}
@@ -389,7 +405,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		let totalForHandle = 0;
 		let isFirstStep = true;
 		do {
-			let searchPage = await this.getItems(syncConfig, context);
+			const searchPage = await this.getItems(syncConfig, context);
 			if (!context.plugin.statusHolder.syncing()) {
 				break;
 			}
@@ -407,7 +423,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 				isFirstStep = false;
 			}
 			handleCount += list.length;
-			let subjectListItems = await this.removeExists(
+			const subjectListItems = await this.removeExists(
 				list,
 				syncConfig,
 				context,
@@ -416,7 +432,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 				await sleepRange(
 					BasicConst.CALL_DOUBAN_DELAY,
 					BasicConst.CALL_DOUBAN_DELAY +
-					BasicConst.CALL_DOUBAN_DELAY_RANGE,
+						BasicConst.CALL_DOUBAN_DELAY_RANGE,
 				);
 				continue;
 			}
@@ -425,14 +441,14 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			await sleepRange(
 				BasicConst.CALL_DOUBAN_DELAY,
 				BasicConst.CALL_DOUBAN_DELAY +
-				BasicConst.CALL_DOUBAN_DELAY_RANGE,
+					BasicConst.CALL_DOUBAN_DELAY_RANGE,
 			);
 		} while (handleCount <= totalForHandle);
 	}
 
 	private async syncLastThirty(syncConfig: SyncConfig, context: HandleContext) {
 		context.syncOffset = 0;
-		let searchPage = await this.getItems(syncConfig, context);
+		const searchPage = await this.getItems(syncConfig, context);
 		if (!context.plugin.statusHolder.syncing()) {
 			return;
 		}
@@ -445,7 +461,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			return;
 		}
 
-		let subjectListItems = await this.removeExists(
+		const subjectListItems = await this.removeExists(
 			list,
 			syncConfig,
 			context,

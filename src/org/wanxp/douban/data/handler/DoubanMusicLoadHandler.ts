@@ -55,9 +55,22 @@ export default class DoubanMusicLoadHandler extends DoubanAbstractLoadHandler<Do
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanMusicSubject {
 		const title = html(html("head > meta[property= 'og:title']").get(0)).attr("content");
-		let desc:string = html("span.all.hidden").text();
-		if (!desc) {
-			desc = html("span[property='v:summary']").text();
+		// 获取简介：优先获取完整版（span.all.hidden），然后是summary元素
+		// 豆瓣页面可能同时存在折叠部分和完整部分，选择最长的避免重复
+		let desc = '';
+		// 先尝试获取完整版简介
+		const fullDesc = html("span.all.hidden").text().trim();
+		if (fullDesc) {
+			desc = fullDesc;
+		} else {
+			// 如果没有完整版，获取所有summary元素，选择最长的
+			const summaries = html("span[property='v:summary']").get();
+			for (const s of summaries) {
+				const text = html(s).text().trim();
+				if (text.length > desc.length) {
+					desc = text;
+				}
+			}
 		}
 		if (!desc) {
 			desc = html(html("head > meta[property= 'og:description']").get(0)).attr("content");

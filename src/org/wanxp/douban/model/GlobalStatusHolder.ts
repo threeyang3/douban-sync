@@ -33,7 +33,7 @@ export default class GlobalStatusHolder {
 			new Notice(i18nHelper.getMessage('110008'), SyncTypeRecords[syncConfig.syncType], DoubanSubjectState[syncConfig.scope]);
 			return false;
 		}
-		this.syncStatus = new SyncStatusHolder(syncConfigOut);
+		this.syncStatus = new SyncStatusHolder(syncConfigOut, this._app);
 		this.syncStarted = true;
 		this.syncStartTime = new Date().getTime();
 		return true;
