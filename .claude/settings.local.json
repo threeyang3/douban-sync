@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "WebSearch",
+      "WebFetch(domain:docs.obsidian.md)",
+      "WebFetch(domain:book.douban.com)",
+      "Bash(git stash *)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
+    ]
+  }
+}
