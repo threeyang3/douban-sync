@@ -5,7 +5,7 @@
 比如看完电影，会在豆瓣进行评分或评论。或者阅读完的书籍，进行评分或评论。支持包含：电影、书籍、电视剧、音乐、游戏
 ## 实现步骤
 1. 安装[obsidian-dataview](https://github.com/blacksmithgu/obsidian-dataview)插件
-2. 安装[Obsidian-Douban](https://github.com/Wanxp/obsidian-douban)插件(本插件)
+2. 安装 Obsidian-Douban 插件(本插件)
 3. 在Obsidian-Douban插件配置中登录Douban
 4. 配置同步需要的模板 电影/书籍的模板中的frontmatter，在frontmatter中 **增加** 特定tags（根据自己的需要指定），用于需要过滤成为timeline的笔记，如增加tags：`书籍`
 ````markdown
@@ -66,4 +66,4 @@ data-class = "custom-my-movie-time-line">{{myComment}} |简介: {{desc}}
 ### 书籍、电视剧、音乐、游戏
 请参照电影模板
 ## 更多
-参照讨论 [结合timeline插件的妙用](https://github.com/Wanxp/obsidian-douban/issues/19#issuecomment-1428307130)
+可以根据自己的 Dataview 查询需求继续调整表格字段和筛选条件。

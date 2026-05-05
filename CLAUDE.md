@@ -1,6 +1,14 @@
-# obsidian-douban
+# douban-sync
 
 Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记、游戏数据到 Obsidian 笔记。
+
+## 当前仓库状态
+
+- 当前主仓库：`https://github.com/threeyang3/douban-sync`
+- 当前开发分支：`adv`
+- 当前版本基线：`1.0.0`
+- `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
+- 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
 
 ## 技术栈
 
@@ -38,12 +46,21 @@ npm run docs:build     # 文档站构建
 
 ## 文档站
 
-文档源码在 `doc/` 目录，使用 VitePress，部署到 https://obsidian-douban.wxp.hk/
+文档源码在 `doc/` 目录，使用 VitePress。
 
 ## 关键约定
 
-- 版本号同步修改 `package.json` 和 `manifest.json`
+- 版本号同步修改 `package.json`、`package-lock.json`、`manifest.json` 和 `versions.json`
 - 各类型数据 handler 继承 `DoubanAbstractLoadHandler`，同步 handler 继承 `DoubanAbstractSyncHandler`
 - 模板变量定义在 `DefaultTemplateContent.ts`，解析在 `VariableUtil.ts`
 - YAML frontmatter 生成在 `YamlUtil.ts`，多行文本使用 `handleMultiLineText()`
 - 语言检测使用 `moment.locale()`（非 localStorage）
+- 文档站导航在 `doc/.vitepress/config.mts`，新增外部可见文档时同步更新 sidebar
+
+## 下一阶段开发计划
+
+详见 `doc/90_development_plan.md`。优先级：
+
+1. 自定义属性导出、导入
+2. 内置模板预设
+3. 替换同步条目时继承原笔记数据

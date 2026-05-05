@@ -82,7 +82,7 @@ export function constructLoginSettingsUI(containerEl: HTMLElement, manager: Sett
 						'a',
 						{
 							text: i18nHelper.getMessage('100139'),
-							href: 'https://wanxp.github.io/obsidian-douban/20_howtouse_25_setting_login_douban_cookie.html',
+							href: 'https://github.com/threeyang3/douban-sync/blob/main/doc/20_howtouse_25_setting_login_douban_cookie.md',
 						},
 						(a) => {
 							a.setAttr('target', '_blank');

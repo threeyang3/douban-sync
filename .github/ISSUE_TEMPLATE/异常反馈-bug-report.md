@@ -3,7 +3,7 @@ name: 异常反馈/Bug report
 about: 使用遇到问题时反馈问题/Create a report to help us improve
 title: "[Bug]:简要描述你的问题"
 labels: ''
-assignees: Wanxp
+assignees: ''
 
 ---
 
