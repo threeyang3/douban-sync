@@ -13,6 +13,8 @@ export default {
 	'110105': 'search music and create ',
 	'110106': 'search game and create ',
 	'110107': 'Create note for current entry',
+	'110109': 'Export Douban user data',
+	'110110': 'Import Douban user data',
 
 	'110201': `{0} already exists`,
 	'110202': `{0} template can not read`,
@@ -371,6 +373,47 @@ PS: This file could be delete if you want to.
 	'130131': `Please configure note path template in settings first`,
 	'130132': `Note created: {0}`,
 	'130133': `Note already exists, opened: {0}`,
+
+	// Data protection settings
+	'125100': `Data Protection`,
+	'125101': `Protect user data during force sync`,
+	'125102': `Preserve custom properties`,
+	'125103': `Keep user-defined frontmatter properties during force sync`,
+	'125104': `Preserve "Record" section`,
+	'125105': `Keep the ## Record section content during force sync`,
+	'125106': `Preserve "Thoughts" section`,
+	'125107': `Keep the ## Thoughts section content during force sync`,
+
+	// Export
+	'130200': `Export Douban User Data`,
+	'130201': `Will extract user data from folder [{0}] and export as JSON files`,
+	'130202': `Start Export`,
+	'130203': `Extracting data...`,
+	'130204': `Processing: {0}/{1}`,
+	'130205': `Export complete, {0} files exported`,
+	'130206': `Export failed: {0}`,
+
+	// Import
+	'130210': `Import Douban User Data`,
+	'130211': `Import user data from previously exported JSON files`,
+	'130212': `Merge Strategy`,
+	'130213': `Smart merge (overwrite when local is empty)`,
+	'130214': `Keep local (no overwrite)`,
+	'130215': `Use import value (overwrite)`,
+	'130216': `Select Files`,
+
+	// Missing fields
+	'130220': `New Fields Found`,
+	'130221': `Import data contains {0} fields not present locally. Choose how to handle them`,
+	'130222': `Skip`,
+	'130223': `Add`,
+	'130224': `Confirm`,
+
+	// Import result
+	'130230': `Import Result`,
+	'130231': `Success: {0}`,
+	'130232': `Skipped: {0}`,
+	'130233': `Errors: {0}`,
 
 	'140201': `[OB-Douban]: searching '{0}'...`,
 	'140202': `[OB-Douban]: result {0} rows`,

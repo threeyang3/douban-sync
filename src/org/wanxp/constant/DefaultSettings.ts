@@ -1,5 +1,6 @@
 import {DoubanPluginSetting} from "../douban/setting/model/DoubanPluginSetting";
 import {PersonNameMode, PictureBedSetting_PicGo, PictureBedType, SupportType} from "./Constsant";
+import {DEFAULT_DATA_PROTECTION_SETTINGS} from "../douban/userdata/types";
 
 export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	pictureBedFlag: false,
@@ -74,6 +75,7 @@ title: {{title}}
 
 ## 感想
 `,
+	dataProtection: DEFAULT_DATA_PROTECTION_SETTINGS,
 
 }
 

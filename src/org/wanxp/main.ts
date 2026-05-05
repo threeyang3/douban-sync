@@ -35,6 +35,10 @@ import SearcherV2 from "./douban/data/search/SearchV2";
 import {SearchPage} from "./douban/data/model/SearchPage";
 import {getFileFrontmatter, inheritFrontmatterFields} from "./utils/FrontmatterUtil";
 import {DoubanNoteManager} from "./douban/note/DoubanNoteManager";
+import {UserDataExtractor} from "./douban/userdata/UserDataExtractor";
+import {UserDataMerger} from "./douban/userdata/UserDataMerger";
+import {UserDataExportModal, UserDataImportModal} from "./douban/userdata/UserDataModal";
+import {TFile} from "obsidian";
 
 export default class DoubanPlugin extends Plugin {
 	public settings: DoubanPluginSetting;
@@ -120,6 +124,15 @@ export default class DoubanPlugin extends Plugin {
 				// 在force模式下，先检查是否存在该doubanId的旧文件
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
 				const inheritedFrontmatter = this.getInheritedFrontmatter(context, existingFilePath);
+				// 在替换前提取旧文件的用户数据（自定义属性+正文分区）
+				let localUserData = null;
+				if (existingFilePath) {
+					const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+					if (existingFile instanceof TFile) {
+						const extractor = new UserDataExtractor(this.app);
+						localUserData = await extractor.extractFromFileAsync(existingFile);
+					}
+				}
 				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
 				if (inheritedFrontmatter) {
 					await inheritFrontmatterFields(
@@ -128,6 +141,20 @@ export default class DoubanPlugin extends Plugin {
 						inheritedFrontmatter,
 						context.syncStatusHolder.syncStatus.syncConfig.inheritFieldList || [],
 					);
+				}
+				// 数据保护：将旧文件的自定义属性和正文分区合并到新文件
+				if (localUserData) {
+					const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+					if (newFile instanceof TFile) {
+						const merger = new UserDataMerger(this.app);
+						const currentContent = await this.app.vault.read(newFile);
+						const mergedContent = merger.mergeUserData(
+							currentContent, localUserData, this.settings.dataProtection,
+						);
+						if (mergedContent !== currentContent) {
+							await this.app.vault.process(newFile, () => mergedContent);
+						}
+					}
 				}
 				if (existingFilePath && existingFilePath !== fullFilePath) {
 					// 仅在新文件成功写入并完成继承后删除旧文件
@@ -316,6 +343,18 @@ export default class DoubanPlugin extends Plugin {
 			id: "douban-create-or-append-note",
 			name: i18nHelper.getMessage("110107"),
 			callback: () => this.doubanNoteManager?.createOrAppendForCurrentFile(),
+		});
+
+		this.addCommand({
+			id: "douban-export-user-data",
+			name: i18nHelper.getMessage("110109"),
+			callback: () => new UserDataExportModal(this).open(),
+		});
+
+		this.addCommand({
+			id: "douban-import-user-data",
+			name: i18nHelper.getMessage("110110"),
+			callback: () => new UserDataImportModal(this).open(),
 		});
 
 		this.settingsManager = new SettingsManager(this.app, this);

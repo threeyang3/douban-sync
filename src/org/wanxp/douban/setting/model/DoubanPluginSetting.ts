@@ -4,6 +4,7 @@ import {ArraySetting} from "./ArraySetting";
 import {ScoreSetting} from "./ScoreSetting";
 import PictureBedSetting from "./PictureBedSetting";
 import {SupportType} from "../../../constant/Constsant";
+import {DataProtectionSettings} from "../../userdata/types";
 
 export interface DoubanPluginSetting {
 	onlineSettingsFileName: string;
@@ -45,4 +46,5 @@ export interface DoubanPluginSetting {
 	templatePresetPaths?: Record<string, string>,
 	notePathTemplate: string,
 	noteTemplateContent: string,
+	dataProtection: DataProtectionSettings,
 }

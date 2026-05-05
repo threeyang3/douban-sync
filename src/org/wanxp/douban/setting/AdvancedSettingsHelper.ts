@@ -38,6 +38,40 @@ function showAdvancedSettings(containerEl: HTMLElement, manager: SettingsManager
 	containerEl.empty();
 	const promise:Promise<any> = new Promise<any>((resolve, reject) => {resolve(null)});
 
+	// 数据保护设置
+	containerEl.createEl('h4', { text: i18nHelper.getMessage('125100') });
+	containerEl.createEl('p', { text: i18nHelper.getMessage('125101') });
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('125102'))
+		.setDesc(i18nHelper.getMessage('125103'))
+		.addToggle(toggle => toggle
+			.setValue(manager.plugin.settings.dataProtection.preserveCustomProperties)
+			.onChange(async (value) => {
+				manager.plugin.settings.dataProtection.preserveCustomProperties = value;
+				await manager.plugin.saveSettings();
+			}));
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('125104'))
+		.setDesc(i18nHelper.getMessage('125105'))
+		.addToggle(toggle => toggle
+			.setValue(manager.plugin.settings.dataProtection.preserveRecord)
+			.onChange(async (value) => {
+				manager.plugin.settings.dataProtection.preserveRecord = value;
+				await manager.plugin.saveSettings();
+			}));
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('125106'))
+		.setDesc(i18nHelper.getMessage('125107'))
+		.addToggle(toggle => toggle
+			.setValue(manager.plugin.settings.dataProtection.preserveThoughts)
+			.onChange(async (value) => {
+				manager.plugin.settings.dataProtection.preserveThoughts = value;
+				await manager.plugin.saveSettings();
+			}));
+
 
 	//导出
 	new Setting(containerEl)
