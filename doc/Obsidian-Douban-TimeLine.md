@@ -14,7 +14,7 @@ render_with_liquid: false
 
 ## 实现步骤
 1. 安装[Timelines](https://github.com/Darakah/obsidian-timelines)插件
-2. 安装[Obsidian-Douban](https://github.com/Wanxp/obsidian-douban)插件(本插件)
+2. 安装 Obsidian-Douban 插件(本插件)
 3. 在Obsidian-Douban插件配置中登录Douban
 4. 配置同步需要的模板 电影/书籍的模板中的frontmatter，在frontmatter中 **增加** 特定tags（根据自己的需要指定），用于需要过滤成为timeline的笔记，如增加tags：`我看过的电影`
 
@@ -89,5 +89,4 @@ data-class = "custom-my-movie-time-line">{{myComment}} |简介: {{desc}}
 请参照电影模板
 
 ## 更多
-此效果来自热心用户的分享，感谢[![](https://img.shields.io/badge/GitHub-eryajf-blue)](https://github.com/eryajf)  
-参照讨论 [结合timeline插件的妙用](https://github.com/Wanxp/obsidian-douban/issues/19#issuecomment-1428307130)
+可以根据自己的模板字段继续调整时间线展示内容。

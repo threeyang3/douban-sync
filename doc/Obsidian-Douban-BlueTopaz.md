@@ -14,7 +14,7 @@ render_with_liquid: false
 
 ## 实现步骤
 1. 安装[Blue Topaz](https://github.com/PKM-er/Blue-Topaz_Obsidian-css)插件， 可在Obsidian主题搜索中找到 `Blue Topaz`
-2. 安装[Obsidian-Douban](https://github.com/Wanxp/obsidian-douban)插件(本插件)
+2. 安装 Obsidian-Douban 插件(本插件)
 3. 在Obsidian-Douban插件配置中登录Douban
 4. 配置需要的模板文件, 在模板中 ==增加== 以下内容，如下所示
 
@@ -124,4 +124,4 @@ desc: {{desc}}
 请参照书籍模板
 
 ## 更多
-此效果来自热心用户的分享，感谢
+可以根据主题样式和自己的模板字段继续调整页面展示内容。

@@ -2,9 +2,9 @@ title: Obsidian-Douban
 description: This is a plugin that can import movies/books/musics/notes/games info data from Douban for Obsidian .
 theme: just-the-docs
 
-url: https://wanxp.github.io/obsidian-douban
+url: https://threeyang3.github.io/douban-sync
 
 aux_links: # remove if you don't want this link to appear on your pages
-  Obsidian-Douban on Github: https://github.com/Wanxp/obsidian-douban
+  Douban Sync on Github: https://github.com/threeyang3/douban-sync
 search:
   focus_shortcut_key: 'k'

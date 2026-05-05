@@ -7,9 +7,9 @@ nav_order: 700
 
 1. 进入你的Obsidian测试文档文件夹下的`/.obsidian/plugins/`
 2. 克隆代码      
-   `git clone git@github.com:Wanxp/obsidian-douban.git`
+   `git clone git@github.com:threeyang3/douban-sync.git`
 3. 进入代码文件夹      
-   `cd obsidian-douban`
+   `cd douban-sync`
 4. install
 	`npm install`
 5. 构建      
