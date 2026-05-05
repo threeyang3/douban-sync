@@ -42,4 +42,5 @@ export interface DoubanPluginSetting {
 	arraySettings: ArraySetting[],
 	scoreSetting: ScoreSetting,
 	searchDefaultType: SupportType,
+	templatePresetPaths?: Record<string, string>,
 }

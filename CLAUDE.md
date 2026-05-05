@@ -6,7 +6,7 @@ Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记�
 
 - 当前主仓库：`https://github.com/threeyang3/douban-sync`
 - 当前开发分支：`adv`
-- 当前版本基线：`1.0.0`
+- 当前版本基线：`1.2.0`
 - `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
 - 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
 
@@ -56,11 +56,14 @@ npm run docs:build     # 文档站构建
 - YAML frontmatter 生成在 `YamlUtil.ts`，多行文本使用 `handleMultiLineText()`
 - 语言检测使用 `moment.locale()`（非 localStorage）
 - 文档站导航在 `doc/.vitepress/config.mts`，新增外部可见文档时同步更新 sidebar
+- 模板设置支持内置预设写入，入口在 `TemplateSettingHelper.ts`，预设内容定义在 `TemplatePresetUtil.ts`
+- 自定义属性导入导出逻辑在 `CustomPropertyIO.ts`，导入仅接受带 `version` 和 `customProperties` 的 JSON
+- 强制替换同步时的旧 frontmatter 继承在 `main.ts#createFile()` 和 `FrontmatterUtil.ts`
 
 ## 下一阶段开发计划
 
 详见 `doc/90_development_plan.md`。优先级：
 
-1. 自定义属性导出、导入
-2. 内置模板预设
-3. 替换同步条目时继承原笔记数据
+1. 为 1.2.0 新功能补充截图与更完整文档示例
+2. 为自定义属性导入导出补单元测试
+3. 为同步继承补更多 frontmatter 边界测试

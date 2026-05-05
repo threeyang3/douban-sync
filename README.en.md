@@ -12,6 +12,9 @@ An Obsidian plugin for importing and syncing Douban data. It can create notes fr
 - Import ratings, comments, collection dates, states, and tags
 - Save covers locally or through a configured image host
 - Customize templates, output paths, and field variables
+- Export custom properties to JSON and import them with merge or overwrite modes
+- Use built-in `basic / compact / sync` template presets and write them directly to template files
+- Inherit selected frontmatter fields from existing notes during forced replacement sync
 - Works on desktop and mobile Obsidian
 
 ## Usage
@@ -30,6 +33,12 @@ After logging in to Douban, the plugin can sync your personal collection records
 - Import template: controls the generated note body
 - Output path: controls where notes are created
 - Attachment settings: controls where cover images are stored
+
+### New in 1.2.0
+
+- Custom properties now support `Export JSON`, `Merge Import`, and `Overwrite Import`
+- Template settings now provide built-in presets that can be copied or written to files directly
+- The sync modal now supports inheriting selected frontmatter fields from the old note during forced replacement
 
 ## Installation
 
@@ -52,6 +61,7 @@ After logging in to Douban, the plugin can sync your personal collection records
 npm install
 npm run build
 npm run dev
+npm test
 ```
 
 ## Disclaimer

@@ -5,7 +5,7 @@ nav_order: 900
 
 # 开发计划
 
-当前分支为 `adv`，下一阶段围绕配置迁移、模板易用性和同步替换安全性展开。
+当前分支为 `adv`。`1.2.0` 已完成，以下条目保留为已交付记录。
 
 ## 1. 自定义属性导出、导入
 
@@ -28,6 +28,8 @@ nav_order: 900
 - 错误 JSON 不会污染现有设置。
 - 中英文 UI 文案完整。
 
+状态：已完成（2026-05-05）
+
 ## 2. 内置模板
 
 目标：减少新用户手动复制默认模板、创建模板文件、再选择路径的步骤。
@@ -49,6 +51,8 @@ nav_order: 900
 - 用户可以一键生成模板文件。
 - 不会静默覆盖已有模板。
 - 生成模板的 frontmatter 可被现有同步和导入流程正常解析。
+
+状态：已完成（2026-05-05）
 
 ## 3. 替换同步条目时继承原笔记数据
 
@@ -75,9 +79,10 @@ nav_order: 900
 - 同步失败不会删除或污染旧文件。
 - 覆盖 `force=false`、`force=true + inherit=false`、`force=true + inherit=true` 三类场景。
 
-## 建议提交顺序
+状态：已完成（2026-05-05）
 
-1. `feat: add custom property import and export`
-2. `feat: add built-in template presets`
-3. `feat: inherit existing note metadata during forced sync`
-4. `docs: document configuration import and sync inheritance`
+## 后续建议
+
+1. 为 `1.2.0` 新功能补充文档截图
+2. 为自定义属性导入导出补测试
+3. 为同步继承补更多 frontmatter 边界测试

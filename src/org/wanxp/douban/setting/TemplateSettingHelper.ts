@@ -1,15 +1,18 @@
 import {i18nHelper} from "../../lang/helper";
 import {CreateTemplateSelectParams} from "./model/CreateTemplateSelectParams";
-import { FileSuggest } from "./model/FileSuggest";
-import {SearchComponent, Setting} from "obsidian";
-import { log } from "src/org/wanxp/utils/Logutil";
-import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
-import {FolderSuggest} from "./model/FolderSuggest";
+import {SearchComponent, Setting, TFile} from "obsidian";
 import SettingsManager from "./SettingsManager";
 import {showFileExample} from "./OutputSettingsHelper";
 import {FileTreeSelectSuggest} from "./model/FileTreeSelectSuggest";
-import DoubanPlugin from "../../main";
 import {FolderTreeSelectSuggest} from "./model/FolderTreeSelectSuggest";
+import {
+	BUILT_IN_TEMPLATE_PRESET_RECORDS,
+	BuiltInTemplatePresetType,
+	getBuiltInTemplateDefaultPath,
+	getBuiltInTemplatePresetContent
+} from "./TemplatePresetUtil";
+import {TemplateKey} from "../../constant/Constsant";
+import {Notice, normalizePath} from "obsidian";
 
 
 export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsManager) {
@@ -28,6 +31,8 @@ export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsM
 export function createFileSelectionSetting({containerEl, name, desc, placeholder, key, manager
 										  }: CreateTemplateSelectParams) {
 	return (setting: Setting) => {
+		const templateKey = key as TemplateKey;
+		let preset: BuiltInTemplatePresetType = 'sync';
 		setting.controlEl.addClass('obsidian_douban_template_file_select');
 		// @ts-ignore
 		setting.setName(i18nHelper.getMessage(name));
@@ -57,7 +62,8 @@ export function createFileSelectionSetting({containerEl, name, desc, placeholder
 				.setTooltip(i18nHelper.getMessage('121903'))
 				.onClick(async () => {
 					// @ts-ignore
-					navigator.clipboard.writeText(getDefaultTemplateContent(key))
+					navigator.clipboard.writeText(getBuiltInTemplatePresetContent(templateKey, preset))
+					new Notice(i18nHelper.getMessage('121907'));
 				});
 		});
 		setting.addExtraButton((button) => {
@@ -65,9 +71,19 @@ export function createFileSelectionSetting({containerEl, name, desc, placeholder
 				.setIcon('document')
 				.setTooltip(i18nHelper.getMessage('121901'))
 				.onClick(async () => {
-					// @ts-ignore
-					navigator.clipboard.writeText(getDefaultTemplateContent(key, false))
+					await writeBuiltInTemplateFile(manager, key as TemplateKey, preset);
 				});
+		});
+		const presetSetting = new Setting(containerEl)
+			.setName(i18nHelper.getMessage('121908'))
+			.setDesc(i18nHelper.getMessage('121909'));
+		presetSetting.addDropdown((dropdown) => {
+			Object.entries(BUILT_IN_TEMPLATE_PRESET_RECORDS).forEach(([value, label]) => {
+				dropdown.addOption(value, i18nHelper.getMessage(label));
+			});
+			dropdown.setValue(preset).onChange((value: BuiltInTemplatePresetType) => {
+				preset = value;
+			});
 		});
 
 	};
@@ -82,6 +98,48 @@ export function createFolderSelectionSetting({
 		// @ts-ignore
 		setting.setDesc( i18nHelper.getMessage(desc));
 	};
+}
+
+async function writeBuiltInTemplateFile(manager: SettingsManager, key: TemplateKey, preset: BuiltInTemplatePresetType) {
+	const currentPath = manager.getSettingStr(key);
+	const targetPath = normalizePath(currentPath || getBuiltInTemplateDefaultPath(key, preset));
+	const fileExists = await manager.app.vault.adapter.exists(targetPath);
+	if (fileExists) {
+		const confirmed = window.confirm(i18nHelper.getMessage('121910', targetPath));
+		if (!confirmed) {
+			return;
+		}
+	}
+	const content = getBuiltInTemplatePresetContent(key, preset);
+	const file = manager.app.vault.getAbstractFileByPath(targetPath);
+	if (file instanceof TFile) {
+		await manager.app.vault.modify(file, content);
+	} else {
+		const pathParts = targetPath.split('/');
+		pathParts.pop();
+		const folder = pathParts.join('/');
+		if (folder) {
+			await ensureFolderExists(manager, folder);
+		}
+		await manager.app.vault.create(targetPath, content);
+	}
+	await manager.updateSetting(key, targetPath);
+	new Notice(i18nHelper.getMessage('121911', targetPath));
+}
+
+async function ensureFolderExists(manager: SettingsManager, folder: string) {
+	const normalizedFolder = normalizePath(folder);
+	if (!normalizedFolder || await manager.app.vault.adapter.exists(normalizedFolder)) {
+		return;
+	}
+	const parts = normalizedFolder.split('/').filter((part) => !!part);
+	let currentPath = '';
+	for (const part of parts) {
+		currentPath = currentPath ? `${currentPath}/${part}` : part;
+		if (!await manager.app.vault.adapter.exists(currentPath)) {
+			await manager.app.vault.createFolder(currentPath);
+		}
+	}
 }
 
 

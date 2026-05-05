@@ -153,6 +153,8 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			attachmentFileName: (settings.attachmentFileName == '' || settings.attachmentFileName == null) ?  DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
 			templateFile:  (settings.movieTemplateFile == '' || settings.movieTemplateFile == null) ? DEFAULT_SETTINGS.movieTemplateFile : settings.movieTemplateFile,
 			incrementalUpdate: true,
+			inheritOldFields: false,
+			inheritFieldList: ['tags', 'aliases'],
 			syncConditionType: SyncConditionType.ALL,
 			syncConditionDateFromValue: TimeUtil.getLastMonth(),
 			syncConditionDateToValue: new Date(),
@@ -201,7 +203,18 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 		// this.showOutiFleName(contentEl, config, disable);
 		// this.showAttachmentsFileConfig(contentEl, config, disable);
 		this.showUpdateAllConfig(contentEl, config, disable);
-		this.showForceUpdateConfig(contentEl, config, disable);
+		const forceConfigContainer = contentEl.createDiv('sync-force-config');
+		this.renderForceRelatedConfigs(forceConfigContainer, config, disable);
+	}
+
+	private renderForceRelatedConfigs(containerEl: HTMLElement, config: SyncConfig, disable:boolean) {
+		containerEl.empty();
+		this.showForceUpdateConfig(containerEl, config, disable, () => {
+			this.renderForceRelatedConfigs(containerEl, config, disable);
+		});
+		this.showInheritOldFieldsConfig(containerEl, config, disable, () => {
+			this.renderForceRelatedConfigs(containerEl, config, disable);
+		});
 	}
 
 	async onClose() {
@@ -371,7 +384,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 		return supportType + 'TemplateFile';
 	}
 
-	showForceUpdateConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean) {
+	showForceUpdateConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean, onToggle?: () => void) {
 		new Setting(containerEl)
 			.setName(i18nHelper.getMessage('110031'))
 			.setDesc(i18nHelper.getMessage('500110'))
@@ -381,9 +394,38 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 					.setValue(config.force)
 					.onChange(async (value) => {
 						config.force = value;
+						onToggle && onToggle();
 					});
 			})
 			.setDisabled(disable);
+	}
+
+	showInheritOldFieldsConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean, onToggle?: () => void) {
+		const setting = new Setting(containerEl)
+			.setName(i18nHelper.getMessage('110097'))
+			.setDesc(i18nHelper.getMessage('110098'))
+			.setDisabled(disable || !config.force);
+		setting.addToggle((toggleComponent) => {
+			toggleComponent
+				.setValue(!!config.inheritOldFields)
+				.onChange(async (value) => {
+					config.inheritOldFields = value;
+					onToggle && onToggle();
+				});
+		});
+		setting.addText((text) => {
+			text
+				.setPlaceholder(i18nHelper.getMessage('110099'))
+				.setValue((config.inheritFieldList || []).join(', '))
+				.onChange(async (value) => {
+					config.inheritFieldList = value
+						.split(',')
+						.map((item) => item.trim())
+						.filter((item) => !!item);
+				});
+			text.inputEl.style.width = '100%';
+			text.setDisabled(disable || !config.force || !config.inheritOldFields);
+		});
 	}
 
 
