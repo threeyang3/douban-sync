@@ -279,13 +279,13 @@ export class VariableUtil {
 
 	private static handleText(v: string, targetType: TargetType, dataField: DataField = null): string {
 		if (targetType === 'yml_text') {
-			// 对于 desc 字段，使用多行文本处理
-			if (dataField && dataField.name === 'desc') {
-				return YamlUtil.handleMultiLineText(v);
-			}
 			return YamlUtil.handleText(v, dataField);
 		}
 		if (targetType === 'text') {
+			// desc 在正文中以 callout 形式呈现，需要为每行添加 > 前缀以保持 callout 格式
+			if (dataField && dataField.name === 'desc' && v) {
+				return v.replaceAll('\n', '\n> ');
+			}
 			return  v;
 		}
 		if (targetType === 'path') {

@@ -43,4 +43,6 @@ export interface DoubanPluginSetting {
 	scoreSetting: ScoreSetting,
 	searchDefaultType: SupportType,
 	templatePresetPaths?: Record<string, string>,
+	notePathTemplate: string,
+	noteTemplateContent: string,
 }

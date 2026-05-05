@@ -12,6 +12,7 @@ export default {
 	'110104': 'search book and create',
 	'110105': 'search music and create ',
 	'110106': 'search game and create ',
+	'110107': 'Create note for current entry',
 
 	'110201': `{0} already exists`,
 	'110202': `{0} template can not read`,
@@ -315,6 +316,10 @@ PS: This file could be delete if you want to.
 	'121912': `Basic preset`,
 	'121913': `Compact preset`,
 	'121914': `Sync preset`,
+	'121920': `Note path template`,
+	'121921': `Path template for note files, available variables: {{id}}, {{title}}, {{type}}`,
+	'121922': `Note template content`,
+	'121923': `Template content used when creating notes, available variables: {{id}}, {{title}}, {{type}}`,
 
 
 	'125001': `Debug Mode`,
@@ -362,6 +367,10 @@ PS: This file could be delete if you want to.
 	'130108': `Redirect times too much, please check your network or proxy`,
 	'130120': `An error occurred during Sync, but Sync will continue. Error item is {}`,
 	'130121': `An error occurred during Sync, Begin number is bigger than total number {0}, will not sync this item`,
+	'130130': `Current file has no valid Douban ID, cannot create note`,
+	'130131': `Please configure note path template in settings first`,
+	'130132': `Note created: {0}`,
+	'130133': `Note already exists, opened: {0}`,
 
 	'140201': `[OB-Douban]: searching '{0}'...`,
 	'140202': `[OB-Douban]: result {0} rows`,

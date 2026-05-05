@@ -34,6 +34,7 @@ import {DoubanPluginOnlineData} from "./douban/setting/model/DoubanPluginOnlineD
 import SearcherV2 from "./douban/data/search/SearchV2";
 import {SearchPage} from "./douban/data/model/SearchPage";
 import {getFileFrontmatter, inheritFrontmatterFields} from "./utils/FrontmatterUtil";
+import {DoubanNoteManager} from "./douban/note/DoubanNoteManager";
 
 export default class DoubanPlugin extends Plugin {
 	public settings: DoubanPluginSetting;
@@ -46,6 +47,7 @@ export default class DoubanPlugin extends Plugin {
 	public statusHolder: GlobalStatusHolder;
 	public onlineData: DoubanPluginOnlineData;
 	public settingTab: DoubanSettingTab;
+	public doubanNoteManager: DoubanNoteManager;
 
 
 	async putToObsidian(context: HandleContext, extract: DoubanSubject) {
@@ -310,8 +312,11 @@ export default class DoubanPlugin extends Plugin {
 					action: Action.SearchAndCrate}, SupportType.game),
 		});
 
-
-
+		this.addCommand({
+			id: "douban-create-or-append-note",
+			name: i18nHelper.getMessage("110107"),
+			callback: () => this.doubanNoteManager?.createOrAppendForCurrentFile(),
+		});
 
 		this.settingsManager = new SettingsManager(this.app, this);
 		// this.fetchOnlineData(this.settingsManager);
@@ -322,6 +327,7 @@ export default class DoubanPlugin extends Plugin {
 		this.settingTab = new DoubanSettingTab(this.app, this);
 		this.addSettingTab(this.settingTab);
 		this.statusHolder = new GlobalStatusHolder(this.app, this);
+		this.doubanNoteManager = new DoubanNoteManager(this.app, this);
 	}
 
 	async loadSettings() {

@@ -26,6 +26,34 @@ export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsM
 	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '120401', desc: '120402', placeholder: '121701', key: 'noteTemplateFile', manager: manager}));
 	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '121301', desc: '121302', placeholder: '121701', key: 'gameTemplateFile', manager: manager}));
 	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '121801', desc: '121802', placeholder: '121701', key: 'teleplayTemplateFile', manager: manager}));
+
+	containerEl.createEl('h3', { text: i18nHelper.getMessage('121920') });
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('121920'))
+		.setDesc(i18nHelper.getMessage('121921'))
+		.addText((text) => {
+			text
+				.setPlaceholder('笔记/{{type}}/{{title}}.md')
+				.setValue(manager.getSettingStr('notePathTemplate'))
+				.onChange(async (value) => {
+					await manager.updateSetting('notePathTemplate', value);
+				});
+			text.inputEl.style.width = '100%';
+		});
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('121922'))
+		.setDesc(i18nHelper.getMessage('121923'))
+		.addTextArea((text) => {
+			text
+				.setPlaceholder('---\ndoubanId: {{id}}\ntitle: {{title}}\n---\n\n# {{title}}\n\n## 记录\n\n## 感想')
+				.setValue(manager.getSettingStr('noteTemplateContent'))
+				.onChange(async (value) => {
+					await manager.updateSetting('noteTemplateContent', value);
+				});
+			text.inputEl.style.width = '100%';
+			text.inputEl.style.minHeight = '150px';
+		});
 }
 
 export function createFileSelectionSetting({containerEl, name, desc, placeholder, key, manager

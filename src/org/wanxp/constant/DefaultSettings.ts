@@ -62,6 +62,18 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	},
 	searchDefaultType: SupportType.all,
 	templatePresetPaths: {},
+	notePathTemplate: '笔记/{{type}}/{{title}}.md',
+	noteTemplateContent: `---
+doubanId: {{id}}
+title: {{title}}
+---
+
+# {{title}}
+
+## 记录
+
+## 感想
+`,
 
 }
 
