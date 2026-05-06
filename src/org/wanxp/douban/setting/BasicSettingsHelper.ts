@@ -12,9 +12,6 @@ import DoubanPlugin from "../../main";
 import {SearchTypeRecords, SupportType, SupportTypeMap} from "../../constant/Constsant";
 
 export function constructBasicUI(containerEl: HTMLElement, manager: SettingsManager) {
-	// containerEl.createEl('h3', { text: i18nHelper.getMessage('1210') });
-
-
 	new Setting(containerEl).setName(i18nHelper.getMessage('120501')).then((setting) => {
 		setting.addMomentFormat((mf) => {
 			setting.descEl.appendChild(

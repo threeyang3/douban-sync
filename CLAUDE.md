@@ -6,7 +6,7 @@ Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记�
 
 - 当前主仓库：`https://github.com/threeyang3/douban-sync`
 - 当前开发分支：`adv`
-- 当前版本基线：`1.4.0`
+- 当前版本基线：`1.5.0`
 - `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
 - 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
 
@@ -53,14 +53,16 @@ npm run docs:build     # 文档站构建
 
 - 版本号同步修改 `package.json`、`package-lock.json`、`manifest.json` 和 `versions.json`
 - 各类型数据 handler 继承 `DoubanAbstractLoadHandler`，同步 handler 继承 `DoubanAbstractSyncHandler`
+- 同步列表 handler 通过 `DoubanAbstractListHandler.create(syncType, doType)` 工厂方法创建，不再需要叶子类文件
+- 路径自动补全使用 `PathSuggest`（mode: 'folder' | 'file'），替代原 FolderSuggest/FileSuggest
 - 模板变量定义在 `DefaultTemplateContent.ts`，解析在 `VariableUtil.ts`
 - YAML frontmatter 生成在 `YamlUtil.ts`，多行文本使用 `handleMultiLineText()`
 - 语言检测使用 `moment.locale()`（非 localStorage）
 - 文档站导航在 `doc/.vitepress/config.mts`，新增外部可见文档时同步更新 sidebar
-- 模板设置支持内置预设写入，入口在 `TemplateSettingHelper.ts`，预设内容定义在 `TemplatePresetUtil.ts`
+- 模板设置使用 `TemplateConfig`（source: builtin/file/custom），入口在 `TemplateSettingHelper.ts`，预设内容定义在 `TemplatePresetUtil.ts`，编辑/预览模态框在 `TemplateEditorModal.ts`
 - 自定义属性导入导出逻辑在 `CustomPropertyIO.ts`，导入仅接受带 `version` 和 `customProperties` 的 JSON
 - 强制替换同步时的旧 frontmatter 继承在 `main.ts#createFile()` 和 `FrontmatterUtil.ts`
-- 用户数据导出/导入系统在 `douban/userdata/`，核心类型在 `types.ts`，提取器在 `UserDataExtractor.ts`，合并器在 `UserDataMerger.ts`
+- 用户数据导出/导入系统在 `douban/userdata/`，核心类型在 `types.ts`，提取器在 `UserDataExtractor.ts`，合并器在 `UserDataMerger.ts`（无参构造）
 - Vault 扫描工具在 `VaultUtil.ts`，`scanVaultForDoubanIds()` 构建 `Map<doubanId, DoubanFileEntry>` 缓存供多个模块复用
 - 强制同步数据保护在 `main.ts#createFile()` 中集成，通过 `UserDataExtractor` + `UserDataMerger` 保留用户自定义属性和正文分区
 
@@ -68,7 +70,7 @@ npm run docs:build     # 文档站构建
 
 详见 `doc/90_development_plan.md`。优先级：
 
-1. 为 1.2.0 / 1.4.0 新功能补充截图与更完整文档示例
+1. 为 1.2.0 / 1.4.0 / 1.5.0 新功能补充截图与更完整文档示例
 2. 为自定义属性导入导出补单元测试
 3. 为用户数据导出/导入补单元测试
 4. 为同步继承补更多 frontmatter 边界测试

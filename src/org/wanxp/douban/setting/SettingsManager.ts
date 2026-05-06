@@ -17,7 +17,6 @@ import {
 	ArraySettingFieldName,
 	DEFAULT_SETTINGS_ARRAY_NAME
 } from "./model/ArraySetting";
-import {logger} from "bs-logger";
 import {i18nHelper} from "../../lang/helper";
 
 export default class SettingsManager {

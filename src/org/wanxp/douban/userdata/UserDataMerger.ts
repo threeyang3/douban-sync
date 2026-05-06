@@ -4,9 +4,7 @@
  * 用于导入和强制同步时合并用户自定义数据
  */
 
-import { App } from 'obsidian';
 import { DoubanUserData, DataProtectionSettings, DEFAULT_DATA_PROTECTION_SETTINGS } from './types';
-import { extractSection } from './UserDataExtractor';
 
 interface FrontmatterParts {
 	prefix: string;
@@ -22,11 +20,6 @@ function parseFrontmatter(content: string): FrontmatterParts | null {
 }
 
 export class UserDataMerger {
-	private app: App;
-
-	constructor(app: App) {
-		this.app = app;
-	}
 
 	mergeUserData(
 		newContent: string,

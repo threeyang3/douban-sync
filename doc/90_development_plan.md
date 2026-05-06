@@ -111,9 +111,38 @@ nav_order: 900
 
 状态：已完成（2026-05-05）
 
+## 5. 模板设置重构 + Bug 修复
+
+目标：简化模板设置 UI，修复 tags 混入类型问题，为内置模板添加封面链接属性。
+
+涉及模块：
+- `src/org/wanxp/douban/setting/TemplateSettingHelper.ts` — 模板设置 UI 重写
+- `src/org/wanxp/douban/setting/model/DoubanPluginSetting.ts` — TemplateConfig 数据模型
+- `src/org/wanxp/douban/component/TemplateEditorModal.ts` — 模板编辑/预览模态框
+- `src/org/wanxp/douban/data/handler/DoubanAbstractLoadHandler.ts` — tags 修复 + getTemplate 适配
+- `src/org/wanxp/constant/DefaultTemplateContent.ts` — 模板添加封面链接、删除冗余 tags
+- `src/org/wanxp/douban/setting/TemplatePresetUtil.ts` — compact 模板同步更新
+- `src/org/wanxp/main.ts` — 设置迁移逻辑
+
+计划：
+- tags 修复：`parseUserInfo` 不再将 `extract.type` 注入 `myTags`
+- 模板封面链接：所有内置模板 frontmatter 添加 `image: {{imageData.url}}`
+- 模板设置 UI：每类模板一行 dropdown（内置/文件/自定义）+ 上下文按钮 + 复制按钮
+- 模板编辑器：支持预览（只读）和编辑（自定义内容）两种模式
+- 设置迁移：旧 `xxxTemplateFile` 自动迁移到 `TemplateConfig`
+
+验收：
+- tags 不再包含 "book"/"movie" 等类型标签
+- 内置模板 frontmatter 含 `image: {{imageData.url}}`
+- 模板设置 UI 简洁，每行只有 dropdown + 上下文按钮 + 复制按钮
+- 旧用户设置自动迁移，无需手动操作
+- 构建无报错
+
+状态：已完成（2026-05-06）
+
 ## 后续建议
 
-1. 为 `1.2.0` / `1.4.0` 新功能补充文档截图
+1. 为 `1.2.0` / `1.4.0` / `1.5.0` 新功能补充文档截图
 2. 为自定义属性导入导出补测试
 3. 为用户数据导出/导入补单元测试
 4. 为同步继承补更多 frontmatter 边界测试

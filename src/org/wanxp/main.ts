@@ -146,7 +146,7 @@ export default class DoubanPlugin extends Plugin {
 				if (localUserData) {
 					const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
 					if (newFile instanceof TFile) {
-						const merger = new UserDataMerger(this.app);
+						const merger = new UserDataMerger();
 						const currentContent = await this.app.vault.read(newFile);
 						const mergedContent = merger.mergeUserData(
 							currentContent, localUserData, this.settings.dataProtection,
@@ -358,7 +358,6 @@ export default class DoubanPlugin extends Plugin {
 		});
 
 		this.settingsManager = new SettingsManager(this.app, this);
-		// this.fetchOnlineData(this.settingsManager);
 		this.userComponent = new UserComponent(this.settingsManager);
 		this.netFileHandler = new NetFileHandler(this.fileHandler);
 		this.userComponent.assumeLoggedIn();

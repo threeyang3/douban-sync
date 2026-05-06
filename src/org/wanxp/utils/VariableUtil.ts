@@ -35,14 +35,9 @@ export class VariableUtil {
 		if (!allVariables || allVariables.length == 0) {
 			return content;
 		}
-		if (obj instanceof Map) {
-			this.handleCustomVariable(subjectType, obj, settingManager, 'text')
-			content = this.replaceMap(obj, allVariables, content, settingManager, targetType);
-		}else {
-			const map = this.objToMap(obj);
-			this.handleCustomVariable(subjectType, map, settingManager, 'text')
-			content = this.replaceMap(map, allVariables, content, settingManager, targetType);
-		}
+		const map = obj instanceof Map ? obj : this.objToMap(obj);
+		this.handleCustomVariable(subjectType, map, settingManager, 'text');
+		content = this.replaceMap(map, allVariables, content, settingManager, targetType);
 		return content;
 	}
 
@@ -63,11 +58,8 @@ export class VariableUtil {
 		if (!allVariables || allVariables.length == 0) {
 			return content;
 		}
-		if (obj instanceof Map) {
-			content = this.replaceMap(obj, allVariables, content, settingManager, targetType);
-		}else {
-			const map = this.objToMap(obj);
-			content = this.replaceMap(map, allVariables, content, settingManager, targetType);		}
+		const map = obj instanceof Map ? obj : this.objToMap(obj);
+		content = this.replaceMap(map, allVariables, content, settingManager, targetType);
 
 		return content;
 	}

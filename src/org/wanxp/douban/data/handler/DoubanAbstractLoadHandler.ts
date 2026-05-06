@@ -35,8 +35,6 @@ import {DataField} from "../../../utils/model/DataField";
 import {TemplateConfig, DoubanPluginSetting} from "../../setting/model/DoubanPluginSetting";
 import NumberUtil from "../../../utils/NumberUtil";
 import {DoubanHttpUtil} from "../../../utils/DoubanHttpUtil";
-import {logger} from "bs-logger";
-
 export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject> implements DoubanSubjectLoadHandler<T> {
 
 
@@ -134,7 +132,6 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				return sub;
 			})
 			.then(content => this.toEditor(context, content))
-			// .then(content => content ? editor.replaceSelection(content) : content)
 			.catch(e =>  {
 				log.error(i18nHelper.getMessage('130101',  e.toString()), e);
 				if (url) {
@@ -245,19 +242,6 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		}
 		return this.getPersonNameByMode(name, personNameMode);
 	}
-
-	// html_encode(str: string): string {
-	// 	let s = "";
-	// 	if (str.length == 0) return "";
-	// 	s = str.replace(/&/g, "&amp;");
-	// 	s = s.replace(/</g, "&lt;");
-	// 	s = s.replace(/>/g, "&gt;");
-	// 	s = s.replace(/ /g, "&nbsp;");
-	// 	s = s.replace(/\'/g, "&#39;");
-	// 	s = s.replace(/\"/g, "&quot;");
-	// 	s = s.replace(/\n/g, "<br/>");
-	// 	return s;
-	// }
 
 	html_decode(str: string): string {
 		let s = "";
@@ -408,43 +392,15 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 
 
 
-	private getTemplateKey():TemplateKey {
-		let templateKey: TemplateKey;
+	private getTemplateKeys(): { templateKey: TemplateKey; configKey: keyof DoubanPluginSetting } {
 		switch (this.getSupportType()) {
-			case SupportType.movie:
-				templateKey = TemplateKey.movieTemplateFile;
-				break;
-			case SupportType.book:
-				templateKey = TemplateKey.bookTemplateFile;
-				break;
-			case SupportType.music:
-				templateKey = TemplateKey.musicTemplateFile;
-				break;
-			case SupportType.teleplay:
-				templateKey = TemplateKey.teleplayTemplateFile;
-				break;
-			case SupportType.game:
-				templateKey = TemplateKey.gameTemplateFile;
-				break;
-			case SupportType.note:
-				templateKey = TemplateKey.noteTemplateFile;
-				break;
-			default:
-				templateKey = null;
-
-		}
-		return templateKey;
-	}
-
-	private getTemplateConfigKey(): keyof DoubanPluginSetting {
-		switch (this.getSupportType()) {
-			case SupportType.movie: return 'movieTemplateConfig';
-			case SupportType.book: return 'bookTemplateConfig';
-			case SupportType.music: return 'musicTemplateConfig';
-			case SupportType.teleplay: return 'teleplayTemplateConfig';
-			case SupportType.game: return 'gameTemplateConfig';
-			case SupportType.note: return 'noteTemplateConfig';
-			default: return null;
+			case SupportType.movie:  return { templateKey: TemplateKey.movieTemplateFile,     configKey: 'movieTemplateConfig' };
+			case SupportType.book:   return { templateKey: TemplateKey.bookTemplateFile,      configKey: 'bookTemplateConfig' };
+			case SupportType.music:  return { templateKey: TemplateKey.musicTemplateFile,     configKey: 'musicTemplateConfig' };
+			case SupportType.teleplay: return { templateKey: TemplateKey.teleplayTemplateFile, configKey: 'teleplayTemplateConfig' };
+			case SupportType.game:   return { templateKey: TemplateKey.gameTemplateFile,      configKey: 'gameTemplateConfig' };
+			case SupportType.note:   return { templateKey: TemplateKey.noteTemplateFile,      configKey: 'noteTemplateConfig' };
+			default: return { templateKey: null, configKey: null };
 		}
 	}
 
@@ -458,15 +414,11 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				}
 			}
 		}
-		const tempKey: TemplateKey = this.getTemplateKey();
-		const configKey = this.getTemplateConfigKey();
+		const { templateKey: tempKey, configKey } = this.getTemplateKeys();
 		const config: TemplateConfig = context.settings[configKey] as TemplateConfig;
-		let useUserState:boolean = context.userComponent.isLogin() &&
-			extract.userState &&
-			extract.userState.collectionDate != null  &&
-			extract.userState.collectionDate != undefined;
-
-		useUserState = useUserState ? useUserState : false;
+		const useUserState = context.userComponent.isLogin() &&
+			!!extract.userState &&
+			extract.userState.collectionDate != null;
 
 		if (!config || config.source === 'builtin') {
 			return getDefaultTemplateContent(tempKey, useUserState);
@@ -492,7 +444,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		if (!context.userComponent.isLogin()) {
 			return {data: html, userState: null};
 		}
-		if(!html('.nav-user-account')) {
+		if(html('.nav-user-account').length === 0) {
 			return {data: html, userState: null};
 		}
 		return this. analysisUser(html, context);

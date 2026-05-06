@@ -22,7 +22,7 @@ export class UserDataImporter {
 
 	constructor(app: App) {
 		this.app = app;
-		this.merger = new UserDataMerger(app);
+		this.merger = new UserDataMerger();
 	}
 
 	async importFromFile(

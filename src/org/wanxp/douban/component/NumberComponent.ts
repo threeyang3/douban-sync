@@ -8,7 +8,7 @@ import {TextComponent} from 'obsidian';
 export class NumberComponent extends TextComponent {
   constructor(container: HTMLElement, value: number = 0) {
     super(container);
-    this.inputEl.type = 'date';
+    this.inputEl.type = 'number';
     this.inputEl.value = value.toString();
   }
 
