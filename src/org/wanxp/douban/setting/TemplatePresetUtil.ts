@@ -36,6 +36,7 @@ function getCompactTemplateContent(key: TemplateKey): string {
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 score: {{score}}
 datePublished: {{datePublished}}
 tags: {{myTags}}
@@ -62,6 +63,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 author: {{author}}
 score: {{score}}
 datePublished: {{datePublished}}
@@ -89,6 +91,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 actor: {{actor}}
 score: {{score}}
 datePublished: {{datePublished}}
@@ -116,11 +119,11 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 author: {{author}}
 dateTimePublished: {{datePublished}} {{timePublished}}
 url: {{url}}
-tags:
-  - {{type}}
+tags: {{myTags}}
 createTime: {{currentDate}} {{currentTime}}
 ---
 
@@ -137,6 +140,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 score: {{score}}
 platform: {{platform}}
 dateTimePublished: {{datePublished}}

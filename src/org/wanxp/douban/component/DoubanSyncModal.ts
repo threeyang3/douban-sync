@@ -27,7 +27,6 @@ import {SyncConfig} from "../sync/model/SyncConfig";
 import {clearInterval} from "timers";
 import {FolderSuggest} from "../setting/model/FolderSuggest";
 import {DEFAULT_SETTINGS} from "../../constant/DefaultSettings";
-import {createFileSelectionSetting} from "../setting/TemplateSettingHelper";
 import {FileSuggest} from "../setting/model/FileSuggest";
 import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
 import TimeUtil from "../../utils/TimeUtil";
@@ -151,7 +150,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			cacheHighQuantityImage: ( settings.cacheHighQuantityImage == null) ?  DEFAULT_SETTINGS.cacheHighQuantityImage : settings.cacheHighQuantityImage,
 			attachmentPath: (settings.attachmentPath == '' || settings.attachmentPath == null) ?  DEFAULT_SETTINGS.attachmentPath : settings.attachmentPath,
 			attachmentFileName: (settings.attachmentFileName == '' || settings.attachmentFileName == null) ?  DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
-			templateFile:  (settings.movieTemplateFile == '' || settings.movieTemplateFile == null) ? DEFAULT_SETTINGS.movieTemplateFile : settings.movieTemplateFile,
+			templateFile:  this.getDefaultTemplatePath(SyncType.movie),
 			incrementalUpdate: true,
 			inheritOldFields: false,
 			inheritFieldList: ['tags', 'aliases'],
@@ -273,26 +272,20 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 	}
 
 	private getDefaultTemplatePath(value: string) {
-		let result:string = "";
 		const {settings} = this.plugin;
+		let config: any;
 		switch (value) {
-			case SyncType.movie:
-				result = (settings.movieTemplateFile == '' || settings.movieTemplateFile == null) ? DEFAULT_SETTINGS.movieTemplateFile : settings.movieTemplateFile
-				break;
-			case SyncType.book:
-				result = (settings.bookTemplateFile == '' || settings.bookTemplateFile == null) ? DEFAULT_SETTINGS.bookTemplateFile : settings.bookTemplateFile
-				break;
-			case SyncType.music:
-				result = (settings.musicTemplateFile == '' || settings.musicTemplateFile == null) ? DEFAULT_SETTINGS.musicTemplateFile : settings.musicTemplateFile
-				break;
-			case SyncType.teleplay:
-				result = (settings.teleplayTemplateFile == '' || settings.teleplayTemplateFile == null) ? DEFAULT_SETTINGS.teleplayTemplateFile : settings.teleplayTemplateFile
-				break;
-			case SyncType.game:
-				result = (settings.gameTemplateFile == '' || settings.gameTemplateFile == null) ? DEFAULT_SETTINGS.gameTemplateFile : settings.gameTemplateFile
-				break;
+			case SyncType.movie: config = settings.movieTemplateConfig; break;
+			case SyncType.book: config = settings.bookTemplateConfig; break;
+			case SyncType.music: config = settings.musicTemplateConfig; break;
+			case SyncType.teleplay: config = settings.teleplayTemplateConfig; break;
+			case SyncType.game: config = settings.gameTemplateConfig; break;
+			default: return '';
 		}
-		return result;
+		if (config && config.source === 'file' && config.filePath) {
+			return config.filePath;
+		}
+		return '';
 	}
 
 	private showScopeDropdown(containerEl:HTMLDivElement, scopeSelections: Record<string, string>, config: SyncConfig, disable:boolean) {

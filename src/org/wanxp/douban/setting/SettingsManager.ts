@@ -210,6 +210,12 @@ export default class SettingsManager {
 		this.settings.noteTemplateFile = DEFAULT_SETTINGS.noteTemplateFile;
 		this.settings.gameTemplateFile = DEFAULT_SETTINGS.gameTemplateFile;
 		this.settings.teleplayTemplateFile = DEFAULT_SETTINGS.teleplayTemplateFile;
+		this.settings.movieTemplateConfig = DEFAULT_SETTINGS.movieTemplateConfig;
+		this.settings.bookTemplateConfig = DEFAULT_SETTINGS.bookTemplateConfig;
+		this.settings.musicTemplateConfig = DEFAULT_SETTINGS.musicTemplateConfig;
+		this.settings.noteTemplateConfig = DEFAULT_SETTINGS.noteTemplateConfig;
+		this.settings.gameTemplateConfig = DEFAULT_SETTINGS.gameTemplateConfig;
+		this.settings.teleplayTemplateConfig = DEFAULT_SETTINGS.teleplayTemplateConfig;
 		this.settings.dateFormat = DEFAULT_SETTINGS.dateFormat;
 		this.settings.timeFormat = DEFAULT_SETTINGS.timeFormat;
 		this.settings.searchUrl = DEFAULT_SETTINGS.searchUrl;

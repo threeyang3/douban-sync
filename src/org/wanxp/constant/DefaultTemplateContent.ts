@@ -8,8 +8,8 @@ import {TemplateKey} from "./Constsant";
  */
 function syncify(basic: string, syncTable: string, basicTable: string): string {
 	return basic
-		.replace('tags:\n  - {{type}}',
-			`myRating: {{myRating}}\nmyRatingStar: {{myRatingStar}}\ntags: {{myTags}}\nstate: {{myState}}\ncollectionDate: {{myCollectionDate}}`)
+		.replace('createTime:',
+			`myRating: {{myRating}}\nmyRatingStar: {{myRatingStar}}\ntags: {{myTags}}\nstate: {{myState}}\ncollectionDate: {{myCollectionDate}}\ncreateTime:`)
 		.replace(basicTable, syncTable)
 		.replace('> [!abstract]- **简介**',
 			'> [!abstract]+ **短评**\n> {{myComment}}\n\n> [!abstract]- **简介**');
@@ -44,6 +44,7 @@ const movieBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 score: {{score}}
 scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
@@ -52,8 +53,6 @@ datePublished: {{datePublished}}
 director: {{director}}
 actor: {{actor}}
 author: {{author}}
-tags:
-  - {{type}}
 url: {{url}}
 aliases: {{aliases}}
 country: {{country}}
@@ -113,6 +112,7 @@ subTitle: {{subTitle}}
 originalTitle: {{originalTitle}}
 series: {{series}}
 type: {{type}}
+image: {{imageData.url}}
 author: {{author}}
 score: {{score}}
 scoreStar: {{scoreStar}}
@@ -124,8 +124,6 @@ isbn: {{isbn}}
 url: {{url}}
 totalPage: {{totalPage}}
 price: {{price}}
-tags:
-  - {{type}}
 binding: {{binding}}
 createTime: {{currentDate}} {{currentTime}}
 ---
@@ -177,6 +175,7 @@ const musicBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 actor: {{actor}}
 score: {{score}}
 scoreStar: {{scoreStar}}
@@ -188,8 +187,6 @@ publisher: {{publisher}}
 barcode: {{barcode}}
 url: {{url}}
 records: {{records}}
-tags:
-  - {{type}}
 createTime: {{currentDate}} {{currentTime}}
 ---
 
@@ -219,12 +216,11 @@ const noteBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 author: {{author}}
 authorUrl: {{authorUrl}}
 dateTimePublished: {{datePublished}} {{timePublished}}
 url: {{url}}
-tags:
-  - {{type}}
 createTime: {{currentDate}} {{currentTime}}
 ---
 
@@ -269,6 +265,7 @@ doubanId: {{id}}
 title: {{title}}
 aliases: {{aliases}}
 type: {{type}}
+image: {{imageData.url}}
 score: {{score}}
 scoreStar: {{scoreStar}}
 dateTimePublished: {{datePublished}}
@@ -277,8 +274,6 @@ genre: {{genre}}
 developer: {{developer}}
 platform: {{platform}}
 url: {{url}}
-tags:
-  - {{type}}
 createTime: {{currentDate}} {{currentTime}}
 ---
 
@@ -329,6 +324,7 @@ const teleplayBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
+image: {{imageData.url}}
 score: {{score}}
 scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
@@ -337,8 +333,6 @@ datePublished: {{datePublished}}
 director: {{director}}
 actor: {{actor}}
 author: {{author}}
-tags:
-  - {{type}}
 url: {{url}}
 aliases: {{aliases}}
 country: {{country}}

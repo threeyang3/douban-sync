@@ -32,6 +32,7 @@ import HttpUtil from "../../../utils/HttpUtil";
 import HtmlUtil from "../../../utils/HtmlUtil";
 import {VariableUtil} from "../../../utils/VariableUtil";
 import {DataField} from "../../../utils/model/DataField";
+import {TemplateConfig, DoubanPluginSetting} from "../../setting/model/DoubanPluginSetting";
 import NumberUtil from "../../../utils/NumberUtil";
 import {DoubanHttpUtil} from "../../../utils/DoubanHttpUtil";
 import {logger} from "bs-logger";
@@ -355,9 +356,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		}
 		let tags: string[] = [];
 		if (userState.tags && userState.tags.length > 0 ) {
-			tags = [extract.type, ...userState.tags.map(tag => tag.trim())];
-		}else {
-			tags = [extract.type];
+			tags = userState.tags.map(tag => tag.trim());
 		}
 		Object.entries(userState).forEach(([key, value]) => {
 			if (!value) {
@@ -365,9 +364,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			}
 			variableMap.set(key, new DataField(key, VariableUtil.getType(value), value, value));
 		});
-		if (userState.tags && userState.tags.length > 0 ) {
-			variableMap.set(DoubanUserParameterName.MY_TAGS, new DataField(DoubanUserParameterName.MY_TAGS, DataValueType.array, tags, tags));
-		}
+		variableMap.set(DoubanUserParameterName.MY_TAGS, new DataField(DoubanUserParameterName.MY_TAGS, DataValueType.array, tags, tags));
 		if (userState.comment) {
 			variableMap.set(DoubanUserParameterName.MY_COMMENT, new DataField(
 				DoubanUserParameterName.MY_COMMENT,
@@ -439,6 +436,18 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		return templateKey;
 	}
 
+	private getTemplateConfigKey(): keyof DoubanPluginSetting {
+		switch (this.getSupportType()) {
+			case SupportType.movie: return 'movieTemplateConfig';
+			case SupportType.book: return 'bookTemplateConfig';
+			case SupportType.music: return 'musicTemplateConfig';
+			case SupportType.teleplay: return 'teleplayTemplateConfig';
+			case SupportType.game: return 'gameTemplateConfig';
+			case SupportType.note: return 'noteTemplateConfig';
+			default: return null;
+		}
+	}
+
 	private async getTemplate(extract: T, context: HandleContext): Promise<string> {
 		const {syncConfig} = context;
 		if (syncConfig) {
@@ -450,7 +459,8 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			}
 		}
 		const tempKey: TemplateKey = this.getTemplateKey();
-		const templatePath: string = context.settings[tempKey];
+		const configKey = this.getTemplateConfigKey();
+		const config: TemplateConfig = context.settings[configKey] as TemplateConfig;
 		let useUserState:boolean = context.userComponent.isLogin() &&
 			extract.userState &&
 			extract.userState.collectionDate != null  &&
@@ -458,18 +468,24 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 
 		useUserState = useUserState ? useUserState : false;
 
-		// @ts-ignore
-		if (!templatePath || StringUtil.isBlank(templatePath)) {
+		if (!config || config.source === 'builtin') {
 			return getDefaultTemplateContent(tempKey, useUserState);
 		}
-		const defaultContent = getDefaultTemplateContent(tempKey, useUserState);
-		const firstLinkpathDest: TFile = this.doubanPlugin.app.metadataCache.getFirstLinkpathDest(templatePath, '');
-		if (!firstLinkpathDest) {
-			return defaultContent;
-		} else {
-			const val = await this.doubanPlugin.fileHandler.getFileContent(firstLinkpathDest.path);
-			return val ? val : defaultContent;
+
+		if (config.source === 'file' && config.filePath) {
+			const firstLinkpathDest: TFile = this.doubanPlugin.app.metadataCache.getFirstLinkpathDest(config.filePath, '');
+			if (firstLinkpathDest) {
+				const val = await this.doubanPlugin.fileHandler.getFileContent(firstLinkpathDest.path);
+				if (val) return val;
+			}
+			return getDefaultTemplateContent(tempKey, useUserState);
 		}
+
+		if (config.source === 'custom' && config.customContent) {
+			return config.customContent;
+		}
+
+		return getDefaultTemplateContent(tempKey, useUserState);
 	}
 
 	analysisUserState(html: CheerioAPI, context: HandleContext): {data:CheerioAPI ,  userState: UserStateSubject} {

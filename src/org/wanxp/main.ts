@@ -371,8 +371,29 @@ export default class DoubanPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.migrateTemplateSettings();
 		this.doubanExtractHandler = new DoubanSearchChooseItemHandler(this.app, this);
 		this.fileHandler = new FileHandler(this.app);
+	}
+
+	private migrateTemplateSettings() {
+		const templateKeys = [
+			{ configKey: 'movieTemplateConfig' as const, fileKey: 'movieTemplateFile' as const },
+			{ configKey: 'bookTemplateConfig' as const, fileKey: 'bookTemplateFile' as const },
+			{ configKey: 'musicTemplateConfig' as const, fileKey: 'musicTemplateFile' as const },
+			{ configKey: 'noteTemplateConfig' as const, fileKey: 'noteTemplateFile' as const },
+			{ configKey: 'gameTemplateConfig' as const, fileKey: 'gameTemplateFile' as const },
+			{ configKey: 'teleplayTemplateConfig' as const, fileKey: 'teleplayTemplateFile' as const },
+		];
+		for (const { configKey, fileKey } of templateKeys) {
+			if (this.settings[configKey]) continue;
+			const filePath = this.settings[fileKey];
+			if (filePath && typeof filePath === 'string' && filePath.trim()) {
+				this.settings[configKey] = { source: 'file', filePath: filePath.trim() };
+			} else {
+				this.settings[configKey] = { source: 'builtin' };
+			}
+		}
 	}
 
 	async saveSettings() {

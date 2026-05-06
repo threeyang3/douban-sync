@@ -322,6 +322,12 @@ PS: This file could be delete if you want to.
 	'121921': `Path template for note files, available variables: {{id}}, {{title}}, {{type}}`,
 	'121922': `Note template content`,
 	'121923': `Template content used when creating notes, available variables: {{id}}, {{title}}, {{type}}`,
+	'121930': `Template Preview`,
+	'121931': `Edit Template`,
+	'121932': `Available Variables`,
+	'121940': `Built-in Template`,
+	'121941': `From File`,
+	'121942': `Custom Content`,
 
 
 	'125001': `Debug Mode`,
