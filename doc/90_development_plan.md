@@ -81,8 +81,39 @@ nav_order: 900
 
 状态：已完成（2026-05-05）
 
+## 4. 用户数据导出/导入/继承
+
+目标：让用户可以备份、迁移和复用自定义数据（自定义属性 + 正文分区），并在强制同步时自动保护这些数据。
+
+涉及模块：
+- `src/org/wanxp/douban/userdata/types.ts` — 类型定义、DOUBAN_FIELDS 排除集
+- `src/org/wanxp/douban/userdata/UserDataExtractor.ts` — 从本地文件提取用户数据
+- `src/org/wanxp/douban/userdata/UserDataExporter.ts` — 按条目类型分组导出 JSON
+- `src/org/wanxp/douban/userdata/UserDataImporter.ts` — 从 JSON 导入，支持三种合并策略
+- `src/org/wanxp/douban/userdata/UserDataMerger.ts` — frontmatter 字段和正文分区合并
+- `src/org/wanxp/douban/userdata/UserDataModal.ts` — 导出/导入/缺失字段/结果 UI
+- `src/org/wanxp/utils/VaultUtil.ts` — 共享 Vault 扫描工具
+- `src/org/wanxp/main.ts` — 命令注册 + 强制同步数据保护集成
+
+计划：
+- 导出：扫描文件夹中含 doubanId 的 .md 文件，提取非标准 frontmatter 字段和正文分区，按类型输出 JSON
+- 导入：按 doubanId 匹配本地文件，支持智能/本地优先/导入优先三种合并策略
+- 缺失字段：导入数据中存在但本地 frontmatter 中没有的字段，逐条询问用户是否添加
+- 数据保护：强制同步替换文件时，自动提取旧文件的用户数据并合并到新文件
+- 共享 VaultUtil：多个模块复用同一个 `scanVaultForDoubanIds()` 避免重复扫描
+
+验收：
+- 导出的 JSON 可以完整恢复用户的自定义数据
+- 三种合并策略行为正确
+- 强制同步后用户的自定义属性、记录、感想分区不丢失
+- 数据保护开关可独立控制
+- 中英文 UI 文案完整
+
+状态：已完成（2026-05-05）
+
 ## 后续建议
 
-1. 为 `1.2.0` 新功能补充文档截图
+1. 为 `1.2.0` / `1.4.0` 新功能补充文档截图
 2. 为自定义属性导入导出补测试
-3. 为同步继承补更多 frontmatter 边界测试
+3. 为用户数据导出/导入补单元测试
+4. 为同步继承补更多 frontmatter 边界测试
