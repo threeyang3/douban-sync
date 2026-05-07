@@ -36,7 +36,7 @@ function getCompactTemplateContent(key: TemplateKey): string {
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 score: {{score}}
 datePublished: {{datePublished}}
 tags: {{myTags}}
@@ -49,7 +49,7 @@ createTime: {{currentDate}} {{currentTime}}
 > [!douban-info]+ **{{title}}**
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 > | 状态 | \`= this.state\` |
 > | 评分 | {{score}} |
 > | 日期 | {{datePublished}} |
@@ -63,7 +63,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 author: {{author}}
 score: {{score}}
 datePublished: {{datePublished}}
@@ -76,7 +76,7 @@ createTime: {{currentDate}} {{currentTime}}
 > [!douban-info]+ **{{title}}**
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 > | 作者 | {{author}} |
 > | 状态 | \`= this.state\` |
 > | 评分 | {{score}} |
@@ -91,7 +91,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 actor: {{actor}}
 score: {{score}}
 datePublished: {{datePublished}}
@@ -104,7 +104,7 @@ createTime: {{currentDate}} {{currentTime}}
 > [!douban-info]+ **{{title}}**
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 > | 表演者 | {{actor}} |
 > | 状态 | \`= this.state\` |
 > | 评分 | {{score}} |
@@ -119,7 +119,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 author: {{author}}
 dateTimePublished: {{datePublished}} {{timePublished}}
 url: {{url}}
@@ -130,7 +130,7 @@ createTime: {{currentDate}} {{currentTime}}
 > [!douban-info]+ **{{title}}**
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 > | 作者 | {{author}} |
 > | 发布 | {{datePublished}} |
 
@@ -140,7 +140,7 @@ createTime: {{currentDate}} {{currentTime}}
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 score: {{score}}
 platform: {{platform}}
 dateTimePublished: {{datePublished}}
@@ -154,7 +154,7 @@ createTime: {{currentDate}} {{currentTime}}
 > [!douban-info]+ **{{title}}**
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 > | 状态 | \`= this.state\` |
 > | 评分 | {{score}} |
 > | 平台 | {{platform}} |

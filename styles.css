@@ -175,6 +175,103 @@
 	width: 100%;
 }
 
+/* ==================== Douban Info Callout 响应式布局 ==================== */
 
+.callout[data-callout="douban-info"] .callout-content,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+}
 
+.callout[data-callout="douban-info"] .callout-content > *,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > * {
+	width: 100%;
+	min-width: 0;
+}
 
+.callout[data-callout="douban-info"] .callout-content > p,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > p {
+	margin: 0;
+	text-align: center;
+}
+
+.callout[data-callout="douban-info"] img,
+.markdown-rendered .callout[data-callout="douban-info"] img {
+	width: 400px;
+	max-width: 100%;
+	height: auto;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.callout[data-callout="douban-info"] table,
+.markdown-rendered .callout[data-callout="douban-info"] table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+/* 宽屏布局：封面在左，表格在右 */
+@media (min-width: 1000px) {
+	.callout[data-callout="douban-info"] .callout-content,
+	.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
+		flex-direction: row;
+		align-items: stretch;
+		gap: 16px;
+	}
+
+	.callout[data-callout="douban-info"] .callout-content > *,
+	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > * {
+		min-height: 0;
+	}
+
+	.callout[data-callout="douban-info"] .callout-content > :first-child,
+	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :first-child {
+		flex: 0 0 400px;
+		width: 400px;
+		max-width: 100%;
+	}
+
+	.callout[data-callout="douban-info"] .callout-content > :last-child,
+	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :last-child {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.callout[data-callout="douban-info"] .callout-content > p,
+	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > p {
+		flex-shrink: 0;
+		text-align: left;
+		display: flex;
+		align-items: stretch;
+	}
+
+	.callout[data-callout="douban-info"] img,
+	.markdown-rendered .callout[data-callout="douban-info"] img {
+		flex-shrink: 0;
+		width: 400px;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.callout[data-callout="douban-info"] table,
+	.markdown-rendered .callout[data-callout="douban-info"] table {
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+/* 窄屏：纵向排列，封面居中 */
+@media (max-width: 767px) {
+	.callout[data-callout="douban-info"] .callout-content {
+		flex-direction: column !important;
+		align-items: center !important;
+	}
+	.callout[data-callout="douban-info"] img {
+		width: 100% !important;
+		max-width: 280px !important;
+		height: auto !important;
+	}
+}

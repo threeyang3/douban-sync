@@ -127,6 +127,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					guessType = this.getGuessType(data);
 				}
 				const sub = this.parseSubjectFromHtml(data, context);
+				sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
 				sub.userState = userState;
 				sub.guessType = guessType;
 				return sub;
@@ -527,6 +528,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				const resultValue = await this.handleImage(highImage, folder, fileName, context, false, highImageHeaders);
 				if (resultValue && resultValue.success) {
 					extract.image = resultValue.filepath;
+					extract.imageUrl = highImage;
 					this.initImageVariableMap(extract, context, variableMap);
 					return;
 				}
@@ -586,6 +588,22 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 	abstract getHighQuantityImageUrl(fileName:string):string;
 
 	abstract getSubjectUrl(id:string):string;
+
+	/**
+	 * 规范化豆瓣封面图片 URL：统一使用 img9 子域和 getHighQuantityImageUrl 的路径格式
+	 * 解决豆瓣 CDN 随机子域（img1~img8）导致的封面链接不可访问问题
+	 */
+	normalizeImageUrl(imageUrl: string): string {
+		if (!imageUrl) {
+			return imageUrl;
+		}
+		const fileName = this.getImageFilename(imageUrl);
+		if (!fileName) {
+			return imageUrl;
+		}
+		const normalized = this.getHighQuantityImageUrl(fileName);
+		return normalized || imageUrl;
+	}
 
 	handlePersonNameByMeta(html: CheerioAPI, movie: DoubanSubject, context: HandleContext,
 								   metaProperty:string, objectProperty:string) {

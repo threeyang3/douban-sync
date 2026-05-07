@@ -44,7 +44,7 @@ const movieBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 score: {{score}}
 scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
@@ -64,10 +64,10 @@ createTime: {{currentDate}} {{currentTime}}
 
 > [!douban-info]+ 🎬 **{{title}}**
 >
-> ![cover|300]({{image}})
+> ![cover|400]({{image}})
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 ${movieTable}
 
 > [!abstract]- **简介**
@@ -112,7 +112,7 @@ subTitle: {{subTitle}}
 originalTitle: {{originalTitle}}
 series: {{series}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 author: {{author}}
 score: {{score}}
 scoreStar: {{scoreStar}}
@@ -130,10 +130,10 @@ createTime: {{currentDate}} {{currentTime}}
 
 > [!douban-info]+ 📚 **{{title}}**
 >
-> ![cover|300]({{image}})
+> ![cover|400]({{image}})
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 ${bookTable}
 
 > [!abstract]- **简介**
@@ -175,7 +175,7 @@ const musicBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 actor: {{actor}}
 score: {{score}}
 scoreStar: {{scoreStar}}
@@ -192,10 +192,10 @@ createTime: {{currentDate}} {{currentTime}}
 
 > [!douban-info]+ 🎵 **{{title}}**
 >
-> ![cover|300]({{image}})
+> ![cover|400]({{image}})
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 ${musicTable}
 
 > [!abstract]- **简介**
@@ -216,7 +216,7 @@ const noteBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 author: {{author}}
 authorUrl: {{authorUrl}}
 dateTimePublished: {{datePublished}} {{timePublished}}
@@ -227,7 +227,7 @@ createTime: {{currentDate}} {{currentTime}}
 > [!douban-info]+ 📝 **{{title}}**
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 > | 作者 | {{author}} |
 > | 发布时间 | {{datePublished}} {{timePublished}} |
 
@@ -265,7 +265,7 @@ doubanId: {{id}}
 title: {{title}}
 aliases: {{aliases}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 score: {{score}}
 scoreStar: {{scoreStar}}
 dateTimePublished: {{datePublished}}
@@ -279,10 +279,10 @@ createTime: {{currentDate}} {{currentTime}}
 
 > [!douban-info]+ 🎮 **{{title}}**
 >
-> ![cover|300]({{image}})
+> ![cover|400]({{image}})
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 ${gameTable}
 
 > [!abstract]- **简介**
@@ -324,7 +324,7 @@ const teleplayBasic = `---
 doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: {{imageData.url}}
+image: "{{image}}"
 score: {{score}}
 scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
@@ -345,10 +345,10 @@ createTime: {{currentDate}} {{currentTime}}
 
 > [!douban-info]+ 📺 **{{title}}**
 >
-> ![cover|300]({{image}})
+> ![cover|400]({{image}})
 >
 > | | |
-> |:------:|:------:|
+> |:------:|:------------------------------------------:|
 ${teleplayTable}
 
 > [!abstract]- **简介**
