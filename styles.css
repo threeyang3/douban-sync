@@ -221,7 +221,7 @@
 }
 
 /* 宽屏布局：封面在左，表格在右，各自自然高度，矮的居中 */
-@media (min-width: 600px) {
+@media (min-width: 800px) {
 	.callout[data-callout="douban-info"] .callout-content,
 	.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
 		flex-direction: row;
