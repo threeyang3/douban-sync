@@ -18,27 +18,27 @@ function syncify(basic: string, syncTable: string, basicTable: string): string {
 // ==================== Movie ====================
 
 const movieTable = `> | 评分 | {{scoreStar}} |
-> | 类型 | {{genre}} |
-> | 导演 | {{director}} |
-> | 主演 | {{actor}} |
-> | 地区 | {{country}} |
-> | 语言 | {{language}} |
-> | 上映 | {{datePublished}} |
-> | 片长 | {{time}} |
-> | IMDb | {{IMDb}} |`;
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 主演 | \`= this.actor\` |
+> | 地区 | \`= this.country\` |
+> | 语言 | \`= this.language\` |
+> | 上映 | \`= this.datePublished\` |{{#if time}}
+> | 片长 | \`= this.time\` |{{/if}}{{#if IMDb}}
+> | IMDb | \`= this.IMDb\` |{{/if}}`;
 
 const movieSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
 > | 豆瓣评分 | {{scoreStar}} |
-> | 类型 | {{genre}} |
-> | 导演 | {{director}} |
-> | 主演 | {{actor}} |
-> | 地区 | {{country}} |
-> | 语言 | {{language}} |
-> | 上映 | {{datePublished}} |
-> | 片长 | {{time}} |
-> | IMDb | {{IMDb}} |`;
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 主演 | \`= this.actor\` |
+> | 地区 | \`= this.country\` |
+> | 语言 | \`= this.language\` |
+> | 上映 | \`= this.datePublished\` |{{#if time}}
+> | 片长 | \`= this.time\` |{{/if}}{{#if IMDb}}
+> | IMDb | \`= this.IMDb\` |{{/if}}`;
 
 const movieBasic = `---
 doubanId: {{id}}
@@ -80,30 +80,30 @@ ${movieTable}
 
 // ==================== Book ====================
 
-const bookTable = `> | 作者 | {{author}} |
-> | 译者 | {{translator}} |
+const bookTable = `> | 作者 | \`= this.author\` |{{#if translator}}
+> | 译者 | \`= this.translator\` |{{/if}}
 > | 评分 | {{scoreStar}} |
-> | 出版社 | {{publisher}} |
-> | 出版日期 | {{datePublished}} |
-> | 页数 | {{totalPage}} |
-> | ISBN | {{isbn}} |
-> | 丛书 | {{series}} |
-> | 装帧 | {{binding}} |
-> | 价格 | {{price}} |`;
+> | 出版社 | \`= this.publisher\` |
+> | 出版日期 | \`= this.datePublished\` |{{#if totalPage}}
+> | 页数 | \`= this.totalPage\` |{{/if}}
+> | ISBN | \`= this.isbn\` |{{#if series}}
+> | 丛书 | \`= this.series\` |{{/if}}{{#if binding}}
+> | 装帧 | \`= this.binding\` |{{/if}}{{#if price}}
+> | 价格 | \`= this.price\` |{{/if}}`;
 
 const bookSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
 > | 豆瓣评分 | {{scoreStar}} |
-> | 作者 | {{author}} |
-> | 译者 | {{translator}} |
-> | 出版社 | {{publisher}} |
-> | 出版日期 | {{datePublished}} |
-> | 页数 | {{totalPage}} |
-> | ISBN | {{isbn}} |
-> | 丛书 | {{series}} |
-> | 装帧 | {{binding}} |
-> | 价格 | {{price}} |`;
+> | 作者 | \`= this.author\` |{{#if translator}}
+> | 译者 | \`= this.translator\` |{{/if}}
+> | 出版社 | \`= this.publisher\` |
+> | 出版日期 | \`= this.datePublished\` |{{#if totalPage}}
+> | 页数 | \`= this.totalPage\` |{{/if}}
+> | ISBN | \`= this.isbn\` |{{#if series}}
+> | 丛书 | \`= this.series\` |{{/if}}{{#if binding}}
+> | 装帧 | \`= this.binding\` |{{/if}}{{#if price}}
+> | 价格 | \`= this.price\` |{{/if}}`;
 
 const bookBasic = `---
 doubanId: {{id}}
@@ -148,28 +148,28 @@ ${bookTable}
 
 // ==================== Music ====================
 
-const musicTable = `> | 表演者 | {{actor}} |
+const musicTable = `> | 表演者 | \`= this.actor\` |
 > | 评分 | {{scoreStar}} |
-> | 流派 | {{genre}} |
-> | 专辑类型 | {{albumType}} |
-> | 介质 | {{medium}} |
-> | 发行时间 | {{datePublished}} |
-> | 出版者 | {{publisher}} |
-> | 条形码 | {{barcode}} |
-> | 曲目数 | {{records}} |`;
+> | 流派 | \`= this.genre\` |{{#if albumType}}
+> | 专辑类型 | \`= this.albumType\` |{{/if}}{{#if medium}}
+> | 介质 | \`= this.medium\` |{{/if}}
+> | 发行时间 | \`= this.datePublished\` |
+> | 出版者 | \`= this.publisher\` |{{#if barcode}}
+> | 条形码 | \`= this.barcode\` |{{/if}}{{#if records}}
+> | 曲目数 | \`= this.records\` |{{/if}}`;
 
 const musicSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
 > | 豆瓣评分 | {{scoreStar}} |
-> | 表演者 | {{actor}} |
-> | 流派 | {{genre}} |
-> | 专辑类型 | {{albumType}} |
-> | 介质 | {{medium}} |
-> | 发行时间 | {{datePublished}} |
-> | 出版者 | {{publisher}} |
-> | 条形码 | {{barcode}} |
-> | 曲目数 | {{records}} |`;
+> | 表演者 | \`= this.actor\` |
+> | 流派 | \`= this.genre\` |{{#if albumType}}
+> | 专辑类型 | \`= this.albumType\` |{{/if}}{{#if medium}}
+> | 介质 | \`= this.medium\` |{{/if}}
+> | 发行时间 | \`= this.datePublished\` |
+> | 出版者 | \`= this.publisher\` |{{#if barcode}}
+> | 条形码 | \`= this.barcode\` |{{/if}}{{#if records}}
+> | 曲目数 | \`= this.records\` |{{/if}}`;
 
 const musicBasic = `---
 doubanId: {{id}}
@@ -244,21 +244,21 @@ createTime: {{currentDate}} {{currentTime}}
 // ==================== Game ====================
 
 const gameTable = `> | 评分 | {{scoreStar}} |
-> | 类型 | {{genre}} |
-> | 平台 | {{platform}} |
-> | 开发商 | {{developer}} |
-> | 发行商 | {{publisher}} |
-> | 发行日期 | {{datePublished}} |`;
+> | 类型 | \`= this.genre\` |{{#if platform}}
+> | 平台 | \`= this.platform\` |{{/if}}{{#if developer}}
+> | 开发商 | \`= this.developer\` |{{/if}}
+> | 发行商 | \`= this.publisher\` |
+> | 发行日期 | \`= this.datePublished\` |`;
 
 const gameSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
 > | 豆瓣评分 | {{scoreStar}} |
-> | 类型 | {{genre}} |
-> | 平台 | {{platform}} |
-> | 开发商 | {{developer}} |
-> | 发行商 | {{publisher}} |
-> | 发行日期 | {{datePublished}} |`;
+> | 类型 | \`= this.genre\` |{{#if platform}}
+> | 平台 | \`= this.platform\` |{{/if}}{{#if developer}}
+> | 开发商 | \`= this.developer\` |{{/if}}
+> | 发行商 | \`= this.publisher\` |
+> | 发行日期 | \`= this.datePublished\` |`;
 
 const gameBasic = `---
 doubanId: {{id}}
@@ -296,29 +296,29 @@ ${gameTable}
 // ==================== Teleplay ====================
 
 const teleplayTable = `> | 评分 | {{scoreStar}} |
-> | 类型 | {{genre}} |
-> | 导演 | {{director}} |
-> | 主演 | {{actor}} |
-> | 集数 | {{episode}} |
-> | 地区 | {{country}} |
-> | 语言 | {{language}} |
-> | 首播 | {{datePublished}} |
-> | 单集片长 | {{time}} |
-> | IMDb | {{IMDb}} |`;
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 主演 | \`= this.actor\` |{{#if episode}}
+> | 集数 | \`= this.episode\` |{{/if}}
+> | 地区 | \`= this.country\` |
+> | 语言 | \`= this.language\` |
+> | 首播 | \`= this.datePublished\` |{{#if time}}
+> | 单集片长 | \`= this.time\` |{{/if}}{{#if IMDb}}
+> | IMDb | \`= this.IMDb\` |{{/if}}`;
 
 const teleplaySyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
 > | 豆瓣评分 | {{scoreStar}} |
-> | 类型 | {{genre}} |
-> | 导演 | {{director}} |
-> | 主演 | {{actor}} |
-> | 集数 | {{episode}} |
-> | 地区 | {{country}} |
-> | 语言 | {{language}} |
-> | 首播 | {{datePublished}} |
-> | 单集片长 | {{time}} |
-> | IMDb | {{IMDb}} |`;
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 主演 | \`= this.actor\` |{{#if episode}}
+> | 集数 | \`= this.episode\` |{{/if}}
+> | 地区 | \`= this.country\` |
+> | 语言 | \`= this.language\` |
+> | 首播 | \`= this.datePublished\` |{{#if time}}
+> | 单集片长 | \`= this.time\` |{{/if}}{{#if IMDb}}
+> | IMDb | \`= this.IMDb\` |{{/if}}`;
 
 const teleplayBasic = `---
 doubanId: {{id}}

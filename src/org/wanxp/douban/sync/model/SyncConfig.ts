@@ -17,5 +17,4 @@ export interface  SyncConfig {
 	templateFile: string;
 	incrementalUpdate: boolean;
 	inheritOldFields?: boolean;
-	inheritFieldList?: string[];
 }

@@ -51,8 +51,8 @@ createTime: {{currentDate}} {{currentTime}}
 > | | |
 > |:------:|:------------------------------------------:|
 > | 状态 | \`= this.state\` |
-> | 评分 | {{score}} |
-> | 日期 | {{datePublished}} |
+> | 评分 | \`= this.score\` |
+> | 日期 | \`= this.datePublished\` |
 
 > [!abstract]- **简介**
 > {{desc}}
@@ -77,10 +77,10 @@ createTime: {{currentDate}} {{currentTime}}
 >
 > | | |
 > |:------:|:------------------------------------------:|
-> | 作者 | {{author}} |
+> | 作者 | \`= this.author\` |
 > | 状态 | \`= this.state\` |
-> | 评分 | {{score}} |
-> | 日期 | {{datePublished}} |
+> | 评分 | \`= this.score\` |
+> | 日期 | \`= this.datePublished\` |
 
 > [!abstract]- **简介**
 > {{desc}}
@@ -105,10 +105,10 @@ createTime: {{currentDate}} {{currentTime}}
 >
 > | | |
 > |:------:|:------------------------------------------:|
-> | 表演者 | {{actor}} |
+> | 表演者 | \`= this.actor\` |
 > | 状态 | \`= this.state\` |
-> | 评分 | {{score}} |
-> | 日期 | {{datePublished}} |
+> | 评分 | \`= this.score\` |
+> | 日期 | \`= this.datePublished\` |
 
 > [!abstract]- **简介**
 > {{desc}}
@@ -131,8 +131,8 @@ createTime: {{currentDate}} {{currentTime}}
 >
 > | | |
 > |:------:|:------------------------------------------:|
-> | 作者 | {{author}} |
-> | 发布 | {{datePublished}} |
+> | 作者 | \`= this.author\` |
+> | 发布 | \`= this.dateTimePublished\` |
 
 {{content}}`;
 		case TemplateKey.gameTemplateFile:
@@ -156,9 +156,9 @@ createTime: {{currentDate}} {{currentTime}}
 > | | |
 > |:------:|:------------------------------------------:|
 > | 状态 | \`= this.state\` |
-> | 评分 | {{score}} |
-> | 平台 | {{platform}} |
-> | 日期 | {{datePublished}} |
+> | 评分 | \`= this.score\` |
+> | 平台 | \`= this.platform\` |
+> | 日期 | \`= this.dateTimePublished\` |
 
 > [!abstract]- **简介**
 > {{desc}}

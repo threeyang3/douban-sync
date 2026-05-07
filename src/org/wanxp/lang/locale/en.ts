@@ -78,9 +78,8 @@ PS: This file could be delete if you want to.
 	'110091': `Error`,
 	'110095': `The smaller the number, the closer to now. For example, the latest update on Douban is the first one, and the earliest update is the last one.`,
 	'110096': `This is the update time of our entry on Douban`,
-	'110097': `Inherit old fields:`,
-	'110098': `Only works when forced replacement is enabled. The sync writes the new note first, then copies selected frontmatter fields from the old note. Recommended defaults: tags, aliases`,
-	'110099': `tags, aliases`,
+	'110097': `Inherit old note data:`,
+	'110098': `Only works when forced replacement is enabled. Preserves custom frontmatter properties and "记录"/"感想" body sections from the old note`,
 
 	'exists':`[exists]`,
 	'unHandle':`[unHandle]`,

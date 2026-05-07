@@ -188,11 +188,33 @@ export class VariableUtil {
 
 
 	private static replaceMap(obj: Map<string, any>, allVariables:FieldVariable[], content: string, settingManager: SettingsManager, targetType: TargetType) {
+		content = this.replaceConditionals(obj, content);
 		allVariables.forEach(variable => {
 			const value = obj.get(variable.key);
 			content = this.replaceVariable(variable, value, content, settingManager, targetType);
 		});
 		return content;
+	}
+
+	/**
+	 * 处理 {{#if variable}}...{{/if}} 条件渲染
+	 * 变量存在且非空时保留内容，否则移除整个块
+	 */
+	private static replaceConditionals(obj: Map<string, any>, content: string): string {
+		if (!content) {
+			return content;
+		}
+		const conditionalRegex = /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+		return content.replace(conditionalRegex, (_match, key, block) => {
+			const value = obj.get(key);
+			if (value === undefined || value === null || value === '') {
+				return '';
+			}
+			if (Array.isArray(value) && value.length === 0) {
+				return '';
+			}
+			return block;
+		});
 	}
 
 	static getType(value: any):DataValueType {

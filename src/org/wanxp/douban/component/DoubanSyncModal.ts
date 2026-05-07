@@ -152,7 +152,6 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			templateFile:  this.getDefaultTemplatePath(SyncType.movie),
 			incrementalUpdate: true,
 			inheritOldFields: false,
-			inheritFieldList: ['tags', 'aliases'],
 			syncConditionType: SyncConditionType.ALL,
 			syncConditionDateFromValue: TimeUtil.getLastMonth(),
 			syncConditionDateToValue: new Date(),
@@ -398,19 +397,6 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 					config.inheritOldFields = value;
 					onToggle && onToggle();
 				});
-		});
-		setting.addText((text) => {
-			text
-				.setPlaceholder(i18nHelper.getMessage('110099'))
-				.setValue((config.inheritFieldList || []).join(', '))
-				.onChange(async (value) => {
-					config.inheritFieldList = value
-						.split(',')
-						.map((item) => item.trim())
-						.filter((item) => !!item);
-				});
-			text.inputEl.style.width = '100%';
-			text.setDisabled(disable || !config.force || !config.inheritOldFields);
 		});
 	}
 

@@ -257,18 +257,6 @@
 		min-width: 0;
 	}
 
-	/* 行数过多时压缩行高，行数少时保持自然高度 */
-	.callout[data-callout="douban-info"] table tr,
-	.markdown-rendered .callout[data-callout="douban-info"] table tr {
-		height: auto;
-	}
-	.callout[data-callout="douban-info"] table td,
-	.callout[data-callout="douban-info"] table th,
-	.markdown-rendered .callout[data-callout="douban-info"] table td,
-	.markdown-rendered .callout[data-callout="douban-info"] table th {
-		padding: 4px 8px;
-		line-height: 1.4;
-	}
 }
 
 /* 窄屏：纵向排列，封面居中 */

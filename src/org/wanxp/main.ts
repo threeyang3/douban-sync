@@ -33,7 +33,6 @@ import GithubUtil from "./utils/GithubUtil";
 import {DoubanPluginOnlineData} from "./douban/setting/model/DoubanPluginOnlineData";
 import SearcherV2 from "./douban/data/search/SearchV2";
 import {SearchPage} from "./douban/data/model/SearchPage";
-import {getFileFrontmatter, inheritFrontmatterFields} from "./utils/FrontmatterUtil";
 import {DoubanNoteManager} from "./douban/note/DoubanNoteManager";
 import {UserDataExtractor} from "./douban/userdata/UserDataExtractor";
 import {UserDataMerger} from "./douban/userdata/UserDataMerger";
@@ -123,7 +122,6 @@ export default class DoubanPlugin extends Plugin {
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
 				// 在force模式下，先检查是否存在该doubanId的旧文件
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
-				const inheritedFrontmatter = this.getInheritedFrontmatter(context, existingFilePath);
 				// 在替换前提取旧文件的用户数据（自定义属性+正文分区）
 				let localUserData = null;
 				if (existingFilePath) {
@@ -134,14 +132,6 @@ export default class DoubanPlugin extends Plugin {
 					}
 				}
 				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
-				if (inheritedFrontmatter) {
-					await inheritFrontmatterFields(
-						this.app,
-						fullFilePath,
-						inheritedFrontmatter,
-						context.syncStatusHolder.syncStatus.syncConfig.inheritFieldList || [],
-					);
-				}
 				// 数据保护：将旧文件的自定义属性和正文分区合并到新文件
 				if (localUserData) {
 					const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
@@ -174,17 +164,6 @@ export default class DoubanPlugin extends Plugin {
 		}else {
 			await this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate);
 		}
-	}
-
-	private getInheritedFrontmatter(context: HandleContext, existingFilePath: string | null): Record<string, unknown> | null {
-		if (!existingFilePath || !context.syncConfig?.inheritOldFields) {
-			return null;
-		}
-		const fields = context.syncConfig.inheritFieldList || [];
-		if (!fields.length) {
-			return null;
-		}
-		return getFileFrontmatter(this.app, existingFilePath);
 	}
 
 	async search(searchTerm: string, searchType: SupportType, context: HandleContext) {
@@ -364,6 +343,19 @@ export default class DoubanPlugin extends Plugin {
 
 		this.settingTab = new DoubanSettingTab(this.app, this);
 		this.addSettingTab(this.settingTab);
+
+		this.addRibbonIcon('book-open', i18nHelper.getMessage('110103'), () => {
+			this.showSyncModal({
+				plugin: this,
+				mode: SearchHandleMode.FOR_CREATE,
+				settings: this.settings,
+				userComponent: this.userComponent,
+				netFileHandler: this.netFileHandler,
+				action: Action.Sync,
+				syncStatusHolder: this.statusHolder,
+			});
+		});
+
 		this.statusHolder = new GlobalStatusHolder(this.app, this);
 		this.doubanNoteManager = new DoubanNoteManager(this.app, this);
 	}
@@ -476,9 +468,6 @@ export default class DoubanPlugin extends Plugin {
 		syncConfig.attachmentPath = syncConfig.attachmentPath ? syncConfig.attachmentPath : DEFAULT_SETTINGS.attachmentPath;
 		syncConfig.dataFileNamePath = syncConfig.dataFileNamePath ? syncConfig.dataFileNamePath : DEFAULT_SETTINGS.dataFileNamePath;
 		syncConfig.inheritOldFields = !!syncConfig.inheritOldFields;
-		syncConfig.inheritFieldList = syncConfig.inheritFieldList && syncConfig.inheritFieldList.length > 0
-			? syncConfig.inheritFieldList
-			: ['tags', 'aliases'];
 	}
 
 }
