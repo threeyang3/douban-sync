@@ -35,14 +35,9 @@ export class VariableUtil {
 		if (!allVariables || allVariables.length == 0) {
 			return content;
 		}
-		if (obj instanceof Map) {
-			this.handleCustomVariable(subjectType, obj, settingManager, 'text')
-			content = this.replaceMap(obj, allVariables, content, settingManager, targetType);
-		}else {
-			const map = this.objToMap(obj);
-			this.handleCustomVariable(subjectType, map, settingManager, 'text')
-			content = this.replaceMap(map, allVariables, content, settingManager, targetType);
-		}
+		const map = obj instanceof Map ? obj : this.objToMap(obj);
+		this.handleCustomVariable(subjectType, map, settingManager, 'text');
+		content = this.replaceMap(map, allVariables, content, settingManager, targetType);
 		return content;
 	}
 
@@ -63,11 +58,8 @@ export class VariableUtil {
 		if (!allVariables || allVariables.length == 0) {
 			return content;
 		}
-		if (obj instanceof Map) {
-			content = this.replaceMap(obj, allVariables, content, settingManager, targetType);
-		}else {
-			const map = this.objToMap(obj);
-			content = this.replaceMap(map, allVariables, content, settingManager, targetType);		}
+		const map = obj instanceof Map ? obj : this.objToMap(obj);
+		content = this.replaceMap(map, allVariables, content, settingManager, targetType);
 
 		return content;
 	}
@@ -110,10 +102,22 @@ export class VariableUtil {
 		if (!value) {
 			return content.replaceAll(variableStr, "");
 		}
-		const arraySettings = this.getArraySetting(outTypeName, settingManager);
+		let arraySettings = this.getArraySetting(outTypeName, settingManager);
 		if (!arraySettings) {
 			log.warn(i18nHelper.getMessage(`130107`, variable.variable, outTypeName));
 			return content;
+		}
+
+		// 正文上下文（表格单元格内）使用内联格式，避免换行破坏 Markdown 表格
+		if (targetType === 'text') {
+			arraySettings = {
+				...arraySettings,
+				arrayElementStart: '',
+				arrayElementEnd: '',
+				arraySpiltV2: '、',
+				arrayStart: '',
+				arrayEnd: '',
+			};
 		}
 
 		const strValues:string[] = value.map((v) => {
@@ -184,11 +188,33 @@ export class VariableUtil {
 
 
 	private static replaceMap(obj: Map<string, any>, allVariables:FieldVariable[], content: string, settingManager: SettingsManager, targetType: TargetType) {
+		content = this.replaceConditionals(obj, content);
 		allVariables.forEach(variable => {
 			const value = obj.get(variable.key);
 			content = this.replaceVariable(variable, value, content, settingManager, targetType);
 		});
 		return content;
+	}
+
+	/**
+	 * 处理 {{#if variable}}...{{/if}} 条件渲染
+	 * 变量存在且非空时保留内容，否则移除整个块
+	 */
+	private static replaceConditionals(obj: Map<string, any>, content: string): string {
+		if (!content) {
+			return content;
+		}
+		const conditionalRegex = /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+		return content.replace(conditionalRegex, (_match, key, block) => {
+			const value = obj.get(key);
+			if (value === undefined || value === null || value === '') {
+				return '';
+			}
+			if (Array.isArray(value) && value.length === 0) {
+				return '';
+			}
+			return block;
+		});
 	}
 
 	static getType(value: any):DataValueType {
@@ -279,13 +305,13 @@ export class VariableUtil {
 
 	private static handleText(v: string, targetType: TargetType, dataField: DataField = null): string {
 		if (targetType === 'yml_text') {
-			// 对于 desc 字段，使用多行文本处理
-			if (dataField && dataField.name === 'desc') {
-				return YamlUtil.handleMultiLineText(v);
-			}
 			return YamlUtil.handleText(v, dataField);
 		}
 		if (targetType === 'text') {
+			// desc 在正文中以 callout 形式呈现，需要为每行添加 > 前缀以保持 callout 格式
+			if (dataField && dataField.name === 'desc' && v) {
+				return v.replaceAll('\n', '\n> ');
+			}
 			return  v;
 		}
 		if (targetType === 'path') {

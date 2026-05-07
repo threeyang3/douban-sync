@@ -9,10 +9,6 @@ export default class YamlUtil {
 
 
 	public static handleSpecialChar(text: string): string {
-		// return this.hasSpecialChar(text) ? text.replace(SPECIAL_CHAR_REG, (match, p1) => {
-		// 	return SPECIAL_CHAR_REG_REPLACE.get(p1) || p1;
-		// }) : text;
-		//temp solution
 		return '"' + text + '"';
 	}
 
@@ -32,7 +28,7 @@ export default class YamlUtil {
 			if (dataField && dataField.type === DataValueType.date) {
 				return text;
 			}
-			YamlUtil.handleSpecialChar(text);
+			text = YamlUtil.handleSpecialChar(text);
 		}
 		return text;
 	}
@@ -67,8 +63,4 @@ export default class YamlUtil {
 
 export const SPECIAL_CHAR_REG = /[{}\[\]&*#?|\-<>=!%@:"`,\n]/;
 export const TITLE_ALIASES_SPECIAL_CHAR_REG_G = /[{}\[\]&*#?|\-<>=!%@:"`,，\n]/g;
-
-const SPECIAL_CHAR_REG_REPLACE: Map<string, string> = new Map([
-	['{', '\\{'],
-]);
 

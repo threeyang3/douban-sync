@@ -175,6 +175,69 @@
 	width: 100%;
 }
 
+/* ==================== Douban Info Callout 响应式布局 ==================== */
 
+.callout[data-callout="douban-info"],
+.markdown-rendered .callout[data-callout="douban-info"] {
+	--callout-color: var(--text-accent);
+	--callout-icon: lucide-info;
+}
 
+.callout[data-callout="douban-info"] .callout-content,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	justify-content: center;
+	gap: 16px;
+}
 
+.callout[data-callout="douban-info"] .callout-content > :first-child,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :first-child {
+	flex: 1 1 300px;
+	max-width: 400px;
+	align-self: center;
+}
+
+.callout[data-callout="douban-info"] .callout-content > :last-child,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :last-child {
+	flex: 1 1 300px;
+	min-width: 0;
+}
+
+.callout[data-callout="douban-info"] .callout-content > p,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > p {
+	margin: 0;
+	text-align: center;
+}
+
+.callout[data-callout="douban-info"] img,
+.markdown-rendered .callout[data-callout="douban-info"] img {
+	width: 100%;
+	height: auto;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.callout[data-callout="douban-info"] table,
+.markdown-rendered .callout[data-callout="douban-info"] table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: auto;
+}
+
+.callout[data-callout="douban-info"] td,
+.callout[data-callout="douban-info"] th,
+.markdown-rendered .callout[data-callout="douban-info"] td,
+.markdown-rendered .callout[data-callout="douban-info"] th {
+	vertical-align: middle;
+	text-align: center;
+}
+
+.callout[data-callout="douban-info"] td:first-child,
+.callout[data-callout="douban-info"] th:first-child,
+.markdown-rendered .callout[data-callout="douban-info"] td:first-child,
+.markdown-rendered .callout[data-callout="douban-info"] th:first-child {
+	width: 1%;
+	white-space: nowrap;
+}

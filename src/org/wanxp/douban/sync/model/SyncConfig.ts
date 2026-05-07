@@ -16,4 +16,5 @@ export interface  SyncConfig {
 	attachmentFileName: string;
 	templateFile: string;
 	incrementalUpdate: boolean;
+	inheritOldFields?: boolean;
 }

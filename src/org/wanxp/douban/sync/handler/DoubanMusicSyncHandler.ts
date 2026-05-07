@@ -2,12 +2,10 @@ import {DoubanAbstractSyncHandler} from "./DoubanAbstractSyncHandler";
 import DoubanPlugin from "../../../main";
 import {SyncType} from "../../../constant/Constsant";
 import DoubanMusicSubject from "../../data/model/DoubanMusicSubject";
-import DoubanMusicCollectListHandler from "./list/DoubanMusicCollectListHandler";
 import DoubanMusicLoadHandler from "../../data/handler/DoubanMusicLoadHandler";
-import DoubanMusicWishListHandler from "./list/DoubanMusicWishListHandler";
-import DoubanMusicDoListHandler from "./list/DoubanMusicDoListHandler";
+import DoubanAbstractListHandler from "./list/DoubanAbstractListHandler";
+import {DoubanSubjectState} from "../../../constant/DoubanUserState";
 
-//TODO will support in future version
 export class DoubanMusicSyncHandler extends DoubanAbstractSyncHandler<DoubanMusicSubject> {
 
 	getSyncType(): SyncType {
@@ -16,10 +14,9 @@ export class DoubanMusicSyncHandler extends DoubanAbstractSyncHandler<DoubanMusi
 
 	constructor(plugin: DoubanPlugin) {
 		super(plugin, new DoubanMusicLoadHandler(plugin), [
-			new DoubanMusicCollectListHandler(),
-			new DoubanMusicWishListHandler(),
-			new DoubanMusicDoListHandler()]);
+			DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.collect),
+			DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.wish),
+			DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.do)]);
 	}
-
 
 }

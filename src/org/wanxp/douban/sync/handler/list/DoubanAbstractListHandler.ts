@@ -1,11 +1,9 @@
-import { request, RequestUrlParam } from "obsidian";
 import { i18nHelper } from "src/org/wanxp/lang/helper";
 import { log } from "src/org/wanxp/utils/Logutil";
 import { CheerioAPI, load } from "cheerio";
 import HandleContext from "../../../data/model/HandleContext";
 import { doubanSubjectSyncListUrl } from "../../../../constant/Douban";
 import {
-	BasicConst,
 	PAGE_SIZE,
 	SyncType,
 	SyncTypeUrlDomain,
@@ -13,9 +11,7 @@ import {
 import { SubjectListItem } from "../../../data/model/SubjectListItem";
 import { DoubanListHandler } from "./DoubanListHandler";
 import { SyncConfig } from "../../model/SyncConfig";
-import { sleepRange } from "../../../../utils/TimeUtil";
 import { ALL } from "../../../../constant/DoubanUserState";
-import HttpUtil from "../../../../utils/HttpUtil";
 import { DoubanHttpUtil } from "../../../../utils/DoubanHttpUtil";
 import { SearchPage } from "../../../data/model/SearchPage";
 import {SearchPageTypeOf} from "../../../data/model/SearchPageTypeOf";
@@ -120,5 +116,12 @@ export default abstract class DoubanAbstractListHandler
 
 	support(config: SyncConfig): boolean {
 		return this.getDoType() == config.scope || ALL == config.scope;
+	}
+
+	static create(syncType: SyncType, doType: string): DoubanListHandler {
+		return new class extends DoubanAbstractListHandler {
+			getSyncType(): SyncType { return syncType; }
+			getDoType(): string { return doType; }
+		};
 	}
 }

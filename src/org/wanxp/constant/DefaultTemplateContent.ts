@@ -1,342 +1,337 @@
 import {TemplateKey} from "./Constsant";
 
-export const DEFAULT_TEMPLATE_CONTENT = {
-	movieTemplateFileContent: `---
-doubanId: {{id}}
+function syncify(basic: string, syncTable: string, basicTable: string): string {
+	return basic
+		.replace('createTime:',
+			`state: {{myState}}\ntags: {{myTags}}\nmyRatingStar: {{myRatingStar}}\n短评: {{myComment}}\n标语: \n存储: \n相关: \ncollectionDate: {{myCollectionDate}}\ncoverUrl: {{imageData.url}}\ncreateTime:`)
+		.replace(basicTable, syncTable)
+		.replace('> [!abstract]- **简介**',
+			'> [!abstract]+ **短评**\n> {{myComment}}\n\n> [!abstract]- **简介**');
+}
+
+// ==================== Movie ====================
+
+const movieTable = `> | 年份 | {{yearPublished}} |
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 语言 | \`= this.language\` |`;
+
+const movieSyncTable = `> | 标语 | \`= this.标语\` |
+> | 状态 | \`= this.state\` |
+> | 类型 | \`= this.genre\` |
+> | 标签 | \`= this.tags\` |
+> | 评分 | \`= this.myRatingStar\` |
+> | 短评 | \`= this.短评\` |
+> | 导演 | \`= this.director\` |
+> | 语言 | \`= this.language\` |
+> | 存储 | \`= this.存储\` |
+> | 相关 | \`= this.相关\` |
+> | 年份 | {{yearPublished}} |`;
+
+const movieBasic = `---
 title: {{title}}
-type: {{type}}
-score: {{score}}
-scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
+type: {{type}}
 genre: {{genre}}
-datePublished: {{datePublished}}
-director: {{director}}
+country: {{country}}
+score: {{score}}
+aliases: {{aliases}}
+director: "[[{{director}}]]"
 actor: {{actor}}
 author: {{author}}
-tags: 
-  - {{type}}
-url: {{url}}
-aliases: {{aliases}}
-country: {{country}}
+datePublished: {{datePublished}}
 language: {{language}}
-IMDb: {{IMDb}}
 time: {{time}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
+doubanId: {{id}}
+IMDb: {{IMDb}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
-![image]({{image}})
-`,
-	bookTemplateFileContent: `---
-doubanId: {{id}}
+> [!douban-info]+ 🎬 **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${movieTable}
+
+> [!abstract]- **简介**
+> {{desc}}
+
+## 记录
+
+## 感想
+`;
+
+// ==================== Book ====================
+
+const bookTable = `> | 作者 | \`= this.author\` |
+> | 出版发行 | {{publisher}} |
+> | 出版年份 | {{yearPublished}} |`;
+
+const bookSyncTable = `> | 标语 | \`= this.标语\` |
+> | 作者 | \`= this.author\` |
+> | 状态 | \`= this.state\` |
+> | 标签 | \`= this.tags\` |
+> | 评分 | \`= this.myRatingStar\` |
+> | 短评 | \`= this.短评\` |
+> | 位置 | \`= this.位置\` |
+> | 相关 | \`= this.相关\` |
+> | 出版发行 | {{publisher}} |
+> | 出版年份 | {{yearPublished}} |`;
+
+const bookBasic = `---
 title: {{title}}
 subTitle: {{subTitle}}
 originalTitle: {{originalTitle}}
 series: {{series}}
 type: {{type}}
 author: {{author}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-datePublished: {{datePublished}}
 translator: {{translator}}
+score: {{score}}
+datePublished: {{datePublished}}
 publisher: {{publisher}}
 producer: {{producer}}
+doubanId: {{id}}
 isbn: {{isbn}}
 url: {{url}}
 totalPage: {{totalPage}}
 price: {{price}}
-tags:  
-  - {{type}}
 binding: {{binding}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
-![image]({{image}})
+> [!douban-info]+ 📚 **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${bookTable}
+
+> [!abstract]- **简介**
+> {{desc}}
 
 {{menu}}
-`,
-	musicTemplateFileContent: `---
-doubanId: {{id}}
+
+## 记录
+
+## 感想
+`;
+
+// ==================== Music ====================
+
+const musicTable = `> | 表演者 | \`= this.actor\` |
+> | 流派 | \`= this.genre\` |
+> | 发行时间 | \`= this.datePublished\` |
+> | 出版者 | \`= this.publisher\` |`;
+
+const musicSyncTable = `> | 状态 | \`= this.state\` |
+> | 标签 | \`= this.tags\` |
+> | 评分 | \`= this.myRatingStar\` |
+> | 短评 | \`= this.短评\` |
+> | 表演者 | \`= this.actor\` |
+> | 流派 | \`= this.genre\` |
+> | 发行时间 | \`= this.datePublished\` |
+> | 出版者 | \`= this.publisher\` |`;
+
+const musicBasic = `---
 title: {{title}}
 type: {{type}}
 actor: {{actor}}
 score: {{score}}
-scoreStar: {{scoreStar}}
 genre: {{genre}}
 medium: {{medium}}
 albumType: {{albumType}}
 datePublished: {{datePublished}}
 publisher: {{publisher}}
 barcode: {{barcode}}
-url: {{url}}
-records: {{records}}
-tags:  
-  - {{type}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
----
-
-![image]({{image}})
-
----
-Menu:
-{{menu}}
-`,
-	noteTemplateFileContent: `---
 doubanId: {{id}}
-title: {{title}}
-type: {{type}}  
-author: {{author}}
-authorUrl: {{authorUrl}}
-dateTimePublished: {{datePublished}} {{timePublished}}
 url: {{url}}
-tags:  
-  - {{type}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
-{{content}}
-`,
-	gameTemplateFileContent: `---
-doubanId: {{id}}
-title: {{title}}
-aliases: {{aliases}}
-type: {{type}}  
-score: {{score}}
-scoreStar: {{scoreStar}}
-dateTimePublished: {{datePublished}}
-publisher: {{publisher}}
-genre: {{genre}}
-developer: {{developer}}
-platform: {{platform}}
-url: {{url}}
-tags:  
-  - {{type}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
----
+> [!douban-info]+ 🎵 **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${musicTable}
 
-![image]({{image}})	
-`,teleplayTemplateFileContent: `---
-doubanId: {{id}}
-title: {{title}}
-type: {{type}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-originalTitle: {{originalTitle}}
-genre: {{genre}}
-datePublished: {{datePublished}}
-director: {{director}}
-actor: {{actor}}
-author: {{author}}
-tags:  
-  - {{type}}
-url: {{url}}
-aliases: {{aliases}}
-country: {{country}}
-language: {{language}}
-IMDb: {{IMDb}}
-time: {{time}}
-episode: {{episode}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
----
-
-![image]({{image}})
-`,
-}
-
-export const DEFAULT_TEMPLATE_CONTENT_WITH_STATE = {
-	movieTemplateFileContent: `---
-doubanId: {{id}}
-title: {{title}}
-type: {{type}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-myRating: {{myRating}}
-myRatingStar: {{myRatingStar}}
-originalTitle: {{originalTitle}}
-genre: {{genre}}
-datePublished: {{datePublished}}
-director: {{director}}
-actor: {{actor}}
-author: {{author}}
-tags: {{myTags}}
-state: {{myState}}
-url: {{url}}
-aliases: {{aliases}}
-country: {{country}}
-language: {{language}}
-IMDb: {{IMDb}}
-time: {{time}}
-createTime: {{currentDate}} {{currentTime}}
-collectionDate: {{myCollectionDate}}
-desc: {{desc}}
----
-
-![image]({{image}})
-
-Comment: 
----
-{{myComment}}
-`,
-	bookTemplateFileContent: `---
-doubanId: {{id}}
-title: {{title}}
-subTitle: {{subTitle}}
-originalTitle: {{originalTitle}}
-series: {{series}}
-type: {{type}}
-author: {{author}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-myRating: {{myRating}}
-myRatingStar: {{myRatingStar}}
-datePublished: {{datePublished}}
-translator: {{translator}}
-publisher: {{publisher}}
-producer: {{producer}}
-isbn: {{isbn}}
-url: {{url}}
-totalPage: {{totalPage}}
-price: {{price}}
-tags: {{myTags}}
-state: {{myState}}
-binding: {{binding}}
-createTime: {{currentDate}} {{currentTime}}
-collectionDate: {{myCollectionDate}}
-desc: {{desc}}
----
-
-![image]({{image}})
-
-Comment: 
----
-{{myComment}}
-
-{{menu}}
-`,
-	musicTemplateFileContent: `---
-doubanId: {{id}}
-title: {{title}}
-type: {{type}}
-actor: {{actor}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-myRating: {{myRating}}
-myRatingStar: {{myRatingStar}}
-genre: {{genre}}
-medium: {{medium}}
-albumType: {{albumType}}
-datePublished: {{datePublished}}
-publisher: {{publisher}}
-barcode: {{barcode}}
-url: {{url}}
-records: {{records}}
-tags: {{myTags}}
-state: {{myState}}
-createTime: {{currentDate}} {{currentTime}}
-collectionDate: {{myCollectionDate}}
-desc: {{desc}}
----
-
-![image]({{image}})
+> [!abstract]- **简介**
+> {{desc}}
 
 ---
 Menu:
 {{menu}}
 
----
-Comment: 
-{{myComment}}
+## 记录
 
-`,
-	noteTemplateFileContent: `---
-doubanId: {{id}}
+## 感想
+`;
+
+// ==================== Note ====================
+
+const noteBasic = `---
 title: {{title}}
-type: {{type}}  
+type: {{type}}
 author: {{author}}
 authorUrl: {{authorUrl}}
 dateTimePublished: {{datePublished}} {{timePublished}}
+doubanId: {{id}}
 url: {{url}}
-tags: 
-  - {{type}}
-createTime: {{currentDate}} {{currentTime}}
-desc: {{desc}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
+
+> [!douban-info]+ 📝 **{{title}}**
+>
+> | | |
+> |:------:|:------------------------------------------:|
+> | 作者 | \`= this.author\` |
+> | 发布时间 | \`= this.dateTimePublished\` |
 
 {{content}}
-`,
-	gameTemplateFileContent: `---
-doubanId: {{id}}
-title: {{title}}
-aliases: {{aliases}}
-type: {{type}}  
-score: {{score}}
-scoreStar: {{scoreStar}}
-myRating: {{myRating}}
-myRatingStar: {{myRatingStar}}
-dateTimePublished: {{datePublished}}
-publisher: {{publisher}}
-genre: {{genre}}
-developer: {{developer}}
-platform: {{platform}}
-url: {{url}}
-tags: {{myTags}}
-state: {{myState}}
-createTime: {{currentDate}} {{currentTime}}
-collectionDate: {{myCollectionDate}}
-desc: {{desc}}
----
+`;
 
-![image]({{image}})	
+// ==================== Game ====================
 
-Comment: 
----
-{{myComment}}
-`,teleplayTemplateFileContent: `---
-doubanId: {{id}}
+const gameTable = `> | 类型 | \`= this.genre\` |
+> | 平台 | \`= this.platform\` |
+> | 开发商 | \`= this.developer\` |
+> | 发行商 | {{publisher}} |
+> | 发行年份 | {{yearPublished}} |`;
+
+const gameSyncTable = `> | 标语 | \`= this.标语\` |
+> | 状态 | \`= this.state\` |
+> | 类型 | \`= this.genre\` |
+> | 标签 | \`= this.tags\` |
+> | 评分 | \`= this.myRatingStar\` |
+> | 短评 | \`= this.短评\` |
+> | 开发商 | \`= this.developer\` |
+> | 发行商 | {{publisher}} |
+> | 相关 | \`= this.相关\` |
+> | 存储 | \`= this.存储\` |
+> | 发行年份 | {{yearPublished}} |`;
+
+const gameBasic = `---
 title: {{title}}
 type: {{type}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-myRating: {{myRating}}
-myRatingStar: {{myRatingStar}}
-originalTitle: {{originalTitle}}
 genre: {{genre}}
+platform: {{platform}}
+country: {{country}}
+score: {{score}}
+aliases: {{aliases}}
+dateTimePublished: {{datePublished}}
+publisher: {{publisher}}
+developer: {{developer}}
+doubanId: {{id}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
+---
+
+> [!douban-info]+ 🎮 **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${gameTable}
+
+> [!abstract]- **简介**
+> {{desc}}
+
+## 记录
+
+## 感想
+`;
+
+// ==================== Teleplay ====================
+
+const teleplayTable = `> | 年份 | {{yearPublished}} |
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 语言 | \`= this.language\` |
+> | 集数 | {{episode}} |`;
+
+const teleplaySyncTable = `> | 标语 | \`= this.标语\` |
+> | 状态 | \`= this.state\` |
+> | 类型 | \`= this.genre\` |
+> | 标签 | \`= this.tags\` |
+> | 评分 | \`= this.myRatingStar\` |
+> | 短评 | \`= this.短评\` |
+> | 导演 | \`= this.director\` |
+> | 语言 | \`= this.language\` |
+> | 存储 | \`= this.存储\` |
+> | 相关 | \`= this.相关\` |
+> | 年份 | {{yearPublished}} |
+> | 集数 | {{episode}} |`;
+
+const teleplayBasic = `---
+title: {{title}}
+originalTitle: {{originalTitle}}
+type: {{type}}
+genre: {{genre}}
+country: {{country}}
+score: {{score}}
+aliases: {{aliases}}
 datePublished: {{datePublished}}
-director: {{director}}
+episode: {{episode}}
+director: "[[{{director}}]]"
 actor: {{actor}}
 author: {{author}}
-tags: {{myTags}}
-state: {{myState}}
-url: {{url}}
-aliases: {{aliases}}
-country: {{country}}
 language: {{language}}
-IMDb: {{IMDb}}
 time: {{time}}
-episode: {{episode}}
-createTime: {{currentDate}} {{currentTime}}
-collectionDate: {{myCollectionDate}}
-desc: {{desc}}
+doubanId: {{id}}
+IMDb: {{IMDb}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
-![image]({{image}})
+> [!douban-info]+ 📺 **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${teleplayTable}
 
-Comment: 
----
-{{myComment}}
-`,
-}
+> [!abstract]- **简介**
+> {{desc}}
 
-/**
- * 获取默认的文档内容
- * @param key
- */
+## 记录
+
+## 感想
+`;
+
+// ==================== Exports ====================
+
+export const DEFAULT_TEMPLATE_CONTENT: Record<string, string> = {
+	movieTemplateFileContent: movieBasic,
+	bookTemplateFileContent: bookBasic,
+	musicTemplateFileContent: musicBasic,
+	noteTemplateFileContent: noteBasic,
+	gameTemplateFileContent: gameBasic,
+	teleplayTemplateFileContent: teleplayBasic,
+};
+
+export const DEFAULT_TEMPLATE_CONTENT_WITH_STATE: Record<string, string> = {
+	movieTemplateFileContent: syncify(movieBasic, movieSyncTable, movieTable),
+	bookTemplateFileContent: syncify(bookBasic, bookSyncTable, bookTable),
+	musicTemplateFileContent: syncify(musicBasic, musicSyncTable, musicTable),
+	noteTemplateFileContent: noteBasic,
+	gameTemplateFileContent: syncify(gameBasic, gameSyncTable, gameTable),
+	teleplayTemplateFileContent: syncify(teleplayBasic, teleplaySyncTable, teleplayTable),
+};
+
 export function getDefaultTemplateContent(key: TemplateKey, useStateTemplate: boolean = true): string {
-	// @ts-ignore
-	return useStateTemplate ? DEFAULT_TEMPLATE_CONTENT_WITH_STATE[key + "Content"] : DEFAULT_TEMPLATE_CONTENT[key + "Content"];
+	const source = useStateTemplate ? DEFAULT_TEMPLATE_CONTENT_WITH_STATE : DEFAULT_TEMPLATE_CONTENT;
+	return source[key + 'Content'] ?? '';
 }

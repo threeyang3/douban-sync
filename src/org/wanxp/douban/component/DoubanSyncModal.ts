@@ -25,10 +25,8 @@ import {
 } from "../../constant/DoubanUserState";
 import {SyncConfig} from "../sync/model/SyncConfig";
 import {clearInterval} from "timers";
-import {FolderSuggest} from "../setting/model/FolderSuggest";
+import {PathSuggest} from "../setting/model/PathSuggest";
 import {DEFAULT_SETTINGS} from "../../constant/DefaultSettings";
-import {createFileSelectionSetting} from "../setting/TemplateSettingHelper";
-import {FileSuggest} from "../setting/model/FileSuggest";
 import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
 import TimeUtil from "../../utils/TimeUtil";
 import SettingsManager from "../setting/SettingsManager";
@@ -151,8 +149,9 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			cacheHighQuantityImage: ( settings.cacheHighQuantityImage == null) ?  DEFAULT_SETTINGS.cacheHighQuantityImage : settings.cacheHighQuantityImage,
 			attachmentPath: (settings.attachmentPath == '' || settings.attachmentPath == null) ?  DEFAULT_SETTINGS.attachmentPath : settings.attachmentPath,
 			attachmentFileName: (settings.attachmentFileName == '' || settings.attachmentFileName == null) ?  DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
-			templateFile:  (settings.movieTemplateFile == '' || settings.movieTemplateFile == null) ? DEFAULT_SETTINGS.movieTemplateFile : settings.movieTemplateFile,
+			templateFile:  this.getDefaultTemplatePath(SyncType.movie),
 			incrementalUpdate: true,
+			inheritOldFields: false,
 			syncConditionType: SyncConditionType.ALL,
 			syncConditionDateFromValue: TimeUtil.getLastMonth(),
 			syncConditionDateToValue: new Date(),
@@ -197,11 +196,19 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 		new Setting(contentEl);
 		this.showTypeDropdown(contentEl, config, disable);
 		this.showCondition(contentEl, config, disable);
-		// this.showOutputFolderSelections(contentEl, config, disable);
-		// this.showOutiFleName(contentEl, config, disable);
-		// this.showAttachmentsFileConfig(contentEl, config, disable);
 		this.showUpdateAllConfig(contentEl, config, disable);
-		this.showForceUpdateConfig(contentEl, config, disable);
+		const forceConfigContainer = contentEl.createDiv('sync-force-config');
+		this.renderForceRelatedConfigs(forceConfigContainer, config, disable);
+	}
+
+	private renderForceRelatedConfigs(containerEl: HTMLElement, config: SyncConfig, disable:boolean) {
+		containerEl.empty();
+		this.showForceUpdateConfig(containerEl, config, disable, () => {
+			this.renderForceRelatedConfigs(containerEl, config, disable);
+		});
+		this.showInheritOldFieldsConfig(containerEl, config, disable, () => {
+			this.renderForceRelatedConfigs(containerEl, config, disable);
+		});
 	}
 
 	async onClose() {
@@ -242,7 +249,6 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 	private showTypeDropdown(containerEl:HTMLElement, config: SyncConfig, disable:boolean) {
 		const settings = new Setting(containerEl);
 		const scopeSelections = containerEl.createDiv("scope-selection");
-		// const templateFile:HTMLDivElement = containerEl.createDiv('template-file-path-selection');
 		settings
 			.setName(i18nHelper.getMessage('110030'))
 			.addDropdown((dropdown) => {
@@ -252,34 +258,26 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 						config.syncType = value;
 						config.templateFile = this.getDefaultTemplatePath(value);
 						this.openScopeDropdown(scopeSelections, config, disable);
-						// this.showTemplateFileSelectionSetting(templateFile, config, disable);
 					});
 			}).setDisabled(disable);
 		this.openScopeDropdown(scopeSelections, config, disable);
-		// this.showTemplateFileSelectionSetting(templateFile, config, disable);
 	}
 
 	private getDefaultTemplatePath(value: string) {
-		let result:string = "";
 		const {settings} = this.plugin;
+		let config: any;
 		switch (value) {
-			case SyncType.movie:
-				result = (settings.movieTemplateFile == '' || settings.movieTemplateFile == null) ? DEFAULT_SETTINGS.movieTemplateFile : settings.movieTemplateFile
-				break;
-			case SyncType.book:
-				result = (settings.bookTemplateFile == '' || settings.bookTemplateFile == null) ? DEFAULT_SETTINGS.bookTemplateFile : settings.bookTemplateFile
-				break;
-			case SyncType.music:
-				result = (settings.musicTemplateFile == '' || settings.musicTemplateFile == null) ? DEFAULT_SETTINGS.musicTemplateFile : settings.musicTemplateFile
-				break;
-			case SyncType.teleplay:
-				result = (settings.teleplayTemplateFile == '' || settings.teleplayTemplateFile == null) ? DEFAULT_SETTINGS.teleplayTemplateFile : settings.teleplayTemplateFile
-				break;
-			case SyncType.game:
-				result = (settings.gameTemplateFile == '' || settings.gameTemplateFile == null) ? DEFAULT_SETTINGS.gameTemplateFile : settings.gameTemplateFile
-				break;
+			case SyncType.movie: config = settings.movieTemplateConfig; break;
+			case SyncType.book: config = settings.bookTemplateConfig; break;
+			case SyncType.music: config = settings.musicTemplateConfig; break;
+			case SyncType.teleplay: config = settings.teleplayTemplateConfig; break;
+			case SyncType.game: config = settings.gameTemplateConfig; break;
+			default: return '';
 		}
-		return result;
+		if (config && config.source === 'file' && config.filePath) {
+			return config.filePath;
+		}
+		return '';
 	}
 
 	private showScopeDropdown(containerEl:HTMLDivElement, scopeSelections: Record<string, string>, config: SyncConfig, disable:boolean) {
@@ -314,7 +312,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			.setName( i18nHelper.getMessage('121501'))
 			.setDesc( i18nHelper.getMessage('121502'))
 			.addSearch(async (search: SearchComponent) => {
-				new FolderSuggest(this.app, search.inputEl);
+				new PathSuggest(this.app, search.inputEl, 'folder');
 				// @ts-ignore
 				search.setValue(config.dataFilePath)
 					// @ts-ignore
@@ -334,7 +332,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			.setName(i18nHelper.getMessage('121101'))
 			.setDesc(i18nHelper.getMessage('121102'))
 			.addSearch(async (search: SearchComponent) => {
-				new FileSuggest(this.app, search.inputEl);
+				new PathSuggest(this.app, search.inputEl, 'file');
 				// @ts-ignore
 				search.setValue(config.templateFile)
 					// @ts-ignore
@@ -371,19 +369,35 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 		return supportType + 'TemplateFile';
 	}
 
-	showForceUpdateConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean) {
+	showForceUpdateConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean, onToggle?: () => void) {
 		new Setting(containerEl)
 			.setName(i18nHelper.getMessage('110031'))
 			.setDesc(i18nHelper.getMessage('500110'))
 			.addToggle((toggleComponent) => {
 				toggleComponent
-					// .setTooltip(i18nHelper.getMessage('121403'))
+	
 					.setValue(config.force)
 					.onChange(async (value) => {
 						config.force = value;
+						onToggle && onToggle();
 					});
 			})
 			.setDisabled(disable);
+	}
+
+	showInheritOldFieldsConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean, onToggle?: () => void) {
+		const setting = new Setting(containerEl)
+			.setName(i18nHelper.getMessage('110097'))
+			.setDesc(i18nHelper.getMessage('110098'))
+			.setDisabled(disable || !config.force);
+		setting.addToggle((toggleComponent) => {
+			toggleComponent
+				.setValue(!!config.inheritOldFields)
+				.onChange(async (value) => {
+					config.inheritOldFields = value;
+					onToggle && onToggle();
+				});
+		});
 	}
 
 
@@ -395,7 +409,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			.setDesc(i18nHelper.getMessage('121431'))
 			.addToggle((toggleComponent) => {
 				toggleComponent
-					// .setTooltip(i18nHelper.getMessage('121403'))
+	
 					.setValue(config.cacheImage)
 					.onChange(async (value) => {
 						config.cacheImage = value;
@@ -415,7 +429,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			.setName( i18nHelper.getMessage('121432'))
 			.setDesc( i18nHelper.getMessage('121433'))
 			.addSearch(async (search: SearchComponent) => {
-				new FolderSuggest(this.plugin.app, search.inputEl);
+				new PathSuggest(this.plugin.app, search.inputEl, 'folder');
 				// @ts-ignore
 				search.setValue(config.attachmentPath)
 					// @ts-ignore
@@ -429,7 +443,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			.setName( i18nHelper.getMessage('121452'))
 			.setDesc( i18nHelper.getMessage('121453'))
 			.addSearch(async (search: SearchComponent) => {
-				new FolderSuggest(this.plugin.app, search.inputEl);
+				new PathSuggest(this.plugin.app, search.inputEl, 'folder');
 				// @ts-ignore
 				search.setValue(config.attachmentFileName)
 					// @ts-ignore

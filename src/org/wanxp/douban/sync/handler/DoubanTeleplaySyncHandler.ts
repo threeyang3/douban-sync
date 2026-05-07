@@ -1,28 +1,22 @@
 import {DoubanAbstractSyncHandler} from "./DoubanAbstractSyncHandler";
-import {BasicConst, SyncType} from "../../../constant/Constsant";
+import {SyncType} from "../../../constant/Constsant";
 import DoubanPlugin from "../../../main";
 import DoubanTeleplaySubject from "../../data/model/DoubanTeleplaySubject";
 import {DoubanTeleplayLoadHandler} from "../../data/handler/DoubanTeleplayLoadHandler";
-import DoubanTeleplayCollectListHandler from "./list/DoubanTeleplayCollectListHandler";
-import DoubanTeleplayWishListHandler from "./list/DoubanTeleplayWishListHandler";
-import DoubanTeleplayDoListHandler from "./list/DoubanTeleplayDoListHandler";
+import DoubanAbstractListHandler from "./list/DoubanAbstractListHandler";
+import {DoubanSubjectState} from "../../../constant/DoubanUserState";
 
-//TODO will support in future version
 export class DoubanTeleplaySyncHandler extends DoubanAbstractSyncHandler<DoubanTeleplaySubject>{
 
 	constructor(plugin:DoubanPlugin) {
 		super(plugin, new DoubanTeleplayLoadHandler(plugin),[
-			new DoubanTeleplayCollectListHandler(),
-			new DoubanTeleplayWishListHandler(),
-			new DoubanTeleplayDoListHandler()]);
+			DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.collect),
+			DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.wish),
+			DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.do)]);
 	}
-
-
 
 	getSyncType(): SyncType {
 		return SyncType.teleplay;
 	}
-
-
 
 }

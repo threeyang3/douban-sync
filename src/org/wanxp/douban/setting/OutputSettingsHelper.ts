@@ -83,7 +83,7 @@ function scoreSettingDisplay(containerEl: HTMLElement, manager: SettingsManager)
 	maxStarUI.setPlaceholder(i18nHelper.getMessage('124312') + DEFAULT_SETTINGS.scoreSetting.maxStar)
 		.setValue(scoreSetting.maxStar + "")
 		.onChange(async (value) => {
-			if (!NumberUtil.isInt(value) && NumberUtil.value(value) > MAX_STAR_NUMBER && NumberUtil.value(value) < 1) {
+			if (!NumberUtil.isInt(value) || NumberUtil.value(value) > MAX_STAR_NUMBER || NumberUtil.value(value) < 1) {
 				return;
 			}
 			scoreSetting.maxStar = NumberUtil.value(value);
@@ -103,7 +103,6 @@ function scoreSettingDisplay(containerEl: HTMLElement, manager: SettingsManager)
 			await manager.plugin.saveSettings();
 			showStarExample(scoreShowUI, manager);
 		});
-	// displayEmptyStarUI.('obsidian_douban_settings_input')
 	const  displayEmptyStarEl = displayEmptyStarUI.toggleEl;
 	displayEmptyStarEl.addClass('obsidian_douban_settings_input')
 	scoreSettingsUI.appendChild(displayEmptyStarEl).appendText("  ");
@@ -112,8 +111,6 @@ function scoreSettingDisplay(containerEl: HTMLElement, manager: SettingsManager)
 }
 
 export function constructOutUI(containerEl: HTMLElement, manager: SettingsManager) {
-	// containerEl.createEl('h3', { text: i18nHelper.getMessage('1220') });
-
 	new Setting(containerEl);
 	const attachmentFileSetting = containerEl.createDiv({ cls: 'settings-item-attachment' });
 	constructAttachmentFileSettingsUI(attachmentFileSetting, manager);
@@ -144,8 +141,6 @@ export function constructOutUI(containerEl: HTMLElement, manager: SettingsManage
 					frag.createEl('br');
 				})
 			);
-			//   dropdwon.inputEl.addClass("settings_area");
-			//   dropdwon.inputEl.setAttr("rows", 10);
 			dropdwon.addOption(PersonNameMode.CH_NAME, PersonNameModeRecords.CH)
 			dropdwon.addOption(PersonNameMode.EN_NAME, PersonNameModeRecords.EN)
 			dropdwon.addOption(PersonNameMode.CH_EN_NAME, PersonNameModeRecords.CH_EN)
@@ -195,7 +190,7 @@ export function constructAttachmentFileSettingsUI(containerEl: HTMLElement, mana
 		.setDesc(i18nHelper.getMessage('121431'))
 		.addToggle((toggleComponent) => {
 			toggleComponent
-				// .setTooltip(i18nHelper.getMessage('121403'))
+
 				.setValue(manager.plugin.settings.cacheImage)
 				.onChange(async (value) => {
 					manager.plugin.settings.cacheImage = value;
@@ -210,7 +205,7 @@ export function constructAttachmentFileSettingsUI(containerEl: HTMLElement, mana
 			.setDesc(i18nHelper.getMessage('121441'))
 			.addToggle((toggleComponent) => {
 				toggleComponent
-					// .setTooltip(i18nHelper.getMessage('121403'))
+	
 					.setValue(manager.plugin.settings.pictureBedFlag)
 					.onChange(async (value) => {
 						manager.plugin.settings.pictureBedFlag = value;

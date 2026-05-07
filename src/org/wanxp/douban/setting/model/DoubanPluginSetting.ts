@@ -4,6 +4,15 @@ import {ArraySetting} from "./ArraySetting";
 import {ScoreSetting} from "./ScoreSetting";
 import PictureBedSetting from "./PictureBedSetting";
 import {SupportType} from "../../../constant/Constsant";
+import {DataProtectionSettings} from "../../userdata/types";
+
+export type TemplateSource = 'builtin' | 'file' | 'custom';
+
+export interface TemplateConfig {
+	source: TemplateSource;
+	filePath?: string;
+	customContent?: string;
+}
 
 export interface DoubanPluginSetting {
 	onlineSettingsFileName: string;
@@ -14,6 +23,12 @@ export interface DoubanPluginSetting {
 	noteTemplateFile: string,
 	gameTemplateFile: string,
 	teleplayTemplateFile: string,
+	movieTemplateConfig?: TemplateConfig,
+	bookTemplateConfig?: TemplateConfig,
+	musicTemplateConfig?: TemplateConfig,
+	noteTemplateConfig?: TemplateConfig,
+	gameTemplateConfig?: TemplateConfig,
+	teleplayTemplateConfig?: TemplateConfig,
 	dateFormat: string,
 	timeFormat: string,
 	searchUrl: string,
@@ -42,4 +57,8 @@ export interface DoubanPluginSetting {
 	arraySettings: ArraySetting[],
 	scoreSetting: ScoreSetting,
 	searchDefaultType: SupportType,
+	templatePresetPaths?: Record<string, string>,
+	notePathTemplate: string,
+	noteTemplateContent: string,
+	dataProtection: DataProtectionSettings,
 }

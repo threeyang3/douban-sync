@@ -3,23 +3,20 @@ import DoubanPlugin from "../../../main";
 import {SyncType} from "../../../constant/Constsant";
 import DoubanBookSubject from "../../data/model/DoubanBookSubject";
 import DoubanBookLoadHandler from "../../data/handler/DoubanBookLoadHandler";
-import DoubanBookWishListHandler from "./list/DoubanBookWishListHandler";
-import DoubanBookCollectListHandler from "./list/DoubanBookCollectListHandler";
-import DoubanBookDoListHandler from "./list/DoubanBookDoListHandler";
+import DoubanAbstractListHandler from "./list/DoubanAbstractListHandler";
+import {DoubanSubjectState} from "../../../constant/DoubanUserState";
 
-//TODO will support in future version
 export class DoubanBookSyncHandler extends DoubanAbstractSyncHandler<DoubanBookSubject> {
 
 	constructor(plugin:DoubanPlugin) {
 		super(plugin, new DoubanBookLoadHandler(plugin),[
-			new DoubanBookCollectListHandler(),
-			new DoubanBookWishListHandler(),
-			new DoubanBookDoListHandler()]);
+			DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.collect),
+			DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.wish),
+			DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.do)]);
 	}
 
     getSyncType(): SyncType {
 		return SyncType.book;
     }
-
 
 }

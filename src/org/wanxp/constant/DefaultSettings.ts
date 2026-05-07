@@ -1,5 +1,6 @@
 import {DoubanPluginSetting} from "../douban/setting/model/DoubanPluginSetting";
 import {PersonNameMode, PictureBedSetting_PicGo, PictureBedType, SupportType} from "./Constsant";
+import {DEFAULT_DATA_PROTECTION_SETTINGS} from "../douban/userdata/types";
 
 export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	pictureBedFlag: false,
@@ -24,6 +25,12 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	noteTemplateFile: ``,
 	gameTemplateFile: ``,
 	teleplayTemplateFile: ``,
+	movieTemplateConfig: { source: 'builtin' },
+	bookTemplateConfig: { source: 'builtin' },
+	musicTemplateConfig: { source: 'builtin' },
+	noteTemplateConfig: { source: 'builtin' },
+	gameTemplateConfig: { source: 'builtin' },
+	teleplayTemplateConfig: { source: 'builtin' },
 	searchUrl: 'https://www.douban.com/search?q=',
 	dateFormat: "yyyy-MM-DD",
 	timeFormat: "HH:mm:ss",
@@ -61,6 +68,20 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 		maxStar: 5,
 	},
 	searchDefaultType: SupportType.all,
+	templatePresetPaths: {},
+	notePathTemplate: '笔记/{{type}}/{{title}}.md',
+	noteTemplateContent: `---
+doubanId: {{id}}
+title: {{title}}
+---
+
+# {{title}}
+
+## 记录
+
+## 感想
+`,
+	dataProtection: DEFAULT_DATA_PROTECTION_SETTINGS,
 
 }
 

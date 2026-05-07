@@ -33,6 +33,11 @@ import GithubUtil from "./utils/GithubUtil";
 import {DoubanPluginOnlineData} from "./douban/setting/model/DoubanPluginOnlineData";
 import SearcherV2 from "./douban/data/search/SearchV2";
 import {SearchPage} from "./douban/data/model/SearchPage";
+import {DoubanNoteManager} from "./douban/note/DoubanNoteManager";
+import {UserDataExtractor} from "./douban/userdata/UserDataExtractor";
+import {UserDataMerger} from "./douban/userdata/UserDataMerger";
+import {UserDataExportModal, UserDataImportModal} from "./douban/userdata/UserDataModal";
+import {TFile} from "obsidian";
 
 export default class DoubanPlugin extends Plugin {
 	public settings: DoubanPluginSetting;
@@ -45,6 +50,7 @@ export default class DoubanPlugin extends Plugin {
 	public statusHolder: GlobalStatusHolder;
 	public onlineData: DoubanPluginOnlineData;
 	public settingTab: DoubanSettingTab;
+	public doubanNoteManager: DoubanNoteManager;
 
 
 	async putToObsidian(context: HandleContext, extract: DoubanSubject) {
@@ -116,13 +122,36 @@ export default class DoubanPlugin extends Plugin {
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
 				// 在force模式下，先检查是否存在该doubanId的旧文件
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
+				// 在替换前提取旧文件的用户数据（自定义属性+正文分区）
+				let localUserData = null;
+				if (existingFilePath) {
+					const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+					if (existingFile instanceof TFile) {
+						const extractor = new UserDataExtractor(this.app);
+						localUserData = await extractor.extractFromFileAsync(existingFile);
+					}
+				}
+				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
+				// 数据保护：将旧文件的自定义属性和正文分区合并到新文件
+				if (localUserData) {
+					const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+					if (newFile instanceof TFile) {
+						const merger = new UserDataMerger();
+						const currentContent = await this.app.vault.read(newFile);
+						const mergedContent = merger.mergeUserData(
+							currentContent, localUserData, this.settings.dataProtection,
+						);
+						if (mergedContent !== currentContent) {
+							await this.app.vault.process(newFile, () => mergedContent);
+						}
+					}
+				}
 				if (existingFilePath && existingFilePath !== fullFilePath) {
-					// 存在旧文件且路径不同，先删除旧文件
+					// 仅在新文件成功写入并完成继承后删除旧文件
 					await this.fileHandler.deleteFile(existingFilePath);
 					// 从缓存中移除旧记录
 					syncStatus.removeFromExistingCache(subject.id);
 				}
-				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
 				if (exists) {
 					syncStatus != null ? syncStatus.replace(subject.id, subject.title, fullFilePath):null;
 				}else {
@@ -289,24 +318,73 @@ export default class DoubanPlugin extends Plugin {
 					action: Action.SearchAndCrate}, SupportType.game),
 		});
 
+		this.addCommand({
+			id: "douban-create-or-append-note",
+			name: i18nHelper.getMessage("110107"),
+			callback: () => this.doubanNoteManager?.createOrAppendForCurrentFile(),
+		});
 
+		this.addCommand({
+			id: "douban-export-user-data",
+			name: i18nHelper.getMessage("110109"),
+			callback: () => new UserDataExportModal(this).open(),
+		});
 
+		this.addCommand({
+			id: "douban-import-user-data",
+			name: i18nHelper.getMessage("110110"),
+			callback: () => new UserDataImportModal(this).open(),
+		});
 
 		this.settingsManager = new SettingsManager(this.app, this);
-		// this.fetchOnlineData(this.settingsManager);
 		this.userComponent = new UserComponent(this.settingsManager);
 		this.netFileHandler = new NetFileHandler(this.fileHandler);
 		this.userComponent.assumeLoggedIn();
 
 		this.settingTab = new DoubanSettingTab(this.app, this);
 		this.addSettingTab(this.settingTab);
+
+		this.addRibbonIcon('book-open', i18nHelper.getMessage('110103'), () => {
+			this.showSyncModal({
+				plugin: this,
+				mode: SearchHandleMode.FOR_CREATE,
+				settings: this.settings,
+				userComponent: this.userComponent,
+				netFileHandler: this.netFileHandler,
+				action: Action.Sync,
+				syncStatusHolder: this.statusHolder,
+			});
+		});
+
 		this.statusHolder = new GlobalStatusHolder(this.app, this);
+		this.doubanNoteManager = new DoubanNoteManager(this.app, this);
 	}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.migrateTemplateSettings();
 		this.doubanExtractHandler = new DoubanSearchChooseItemHandler(this.app, this);
 		this.fileHandler = new FileHandler(this.app);
+	}
+
+	private migrateTemplateSettings() {
+		const templateKeys = [
+			{ configKey: 'movieTemplateConfig' as const, fileKey: 'movieTemplateFile' as const },
+			{ configKey: 'bookTemplateConfig' as const, fileKey: 'bookTemplateFile' as const },
+			{ configKey: 'musicTemplateConfig' as const, fileKey: 'musicTemplateFile' as const },
+			{ configKey: 'noteTemplateConfig' as const, fileKey: 'noteTemplateFile' as const },
+			{ configKey: 'gameTemplateConfig' as const, fileKey: 'gameTemplateFile' as const },
+			{ configKey: 'teleplayTemplateConfig' as const, fileKey: 'teleplayTemplateFile' as const },
+		];
+		for (const { configKey, fileKey } of templateKeys) {
+			if (this.settings[configKey]) continue;
+			const filePath = this.settings[fileKey];
+			if (filePath && typeof filePath === 'string' && filePath.trim()) {
+				this.settings[configKey] = { source: 'file', filePath: filePath.trim() };
+			} else {
+				this.settings[configKey] = { source: 'builtin' };
+			}
+		}
 	}
 
 	async saveSettings() {
@@ -389,6 +467,7 @@ export default class DoubanPlugin extends Plugin {
 		syncConfig.templateFile = syncConfig.templateFile ? syncConfig.templateFile : '';
 		syncConfig.attachmentPath = syncConfig.attachmentPath ? syncConfig.attachmentPath : DEFAULT_SETTINGS.attachmentPath;
 		syncConfig.dataFileNamePath = syncConfig.dataFileNamePath ? syncConfig.dataFileNamePath : DEFAULT_SETTINGS.dataFileNamePath;
+		syncConfig.inheritOldFields = !!syncConfig.inheritOldFields;
 	}
 
 }

@@ -32,10 +32,9 @@ import HttpUtil from "../../../utils/HttpUtil";
 import HtmlUtil from "../../../utils/HtmlUtil";
 import {VariableUtil} from "../../../utils/VariableUtil";
 import {DataField} from "../../../utils/model/DataField";
+import {TemplateConfig, DoubanPluginSetting} from "../../setting/model/DoubanPluginSetting";
 import NumberUtil from "../../../utils/NumberUtil";
 import {DoubanHttpUtil} from "../../../utils/DoubanHttpUtil";
-import {logger} from "bs-logger";
-
 export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject> implements DoubanSubjectLoadHandler<T> {
 
 
@@ -128,12 +127,12 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					guessType = this.getGuessType(data);
 				}
 				const sub = this.parseSubjectFromHtml(data, context);
+				sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
 				sub.userState = userState;
 				sub.guessType = guessType;
 				return sub;
 			})
 			.then(content => this.toEditor(context, content))
-			// .then(content => content ? editor.replaceSelection(content) : content)
 			.catch(e =>  {
 				log.error(i18nHelper.getMessage('130101',  e.toString()), e);
 				if (url) {
@@ -245,19 +244,6 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		return this.getPersonNameByMode(name, personNameMode);
 	}
 
-	// html_encode(str: string): string {
-	// 	let s = "";
-	// 	if (str.length == 0) return "";
-	// 	s = str.replace(/&/g, "&amp;");
-	// 	s = s.replace(/</g, "&lt;");
-	// 	s = s.replace(/>/g, "&gt;");
-	// 	s = s.replace(/ /g, "&nbsp;");
-	// 	s = s.replace(/\'/g, "&#39;");
-	// 	s = s.replace(/\"/g, "&quot;");
-	// 	s = s.replace(/\n/g, "<br/>");
-	// 	return s;
-	// }
-
 	html_decode(str: string): string {
 		let s = "";
 		if (str.length == 0) return "";
@@ -355,9 +341,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		}
 		let tags: string[] = [];
 		if (userState.tags && userState.tags.length > 0 ) {
-			tags = [extract.type, ...userState.tags.map(tag => tag.trim())];
-		}else {
-			tags = [extract.type];
+			tags = userState.tags.map(tag => tag.trim());
 		}
 		Object.entries(userState).forEach(([key, value]) => {
 			if (!value) {
@@ -365,9 +349,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			}
 			variableMap.set(key, new DataField(key, VariableUtil.getType(value), value, value));
 		});
-		if (userState.tags && userState.tags.length > 0 ) {
-			variableMap.set(DoubanUserParameterName.MY_TAGS, new DataField(DoubanUserParameterName.MY_TAGS, DataValueType.array, tags, tags));
-		}
+		variableMap.set(DoubanUserParameterName.MY_TAGS, new DataField(DoubanUserParameterName.MY_TAGS, DataValueType.array, tags, tags));
 		if (userState.comment) {
 			variableMap.set(DoubanUserParameterName.MY_COMMENT, new DataField(
 				DoubanUserParameterName.MY_COMMENT,
@@ -411,32 +393,16 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 
 
 
-	private getTemplateKey():TemplateKey {
-		let templateKey: TemplateKey;
+	private getTemplateKeys(): { templateKey: TemplateKey; configKey: keyof DoubanPluginSetting } {
 		switch (this.getSupportType()) {
-			case SupportType.movie:
-				templateKey = TemplateKey.movieTemplateFile;
-				break;
-			case SupportType.book:
-				templateKey = TemplateKey.bookTemplateFile;
-				break;
-			case SupportType.music:
-				templateKey = TemplateKey.musicTemplateFile;
-				break;
-			case SupportType.teleplay:
-				templateKey = TemplateKey.teleplayTemplateFile;
-				break;
-			case SupportType.game:
-				templateKey = TemplateKey.gameTemplateFile;
-				break;
-			case SupportType.note:
-				templateKey = TemplateKey.noteTemplateFile;
-				break;
-			default:
-				templateKey = null;
-
+			case SupportType.movie:  return { templateKey: TemplateKey.movieTemplateFile,     configKey: 'movieTemplateConfig' };
+			case SupportType.book:   return { templateKey: TemplateKey.bookTemplateFile,      configKey: 'bookTemplateConfig' };
+			case SupportType.music:  return { templateKey: TemplateKey.musicTemplateFile,     configKey: 'musicTemplateConfig' };
+			case SupportType.teleplay: return { templateKey: TemplateKey.teleplayTemplateFile, configKey: 'teleplayTemplateConfig' };
+			case SupportType.game:   return { templateKey: TemplateKey.gameTemplateFile,      configKey: 'gameTemplateConfig' };
+			case SupportType.note:   return { templateKey: TemplateKey.noteTemplateFile,      configKey: 'noteTemplateConfig' };
+			default: return { templateKey: null, configKey: null };
 		}
-		return templateKey;
 	}
 
 	private async getTemplate(extract: T, context: HandleContext): Promise<string> {
@@ -449,34 +415,37 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				}
 			}
 		}
-		const tempKey: TemplateKey = this.getTemplateKey();
-		const templatePath: string = context.settings[tempKey];
-		let useUserState:boolean = context.userComponent.isLogin() &&
-			extract.userState &&
-			extract.userState.collectionDate != null  &&
-			extract.userState.collectionDate != undefined;
+		const { templateKey: tempKey, configKey } = this.getTemplateKeys();
+		const config: TemplateConfig = context.settings[configKey] as TemplateConfig;
+		const useUserState = context.userComponent.isLogin() &&
+			!!extract.userState &&
+			extract.userState.collectionDate != null;
 
-		useUserState = useUserState ? useUserState : false;
-
-		// @ts-ignore
-		if (!templatePath || StringUtil.isBlank(templatePath)) {
+		if (!config || config.source === 'builtin') {
 			return getDefaultTemplateContent(tempKey, useUserState);
 		}
-		const defaultContent = getDefaultTemplateContent(tempKey, useUserState);
-		const firstLinkpathDest: TFile = this.doubanPlugin.app.metadataCache.getFirstLinkpathDest(templatePath, '');
-		if (!firstLinkpathDest) {
-			return defaultContent;
-		} else {
-			const val = await this.doubanPlugin.fileHandler.getFileContent(firstLinkpathDest.path);
-			return val ? val : defaultContent;
+
+		if (config.source === 'file' && config.filePath) {
+			const firstLinkpathDest: TFile = this.doubanPlugin.app.metadataCache.getFirstLinkpathDest(config.filePath, '');
+			if (firstLinkpathDest) {
+				const val = await this.doubanPlugin.fileHandler.getFileContent(firstLinkpathDest.path);
+				if (val) return val;
+			}
+			return getDefaultTemplateContent(tempKey, useUserState);
 		}
+
+		if (config.source === 'custom' && config.customContent) {
+			return config.customContent;
+		}
+
+		return getDefaultTemplateContent(tempKey, useUserState);
 	}
 
 	analysisUserState(html: CheerioAPI, context: HandleContext): {data:CheerioAPI ,  userState: UserStateSubject} {
 		if (!context.userComponent.isLogin()) {
 			return {data: html, userState: null};
 		}
-		if(!html('.nav-user-account')) {
+		if(html('.nav-user-account').length === 0) {
 			return {data: html, userState: null};
 		}
 		return this. analysisUser(html, context);
@@ -559,6 +528,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				const resultValue = await this.handleImage(highImage, folder, fileName, context, false, highImageHeaders);
 				if (resultValue && resultValue.success) {
 					extract.image = resultValue.filepath;
+					extract.imageUrl = highImage;
 					this.initImageVariableMap(extract, context, variableMap);
 					return;
 				}
@@ -618,6 +588,22 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 	abstract getHighQuantityImageUrl(fileName:string):string;
 
 	abstract getSubjectUrl(id:string):string;
+
+	/**
+	 * 规范化豆瓣封面图片 URL：统一使用 img9 子域和 getHighQuantityImageUrl 的路径格式
+	 * 解决豆瓣 CDN 随机子域（img1~img8）导致的封面链接不可访问问题
+	 */
+	normalizeImageUrl(imageUrl: string): string {
+		if (!imageUrl) {
+			return imageUrl;
+		}
+		const fileName = this.getImageFilename(imageUrl);
+		if (!fileName) {
+			return imageUrl;
+		}
+		const normalized = this.getHighQuantityImageUrl(fileName);
+		return normalized || imageUrl;
+	}
 
 	handlePersonNameByMeta(html: CheerioAPI, movie: DoubanSubject, context: HandleContext,
 								   metaProperty:string, objectProperty:string) {

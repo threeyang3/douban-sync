@@ -1,76 +1,192 @@
 import {i18nHelper} from "../../lang/helper";
-import {CreateTemplateSelectParams} from "./model/CreateTemplateSelectParams";
-import { FileSuggest } from "./model/FileSuggest";
-import {SearchComponent, Setting} from "obsidian";
-import { log } from "src/org/wanxp/utils/Logutil";
-import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
-import {FolderSuggest} from "./model/FolderSuggest";
+import {ButtonComponent, SearchComponent, Setting, TFile} from "obsidian";
 import SettingsManager from "./SettingsManager";
-import {showFileExample} from "./OutputSettingsHelper";
 import {FileTreeSelectSuggest} from "./model/FileTreeSelectSuggest";
-import DoubanPlugin from "../../main";
 import {FolderTreeSelectSuggest} from "./model/FolderTreeSelectSuggest";
+import {CreateTemplateSelectParams} from "./model/CreateTemplateSelectParams";
+import {showFileExample} from "./OutputSettingsHelper";
+import {TemplateKey} from "../../constant/Constsant";
+import {Notice, normalizePath} from "obsidian";
+import {TemplateConfig, TemplateSource, DoubanPluginSetting} from "./model/DoubanPluginSetting";
+import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
+import {TemplateEditorModal} from "../component/TemplateEditorModal";
 
+const TEMPLATE_TYPES: Array<{nameKey: string, configKey: keyof DoubanPluginSetting, templateKey: TemplateKey}> = [
+	{nameKey: '120101', configKey: 'movieTemplateConfig', templateKey: TemplateKey.movieTemplateFile},
+	{nameKey: '120201', configKey: 'bookTemplateConfig', templateKey: TemplateKey.bookTemplateFile},
+	{nameKey: '120301', configKey: 'musicTemplateConfig', templateKey: TemplateKey.musicTemplateFile},
+	{nameKey: '120401', configKey: 'noteTemplateConfig', templateKey: TemplateKey.noteTemplateFile},
+	{nameKey: '121301', configKey: 'gameTemplateConfig', templateKey: TemplateKey.gameTemplateFile},
+	{nameKey: '121801', configKey: 'teleplayTemplateConfig', templateKey: TemplateKey.teleplayTemplateFile},
+];
 
 export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsManager) {
-	// containerEl.createEl('h3', { text: i18nHelper.getMessage('1203') });
 	containerEl.createEl('p', { text: i18nHelper.getMessage('1204') });
 	new Setting(containerEl).setDesc(i18nHelper.getMessage('1205'))
 
-	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '120101', desc: '120102', placeholder: '121701', key: 'movieTemplateFile', manager: manager}));
-	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '120201', desc: '120202', placeholder: '121701', key: 'bookTemplateFile', manager: manager}));
-	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '120301', desc: '120302', placeholder: '121701', key: 'musicTemplateFile', manager: manager}));
-	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '120401', desc: '120402', placeholder: '121701', key: 'noteTemplateFile', manager: manager}));
-	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '121301', desc: '121302', placeholder: '121701', key: 'gameTemplateFile', manager: manager}));
-	new Setting(containerEl).then(createFileSelectionSetting({containerEl: containerEl, name: '121801', desc: '121802', placeholder: '121701', key: 'teleplayTemplateFile', manager: manager}));
+	for (const {nameKey, configKey, templateKey} of TEMPLATE_TYPES) {
+		createTemplateSourceSetting(containerEl, manager, nameKey, configKey, templateKey);
+	}
+
+	containerEl.createEl('h3', { text: i18nHelper.getMessage('121920') });
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('121920'))
+		.setDesc(i18nHelper.getMessage('121921'))
+		.addText((text) => {
+			text
+				.setPlaceholder('笔记/{{type}}/{{title}}.md')
+				.setValue(manager.getSettingStr('notePathTemplate'))
+				.onChange(async (value) => {
+					await manager.updateSetting('notePathTemplate', value);
+				});
+			text.inputEl.style.width = '100%';
+		});
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('121922'))
+		.setDesc(i18nHelper.getMessage('121923'))
+		.addTextArea((text) => {
+			text
+				.setPlaceholder('---\ndoubanId: {{id}}\ntitle: {{title}}\n---\n\n# {{title}}\n\n## 记录\n\n## 感想')
+				.setValue(manager.getSettingStr('noteTemplateContent'))
+				.onChange(async (value) => {
+					await manager.updateSetting('noteTemplateContent', value);
+				});
+			text.inputEl.style.width = '100%';
+			text.inputEl.style.minHeight = '150px';
+		});
 }
 
-export function createFileSelectionSetting({containerEl, name, desc, placeholder, key, manager
-										  }: CreateTemplateSelectParams) {
-	return (setting: Setting) => {
-		setting.controlEl.addClass('obsidian_douban_template_file_select');
-		// @ts-ignore
-		setting.setName(i18nHelper.getMessage(name));
-		// settingDesc.setDesc(i18nHelper.getMessage(desc));
-		setting.addSearch(async (search: SearchComponent) => {
-			const [oldValue, defaultVal] = manager.getSettingWithDefault(key);
-			let v = defaultVal;
-			if (oldValue) {
-				v = oldValue;
-			}
-			const fileTreeSelectSuggest = new FileTreeSelectSuggest(manager.app, search.inputEl, manager, key);
-			// @ts-ignore
-			search.setValue(v);
-			// @ts-ignore
-			search.setPlaceholder(i18nHelper.getMessage(placeholder));
-			search.inputEl.addClass('obsidian_douban_template_file_select_input');
-			search.inputEl.style.width = '100%';
-			search.onChange(async (value: string) => {
-					manager.updateSetting(key, value);
-				});
-
-		});
-
-		setting.addExtraButton((button) => {
-			button
-				.setIcon('copy')
-				.setTooltip(i18nHelper.getMessage('121903'))
-				.onClick(async () => {
-					// @ts-ignore
-					navigator.clipboard.writeText(getDefaultTemplateContent(key))
-				});
-		});
-		setting.addExtraButton((button) => {
-			button
-				.setIcon('document')
-				.setTooltip(i18nHelper.getMessage('121901'))
-				.onClick(async () => {
-					// @ts-ignore
-					navigator.clipboard.writeText(getDefaultTemplateContent(key, false))
-				});
-		});
-
+function createTemplateSourceSetting(
+	containerEl: HTMLElement,
+	manager: SettingsManager,
+	nameKey: string,
+	configKey: keyof DoubanPluginSetting,
+	templateKey: TemplateKey
+) {
+	const getConfig = (): TemplateConfig => {
+		return (manager.getSetting(configKey) as TemplateConfig) || { source: 'builtin' };
 	};
+
+	const setting = new Setting(containerEl);
+	setting.setName(i18nHelper.getMessage(nameKey));
+	setting.controlEl.addClass('obsidian_douban_template_file_select');
+
+	// Source dropdown
+	setting.addDropdown(dropdown => {
+		dropdown
+			.addOption('builtin', i18nHelper.getMessage('121940'))
+			.addOption('file', i18nHelper.getMessage('121941'))
+			.addOption('custom', i18nHelper.getMessage('121942'))
+			.setValue(getConfig().source)
+			.onChange(async (value: string) => {
+				const config = getConfig();
+				config.source = value as TemplateSource;
+				await manager.updateSetting(configKey, config);
+				refreshActionArea();
+			});
+		dropdown.selectEl.style.minWidth = '120px';
+	});
+
+	// Action area (container for context-dependent controls)
+	const actionContainer = setting.controlEl.createDiv();
+	actionContainer.style.display = 'inline-flex';
+	actionContainer.style.alignItems = 'center';
+	actionContainer.style.gap = '4px';
+
+	const refreshActionArea = () => {
+		actionContainer.empty();
+		const config = getConfig();
+		switch (config.source) {
+			case 'builtin': {
+				// Preview button
+				new ButtonComponent(actionContainer)
+					.setIcon('eye')
+					.setTooltip(i18nHelper.getMessage('121930'))
+					.onClick(() => {
+						const content = getDefaultBuiltinContent(templateKey);
+						new TemplateEditorModal(manager.app, templateKey, content, true).open();
+					});
+				break;
+			}
+			case 'file': {
+				// File path input with autocomplete
+				const fileInput = actionContainer.createEl('input', {type: 'text'});
+				fileInput.value = config.filePath || '';
+				fileInput.placeholder = i18nHelper.getMessage('121701');
+				fileInput.style.width = '200px';
+				fileInput.style.fontSize = '12px';
+				new FileTreeSelectSuggest(manager.app, fileInput, manager, configKey);
+				fileInput.addEventListener('change', async () => {
+					const cfg = getConfig();
+					cfg.filePath = fileInput.value;
+					await manager.updateSetting(configKey, cfg);
+				});
+				break;
+			}
+			case 'custom': {
+				// Edit button
+				new ButtonComponent(actionContainer)
+					.setIcon('pencil')
+					.setTooltip(i18nHelper.getMessage('121931'))
+					.onClick(() => {
+						const cfg = getConfig();
+						new TemplateEditorModal(
+							manager.app,
+							templateKey,
+							cfg.customContent || getDefaultBuiltinContent(templateKey),
+							false,
+							async (newContent) => {
+								cfg.customContent = newContent;
+								await manager.updateSetting(configKey, cfg);
+							}
+						).open();
+					});
+				break;
+			}
+		}
+	};
+
+	// Copy button (always present)
+	setting.addExtraButton(button => {
+		button
+			.setIcon('copy')
+			.setTooltip(i18nHelper.getMessage('121903'))
+			.onClick(async () => {
+				const content = await resolveTemplateContent(manager, templateKey, configKey);
+				navigator.clipboard.writeText(content);
+				new Notice(i18nHelper.getMessage('121907'));
+			});
+	});
+
+	refreshActionArea();
+}
+
+export async function resolveTemplateContent(
+	manager: SettingsManager,
+	templateKey: TemplateKey,
+	configKey: keyof DoubanPluginSetting
+): Promise<string> {
+	const config = (manager.getSetting(configKey) as TemplateConfig) || { source: 'builtin' };
+	switch (config.source) {
+		case 'builtin':
+			return getDefaultBuiltinContent(templateKey);
+		case 'file':
+			if (config.filePath) {
+				const file = manager.app.metadataCache.getFirstLinkpathDest(config.filePath, '');
+				if (file) {
+					const content = await manager.app.vault.read(file);
+					if (content) return content;
+				}
+			}
+			return getDefaultBuiltinContent(templateKey);
+		case 'custom':
+			return config.customContent || getDefaultBuiltinContent(templateKey);
+	}
+}
+
+function getDefaultBuiltinContent(templateKey: TemplateKey): string {
+	return getDefaultTemplateContent(templateKey, true);
 }
 
 export function createFolderSelectionSetting({
@@ -84,11 +200,9 @@ export function createFolderSelectionSetting({
 	};
 }
 
-
-
 export function createFolderSelectionSettingInput({
-																							 name, desc, placeholder, key, manager,
-																						 }: CreateTemplateSelectParams, filePathDisplayExample?:HTMLDivElement) {
+																					 name, desc, placeholder, key, manager,
+																				 }: CreateTemplateSelectParams, filePathDisplayExample?:HTMLDivElement) {
 	return (setting: Setting) => {
 		setting.controlEl.addClass('obsidian_douban_template_file_select');
 		setting.addSearch(async (search: SearchComponent) => {
@@ -113,4 +227,3 @@ export function createFolderSelectionSettingInput({
 		});
 	};
 }
-

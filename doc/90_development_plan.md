@@ -5,7 +5,7 @@ nav_order: 900
 
 # 开发计划
 
-当前分支为 `adv`，下一阶段围绕配置迁移、模板易用性和同步替换安全性展开。
+当前分支为 `adv`。`1.2.0` 已完成，以下条目保留为已交付记录。
 
 ## 1. 自定义属性导出、导入
 
@@ -28,6 +28,8 @@ nav_order: 900
 - 错误 JSON 不会污染现有设置。
 - 中英文 UI 文案完整。
 
+状态：已完成（2026-05-05）
+
 ## 2. 内置模板
 
 目标：减少新用户手动复制默认模板、创建模板文件、再选择路径的步骤。
@@ -49,6 +51,8 @@ nav_order: 900
 - 用户可以一键生成模板文件。
 - 不会静默覆盖已有模板。
 - 生成模板的 frontmatter 可被现有同步和导入流程正常解析。
+
+状态：已完成（2026-05-05）
 
 ## 3. 替换同步条目时继承原笔记数据
 
@@ -75,9 +79,70 @@ nav_order: 900
 - 同步失败不会删除或污染旧文件。
 - 覆盖 `force=false`、`force=true + inherit=false`、`force=true + inherit=true` 三类场景。
 
-## 建议提交顺序
+状态：已完成（2026-05-05）
 
-1. `feat: add custom property import and export`
-2. `feat: add built-in template presets`
-3. `feat: inherit existing note metadata during forced sync`
-4. `docs: document configuration import and sync inheritance`
+## 4. 用户数据导出/导入/继承
+
+目标：让用户可以备份、迁移和复用自定义数据（自定义属性 + 正文分区），并在强制同步时自动保护这些数据。
+
+涉及模块：
+- `src/org/wanxp/douban/userdata/types.ts` — 类型定义、DOUBAN_FIELDS 排除集
+- `src/org/wanxp/douban/userdata/UserDataExtractor.ts` — 从本地文件提取用户数据
+- `src/org/wanxp/douban/userdata/UserDataExporter.ts` — 按条目类型分组导出 JSON
+- `src/org/wanxp/douban/userdata/UserDataImporter.ts` — 从 JSON 导入，支持三种合并策略
+- `src/org/wanxp/douban/userdata/UserDataMerger.ts` — frontmatter 字段和正文分区合并
+- `src/org/wanxp/douban/userdata/UserDataModal.ts` — 导出/导入/缺失字段/结果 UI
+- `src/org/wanxp/utils/VaultUtil.ts` — 共享 Vault 扫描工具
+- `src/org/wanxp/main.ts` — 命令注册 + 强制同步数据保护集成
+
+计划：
+- 导出：扫描文件夹中含 doubanId 的 .md 文件，提取非标准 frontmatter 字段和正文分区，按类型输出 JSON
+- 导入：按 doubanId 匹配本地文件，支持智能/本地优先/导入优先三种合并策略
+- 缺失字段：导入数据中存在但本地 frontmatter 中没有的字段，逐条询问用户是否添加
+- 数据保护：强制同步替换文件时，自动提取旧文件的用户数据并合并到新文件
+- 共享 VaultUtil：多个模块复用同一个 `scanVaultForDoubanIds()` 避免重复扫描
+
+验收：
+- 导出的 JSON 可以完整恢复用户的自定义数据
+- 三种合并策略行为正确
+- 强制同步后用户的自定义属性、记录、感想分区不丢失
+- 数据保护开关可独立控制
+- 中英文 UI 文案完整
+
+状态：已完成（2026-05-05）
+
+## 5. 模板设置重构 + Bug 修复
+
+目标：简化模板设置 UI，修复 tags 混入类型问题，为内置模板添加封面链接属性。
+
+涉及模块：
+- `src/org/wanxp/douban/setting/TemplateSettingHelper.ts` — 模板设置 UI 重写
+- `src/org/wanxp/douban/setting/model/DoubanPluginSetting.ts` — TemplateConfig 数据模型
+- `src/org/wanxp/douban/component/TemplateEditorModal.ts` — 模板编辑/预览模态框
+- `src/org/wanxp/douban/data/handler/DoubanAbstractLoadHandler.ts` — tags 修复 + getTemplate 适配
+- `src/org/wanxp/constant/DefaultTemplateContent.ts` — 模板添加封面链接、删除冗余 tags
+- `src/org/wanxp/douban/setting/TemplatePresetUtil.ts` — compact 模板同步更新
+- `src/org/wanxp/main.ts` — 设置迁移逻辑
+
+计划：
+- tags 修复：`parseUserInfo` 不再将 `extract.type` 注入 `myTags`
+- 模板封面链接：所有内置模板 frontmatter 添加 `image: {{imageData.url}}`
+- 模板设置 UI：每类模板一行 dropdown（内置/文件/自定义）+ 上下文按钮 + 复制按钮
+- 模板编辑器：支持预览（只读）和编辑（自定义内容）两种模式
+- 设置迁移：旧 `xxxTemplateFile` 自动迁移到 `TemplateConfig`
+
+验收：
+- tags 不再包含 "book"/"movie" 等类型标签
+- 内置模板 frontmatter 含 `image: {{imageData.url}}`
+- 模板设置 UI 简洁，每行只有 dropdown + 上下文按钮 + 复制按钮
+- 旧用户设置自动迁移，无需手动操作
+- 构建无报错
+
+状态：已完成（2026-05-06）
+
+## 后续建议
+
+1. 为 `1.2.0` / `1.4.0` / `1.5.0` 新功能补充文档截图
+2. 为自定义属性导入导出补测试
+3. 为用户数据导出/导入补单元测试
+4. 为同步继承补更多 frontmatter 边界测试
