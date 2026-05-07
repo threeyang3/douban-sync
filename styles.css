@@ -223,7 +223,7 @@
 .markdown-rendered .callout[data-callout="douban-info"] table {
 	width: 100%;
 	border-collapse: collapse;
-	table-layout: fixed;
+	table-layout: auto;
 }
 
 .callout[data-callout="douban-info"] td,
@@ -232,4 +232,12 @@
 .markdown-rendered .callout[data-callout="douban-info"] th {
 	vertical-align: middle;
 	text-align: center;
+}
+
+.callout[data-callout="douban-info"] td:first-child,
+.callout[data-callout="douban-info"] th:first-child,
+.markdown-rendered .callout[data-callout="douban-info"] td:first-child,
+.markdown-rendered .callout[data-callout="douban-info"] th:first-child {
+	width: 1%;
+	white-space: nowrap;
 }
