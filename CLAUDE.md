@@ -6,7 +6,7 @@ Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记�
 
 - 当前主仓库：`https://github.com/threeyang3/douban-sync`
 - 当前开发分支：`adv`
-- 当前版本基线：`1.5.1`
+- 当前版本基线：`1.9.1`
 - `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
 - 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
 
@@ -65,6 +65,9 @@ npm run docs:build     # 文档站构建
 - 用户数据导出/导入系统在 `douban/userdata/`，核心类型在 `types.ts`，提取器在 `UserDataExtractor.ts`，合并器在 `UserDataMerger.ts`（无参构造）
 - Vault 扫描工具在 `VaultUtil.ts`，`scanVaultForDoubanIds()` 构建 `Map<doubanId, DoubanFileEntry>` 缓存供多个模块复用
 - 强制同步数据保护在 `main.ts#createFile()` 中集成，通过 `UserDataExtractor` + `UserDataMerger` 保留用户自定义属性和正文分区
+- `douban-info` callout 响应式布局使用 `flex-wrap: wrap`（非 `@media` 查询），原因：Obsidian 内容区有 `max-width`，视口断点不可靠
+- 内置模板的 frontmatter 和表格栏目以 `douban/` 文件夹下各类型模板为设计参照
+- create-note 功能（`DoubanNoteManager`）只设置 frontmatter `笔记` 属性，不修改表格
 
 ## 下一阶段开发计划
 
