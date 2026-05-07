@@ -102,10 +102,22 @@ export class VariableUtil {
 		if (!value) {
 			return content.replaceAll(variableStr, "");
 		}
-		const arraySettings = this.getArraySetting(outTypeName, settingManager);
+		let arraySettings = this.getArraySetting(outTypeName, settingManager);
 		if (!arraySettings) {
 			log.warn(i18nHelper.getMessage(`130107`, variable.variable, outTypeName));
 			return content;
+		}
+
+		// 正文上下文（表格单元格内）使用内联格式，避免换行破坏 Markdown 表格
+		if (targetType === 'text') {
+			arraySettings = {
+				...arraySettings,
+				arrayElementStart: '',
+				arrayElementEnd: '',
+				arraySpiltV2: '、',
+				arrayStart: '',
+				arrayEnd: '',
+			};
 		}
 
 		const strValues:string[] = value.map((v) => {

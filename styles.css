@@ -213,18 +213,13 @@
 	table-layout: fixed;
 }
 
-/* 宽屏布局：封面在左，表格在右 */
+/* 宽屏布局：封面在左，表格在右，表格纵向居中 */
 @media (min-width: 1000px) {
 	.callout[data-callout="douban-info"] .callout-content,
 	.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
 		flex-direction: row;
-		align-items: stretch;
+		align-items: center;
 		gap: 16px;
-	}
-
-	.callout[data-callout="douban-info"] .callout-content > *,
-	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > * {
-		min-height: 0;
 	}
 
 	.callout[data-callout="douban-info"] .callout-content > :first-child,
@@ -245,14 +240,14 @@
 		flex-shrink: 0;
 		text-align: left;
 		display: flex;
-		align-items: stretch;
+		align-items: center;
 	}
 
 	.callout[data-callout="douban-info"] img,
 	.markdown-rendered .callout[data-callout="douban-info"] img {
 		flex-shrink: 0;
 		width: 400px;
-		height: 100%;
+		max-height: 600px;
 		object-fit: cover;
 	}
 
@@ -260,6 +255,19 @@
 	.markdown-rendered .callout[data-callout="douban-info"] table {
 		flex: 1;
 		min-width: 0;
+	}
+
+	/* 行数过多时压缩行高，行数少时保持自然高度 */
+	.callout[data-callout="douban-info"] table tr,
+	.markdown-rendered .callout[data-callout="douban-info"] table tr {
+		height: auto;
+	}
+	.callout[data-callout="douban-info"] table td,
+	.callout[data-callout="douban-info"] table th,
+	.markdown-rendered .callout[data-callout="douban-info"] table td,
+	.markdown-rendered .callout[data-callout="douban-info"] table th {
+		padding: 4px 8px;
+		line-height: 1.4;
 	}
 }
 
