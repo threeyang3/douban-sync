@@ -187,7 +187,7 @@
 .markdown-rendered .callout[data-callout="douban-info"] .callout-content {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
+	align-items: stretch;
 	justify-content: center;
 	gap: 16px;
 }
@@ -196,6 +196,7 @@
 .markdown-rendered .callout[data-callout="douban-info"] .callout-content > :first-child {
 	flex: 1 1 300px;
 	max-width: 400px;
+	align-self: center;
 }
 
 .callout[data-callout="douban-info"] .callout-content > :last-child,
@@ -221,6 +222,7 @@
 .callout[data-callout="douban-info"] table,
 .markdown-rendered .callout[data-callout="douban-info"] table {
 	width: 100%;
+	height: 100%;
 	border-collapse: collapse;
 	table-layout: fixed;
 }
