@@ -191,12 +191,6 @@
 	gap: 16px;
 }
 
-.callout[data-callout="douban-info"] .callout-content > *,
-.markdown-rendered .callout[data-callout="douban-info"] .callout-content > * {
-	width: 100%;
-	min-width: 0;
-}
-
 .callout[data-callout="douban-info"] .callout-content > p,
 .markdown-rendered .callout[data-callout="douban-info"] .callout-content > p {
 	margin: 0;
@@ -205,8 +199,7 @@
 
 .callout[data-callout="douban-info"] img,
 .markdown-rendered .callout[data-callout="douban-info"] img {
-	width: 400px;
-	max-width: 100%;
+	width: 100%;
 	height: auto;
 	object-fit: cover;
 	border-radius: 4px;
@@ -219,25 +212,27 @@
 	table-layout: fixed;
 }
 
-/* 宽屏布局：封面在左，表格在右，高度一致 */
-@media (min-width: 1000px) {
+.callout[data-callout="douban-info"] td,
+.callout[data-callout="douban-info"] th,
+.markdown-rendered .callout[data-callout="douban-info"] td,
+.markdown-rendered .callout[data-callout="douban-info"] th {
+	vertical-align: middle;
+	text-align: center;
+}
+
+/* 宽屏布局：封面在左，表格在右，各自自然高度，矮的居中 */
+@media (min-width: 600px) {
 	.callout[data-callout="douban-info"] .callout-content,
 	.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
 		flex-direction: row;
-		align-items: stretch;
+		align-items: center;
 		gap: 16px;
-	}
-
-	.callout[data-callout="douban-info"] .callout-content > *,
-	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > * {
-		min-height: 0;
 	}
 
 	.callout[data-callout="douban-info"] .callout-content > :first-child,
 	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :first-child {
 		flex: 0 0 400px;
 		width: 400px;
-		max-width: 100%;
 	}
 
 	.callout[data-callout="douban-info"] .callout-content > :last-child,
@@ -248,15 +243,12 @@
 
 	.callout[data-callout="douban-info"] .callout-content > p,
 	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > p {
+		margin: 0;
 		flex-shrink: 0;
-		text-align: left;
-		display: flex;
-		align-items: stretch;
 	}
 
 	.callout[data-callout="douban-info"] img,
 	.markdown-rendered .callout[data-callout="douban-info"] img {
-		flex-shrink: 0;
 		width: 400px;
 		height: auto;
 		object-fit: cover;
