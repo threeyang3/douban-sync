@@ -186,9 +186,22 @@
 .callout[data-callout="douban-info"] .callout-content,
 .markdown-rendered .callout[data-callout="douban-info"] .callout-content {
 	display: flex;
-	flex-direction: column;
+	flex-wrap: wrap;
 	align-items: center;
+	justify-content: center;
 	gap: 16px;
+}
+
+.callout[data-callout="douban-info"] .callout-content > :first-child,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :first-child {
+	flex: 1 1 300px;
+	max-width: 400px;
+}
+
+.callout[data-callout="douban-info"] .callout-content > :last-child,
+.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :last-child {
+	flex: 1 1 300px;
+	min-width: 0;
 }
 
 .callout[data-callout="douban-info"] .callout-content > p,
@@ -218,45 +231,4 @@
 .markdown-rendered .callout[data-callout="douban-info"] th {
 	vertical-align: middle;
 	text-align: center;
-}
-
-/* 宽屏布局：封面在左，表格在右，各自自然高度，矮的居中 */
-@media (min-width: 800px) {
-	.callout[data-callout="douban-info"] .callout-content,
-	.markdown-rendered .callout[data-callout="douban-info"] .callout-content {
-		flex-direction: row;
-		align-items: center;
-		gap: 16px;
-	}
-
-	.callout[data-callout="douban-info"] .callout-content > :first-child,
-	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :first-child {
-		flex: 0 0 400px;
-		width: 400px;
-	}
-
-	.callout[data-callout="douban-info"] .callout-content > :last-child,
-	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > :last-child {
-		flex: 1 1 0;
-		min-width: 0;
-	}
-
-	.callout[data-callout="douban-info"] .callout-content > p,
-	.markdown-rendered .callout[data-callout="douban-info"] .callout-content > p {
-		margin: 0;
-		flex-shrink: 0;
-	}
-
-	.callout[data-callout="douban-info"] img,
-	.markdown-rendered .callout[data-callout="douban-info"] img {
-		width: 400px;
-		height: auto;
-		object-fit: cover;
-	}
-
-	.callout[data-callout="douban-info"] table,
-	.markdown-rendered .callout[data-callout="douban-info"] table {
-		flex: 1;
-		min-width: 0;
-	}
 }
