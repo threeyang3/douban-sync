@@ -258,7 +258,7 @@
 	.markdown-rendered .callout[data-callout="douban-info"] img {
 		flex-shrink: 0;
 		width: 400px;
-		height: 100%;
+		height: auto;
 		object-fit: cover;
 	}
 
