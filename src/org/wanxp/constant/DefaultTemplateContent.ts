@@ -17,8 +17,7 @@ function syncify(basic: string, syncTable: string, basicTable: string): string {
 
 // ==================== Movie ====================
 
-const movieTable = `> | 评分 | {{scoreStar}} |
-> | 类型 | \`= this.genre\` |
+const movieTable = `> | 类型 | \`= this.genre\` |
 > | 导演 | \`= this.director\` |
 > | 主演 | \`= this.actor\` |
 > | 地区 | \`= this.country\` |
@@ -30,7 +29,6 @@ const movieTable = `> | 评分 | {{scoreStar}} |
 const movieSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
-> | 豆瓣评分 | {{scoreStar}} |
 > | 类型 | \`= this.genre\` |
 > | 导演 | \`= this.director\` |
 > | 主演 | \`= this.actor\` |
@@ -82,7 +80,6 @@ ${movieTable}
 
 const bookTable = `> | 作者 | \`= this.author\` |{{#if translator}}
 > | 译者 | \`= this.translator\` |{{/if}}
-> | 评分 | {{scoreStar}} |
 > | 出版社 | \`= this.publisher\` |
 > | 出版日期 | \`= this.datePublished\` |{{#if totalPage}}
 > | 页数 | \`= this.totalPage\` |{{/if}}
@@ -94,7 +91,7 @@ const bookTable = `> | 作者 | \`= this.author\` |{{#if translator}}
 const bookSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
-> | 豆瓣评分 | {{scoreStar}} |
+
 > | 作者 | \`= this.author\` |{{#if translator}}
 > | 译者 | \`= this.translator\` |{{/if}}
 > | 出版社 | \`= this.publisher\` |
@@ -149,7 +146,6 @@ ${bookTable}
 // ==================== Music ====================
 
 const musicTable = `> | 表演者 | \`= this.actor\` |
-> | 评分 | {{scoreStar}} |
 > | 流派 | \`= this.genre\` |{{#if albumType}}
 > | 专辑类型 | \`= this.albumType\` |{{/if}}{{#if medium}}
 > | 介质 | \`= this.medium\` |{{/if}}
@@ -161,7 +157,7 @@ const musicTable = `> | 表演者 | \`= this.actor\` |
 const musicSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
-> | 豆瓣评分 | {{scoreStar}} |
+
 > | 表演者 | \`= this.actor\` |
 > | 流派 | \`= this.genre\` |{{#if albumType}}
 > | 专辑类型 | \`= this.albumType\` |{{/if}}{{#if medium}}
@@ -243,8 +239,7 @@ createTime: {{currentDate}} {{currentTime}}
 
 // ==================== Game ====================
 
-const gameTable = `> | 评分 | {{scoreStar}} |
-> | 类型 | \`= this.genre\` |{{#if platform}}
+const gameTable = `> | 类型 | \`= this.genre\` |{{#if platform}}
 > | 平台 | \`= this.platform\` |{{/if}}{{#if developer}}
 > | 开发商 | \`= this.developer\` |{{/if}}
 > | 发行商 | \`= this.publisher\` |
@@ -253,7 +248,6 @@ const gameTable = `> | 评分 | {{scoreStar}} |
 const gameSyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
-> | 豆瓣评分 | {{scoreStar}} |
 > | 类型 | \`= this.genre\` |{{#if platform}}
 > | 平台 | \`= this.platform\` |{{/if}}{{#if developer}}
 > | 开发商 | \`= this.developer\` |{{/if}}
@@ -295,8 +289,7 @@ ${gameTable}
 
 // ==================== Teleplay ====================
 
-const teleplayTable = `> | 评分 | {{scoreStar}} |
-> | 类型 | \`= this.genre\` |
+const teleplayTable = `> | 类型 | \`= this.genre\` |
 > | 导演 | \`= this.director\` |
 > | 主演 | \`= this.actor\` |{{#if episode}}
 > | 集数 | \`= this.episode\` |{{/if}}
@@ -309,7 +302,6 @@ const teleplayTable = `> | 评分 | {{scoreStar}} |
 const teleplaySyncTable = `> | 状态 | \`= this.state\` |
 > | 标签 | \`= this.tags\` |
 > | 评分 | \`= this.myRatingStar\` |
-> | 豆瓣评分 | {{scoreStar}} |
 > | 类型 | \`= this.genre\` |
 > | 导演 | \`= this.director\` |
 > | 主演 | \`= this.actor\` |{{#if episode}}

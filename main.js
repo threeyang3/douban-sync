@@ -18955,8 +18955,7 @@ state: {{myState}}
 collectionDate: {{myCollectionDate}}
 createTime:`).replace(basicTable, syncTable).replace("> [!abstract]- **\u7B80\u4ECB**", "> [!abstract]+ **\u77ED\u8BC4**\n> {{myComment}}\n\n> [!abstract]- **\u7B80\u4ECB**");
 }
-var movieTable = `> | \u8BC4\u5206 | {{scoreStar}} |
-> | \u7C7B\u578B | \`= this.genre\` |
+var movieTable = `> | \u7C7B\u578B | \`= this.genre\` |
 > | \u5BFC\u6F14 | \`= this.director\` |
 > | \u4E3B\u6F14 | \`= this.actor\` |
 > | \u5730\u533A | \`= this.country\` |
@@ -18967,7 +18966,6 @@ var movieTable = `> | \u8BC4\u5206 | {{scoreStar}} |
 var movieSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-> | \u8C46\u74E3\u8BC4\u5206 | {{scoreStar}} |
 > | \u7C7B\u578B | \`= this.genre\` |
 > | \u5BFC\u6F14 | \`= this.director\` |
 > | \u4E3B\u6F14 | \`= this.actor\` |
@@ -19015,7 +19013,6 @@ ${movieTable}
 `;
 var bookTable = `> | \u4F5C\u8005 | \`= this.author\` |{{#if translator}}
 > | \u8BD1\u8005 | \`= this.translator\` |{{/if}}
-> | \u8BC4\u5206 | {{scoreStar}} |
 > | \u51FA\u7248\u793E | \`= this.publisher\` |
 > | \u51FA\u7248\u65E5\u671F | \`= this.datePublished\` |{{#if totalPage}}
 > | \u9875\u6570 | \`= this.totalPage\` |{{/if}}
@@ -19026,7 +19023,7 @@ var bookTable = `> | \u4F5C\u8005 | \`= this.author\` |{{#if translator}}
 var bookSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-> | \u8C46\u74E3\u8BC4\u5206 | {{scoreStar}} |
+
 > | \u4F5C\u8005 | \`= this.author\` |{{#if translator}}
 > | \u8BD1\u8005 | \`= this.translator\` |{{/if}}
 > | \u51FA\u7248\u793E | \`= this.publisher\` |
@@ -19077,7 +19074,6 @@ ${bookTable}
 ## \u611F\u60F3
 `;
 var musicTable = `> | \u8868\u6F14\u8005 | \`= this.actor\` |
-> | \u8BC4\u5206 | {{scoreStar}} |
 > | \u6D41\u6D3E | \`= this.genre\` |{{#if albumType}}
 > | \u4E13\u8F91\u7C7B\u578B | \`= this.albumType\` |{{/if}}{{#if medium}}
 > | \u4ECB\u8D28 | \`= this.medium\` |{{/if}}
@@ -19088,7 +19084,7 @@ var musicTable = `> | \u8868\u6F14\u8005 | \`= this.actor\` |
 var musicSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-> | \u8C46\u74E3\u8BC4\u5206 | {{scoreStar}} |
+
 > | \u8868\u6F14\u8005 | \`= this.actor\` |
 > | \u6D41\u6D3E | \`= this.genre\` |{{#if albumType}}
 > | \u4E13\u8F91\u7C7B\u578B | \`= this.albumType\` |{{/if}}{{#if medium}}
@@ -19163,8 +19159,7 @@ createTime: {{currentDate}} {{currentTime}}
 
 ## \u611F\u60F3
 `;
-var gameTable = `> | \u8BC4\u5206 | {{scoreStar}} |
-> | \u7C7B\u578B | \`= this.genre\` |{{#if platform}}
+var gameTable = `> | \u7C7B\u578B | \`= this.genre\` |{{#if platform}}
 > | \u5E73\u53F0 | \`= this.platform\` |{{/if}}{{#if developer}}
 > | \u5F00\u53D1\u5546 | \`= this.developer\` |{{/if}}
 > | \u53D1\u884C\u5546 | \`= this.publisher\` |
@@ -19172,7 +19167,6 @@ var gameTable = `> | \u8BC4\u5206 | {{scoreStar}} |
 var gameSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-> | \u8C46\u74E3\u8BC4\u5206 | {{scoreStar}} |
 > | \u7C7B\u578B | \`= this.genre\` |{{#if platform}}
 > | \u5E73\u53F0 | \`= this.platform\` |{{/if}}{{#if developer}}
 > | \u5F00\u53D1\u5546 | \`= this.developer\` |{{/if}}
@@ -19210,8 +19204,7 @@ ${gameTable}
 
 ## \u611F\u60F3
 `;
-var teleplayTable = `> | \u8BC4\u5206 | {{scoreStar}} |
-> | \u7C7B\u578B | \`= this.genre\` |
+var teleplayTable = `> | \u7C7B\u578B | \`= this.genre\` |
 > | \u5BFC\u6F14 | \`= this.director\` |
 > | \u4E3B\u6F14 | \`= this.actor\` |{{#if episode}}
 > | \u96C6\u6570 | \`= this.episode\` |{{/if}}
@@ -19223,7 +19216,6 @@ var teleplayTable = `> | \u8BC4\u5206 | {{scoreStar}} |
 var teleplaySyncTable = `> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-> | \u8C46\u74E3\u8BC4\u5206 | {{scoreStar}} |
 > | \u7C7B\u578B | \`= this.genre\` |
 > | \u5BFC\u6F14 | \`= this.director\` |
 > | \u4E3B\u6F14 | \`= this.actor\` |{{#if episode}}
