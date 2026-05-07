@@ -18948,52 +18948,51 @@ var import_obsidian9 = __toModule(require("obsidian"));
 
 // src/org/wanxp/constant/DefaultTemplateContent.ts
 function syncify(basic, syncTable, basicTable) {
-  return basic.replace("createTime:", `myRating: {{myRating}}
-myRatingStar: {{myRatingStar}}
+  return basic.replace("createTime:", `state: {{myState}}
 tags: {{myTags}}
-state: {{myState}}
+myRatingStar: {{myRatingStar}}
+\u77ED\u8BC4: {{myComment}}
+\u6807\u8BED: 
+\u5B58\u50A8: 
+\u76F8\u5173: 
 collectionDate: {{myCollectionDate}}
+coverUrl: {{imageData.url}}
 createTime:`).replace(basicTable, syncTable).replace("> [!abstract]- **\u7B80\u4ECB**", "> [!abstract]+ **\u77ED\u8BC4**\n> {{myComment}}\n\n> [!abstract]- **\u7B80\u4ECB**");
 }
-var movieTable = `> | \u7C7B\u578B | \`= this.genre\` |
-> | \u5BFC\u6F14 | \`= this.director\` |
-> | \u4E3B\u6F14 | \`= this.actor\` |
-> | \u5730\u533A | \`= this.country\` |
-> | \u8BED\u8A00 | \`= this.language\` |
-> | \u4E0A\u6620 | \`= this.datePublished\` |{{#if time}}
-> | \u7247\u957F | \`= this.time\` |{{/if}}{{#if IMDb}}
-> | IMDb | \`= this.IMDb\` |{{/if}}`;
-var movieSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
-> | \u6807\u7B7E | \`= this.tags\` |
-> | \u8BC4\u5206 | \`= this.myRatingStar\` |
+var movieTable = `> | \u5E74\u4EFD | {{yearPublished}} |
 > | \u7C7B\u578B | \`= this.genre\` |
 > | \u5BFC\u6F14 | \`= this.director\` |
-> | \u4E3B\u6F14 | \`= this.actor\` |
-> | \u5730\u533A | \`= this.country\` |
+> | \u8BED\u8A00 | \`= this.language\` |`;
+var movieSyncTable = `> | \u6807\u8BED | \`= this.\u6807\u8BED\` |
+> | \u72B6\u6001 | \`= this.state\` |
+> | \u7C7B\u578B | \`= this.genre\` |
+> | \u6807\u7B7E | \`= this.tags\` |
+> | \u8BC4\u5206 | \`= this.myRatingStar\` |
+> | \u77ED\u8BC4 | \`= this.\u77ED\u8BC4\` |
+> | \u5BFC\u6F14 | \`= this.director\` |
 > | \u8BED\u8A00 | \`= this.language\` |
-> | \u4E0A\u6620 | \`= this.datePublished\` |{{#if time}}
-> | \u7247\u957F | \`= this.time\` |{{/if}}{{#if IMDb}}
-> | IMDb | \`= this.IMDb\` |{{/if}}`;
+> | \u5B58\u50A8 | \`= this.\u5B58\u50A8\` |
+> | \u76F8\u5173 | \`= this.\u76F8\u5173\` |
+> | \u5E74\u4EFD | {{yearPublished}} |`;
 var movieBasic = `---
-doubanId: {{id}}
 title: {{title}}
-type: {{type}}
-image: "{{image}}"
-score: {{score}}
-scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
+type: {{type}}
 genre: {{genre}}
-datePublished: {{datePublished}}
-director: {{director}}
+country: {{country}}
+score: {{score}}
+aliases: {{aliases}}
+director: "[[{{director}}]]"
 actor: {{actor}}
 author: {{author}}
-url: {{url}}
-aliases: {{aliases}}
-country: {{country}}
+datePublished: {{datePublished}}
 language: {{language}}
-IMDb: {{IMDb}}
 time: {{time}}
-createTime: {{currentDate}} {{currentTime}}
+doubanId: {{id}}
+IMDb: {{IMDb}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
 > [!douban-info]+ \u{1F3AC} **{{title}}**
@@ -19011,49 +19010,39 @@ ${movieTable}
 
 ## \u611F\u60F3
 `;
-var bookTable = `> | \u4F5C\u8005 | \`= this.author\` |{{#if translator}}
-> | \u8BD1\u8005 | \`= this.translator\` |{{/if}}
-> | \u51FA\u7248\u793E | \`= this.publisher\` |
-> | \u51FA\u7248\u65E5\u671F | \`= this.datePublished\` |{{#if totalPage}}
-> | \u9875\u6570 | \`= this.totalPage\` |{{/if}}
-> | ISBN | \`= this.isbn\` |{{#if series}}
-> | \u4E1B\u4E66 | \`= this.series\` |{{/if}}{{#if binding}}
-> | \u88C5\u5E27 | \`= this.binding\` |{{/if}}{{#if price}}
-> | \u4EF7\u683C | \`= this.price\` |{{/if}}`;
-var bookSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
+var bookTable = `> | \u4F5C\u8005 | \`= this.author\` |
+> | \u51FA\u7248\u53D1\u884C | {{publisher}} |
+> | \u51FA\u7248\u5E74\u4EFD | {{yearPublished}} |`;
+var bookSyncTable = `> | \u6807\u8BED | \`= this.\u6807\u8BED\` |
+> | \u4F5C\u8005 | \`= this.author\` |
+> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-
-> | \u4F5C\u8005 | \`= this.author\` |{{#if translator}}
-> | \u8BD1\u8005 | \`= this.translator\` |{{/if}}
-> | \u51FA\u7248\u793E | \`= this.publisher\` |
-> | \u51FA\u7248\u65E5\u671F | \`= this.datePublished\` |{{#if totalPage}}
-> | \u9875\u6570 | \`= this.totalPage\` |{{/if}}
-> | ISBN | \`= this.isbn\` |{{#if series}}
-> | \u4E1B\u4E66 | \`= this.series\` |{{/if}}{{#if binding}}
-> | \u88C5\u5E27 | \`= this.binding\` |{{/if}}{{#if price}}
-> | \u4EF7\u683C | \`= this.price\` |{{/if}}`;
+> | \u77ED\u8BC4 | \`= this.\u77ED\u8BC4\` |
+> | \u4F4D\u7F6E | \`= this.\u4F4D\u7F6E\` |
+> | \u76F8\u5173 | \`= this.\u76F8\u5173\` |
+> | \u51FA\u7248\u53D1\u884C | {{publisher}} |
+> | \u51FA\u7248\u5E74\u4EFD | {{yearPublished}} |`;
 var bookBasic = `---
-doubanId: {{id}}
 title: {{title}}
 subTitle: {{subTitle}}
 originalTitle: {{originalTitle}}
 series: {{series}}
 type: {{type}}
-image: "{{image}}"
 author: {{author}}
-score: {{score}}
-scoreStar: {{scoreStar}}
-datePublished: {{datePublished}}
 translator: {{translator}}
+score: {{score}}
+datePublished: {{datePublished}}
 publisher: {{publisher}}
 producer: {{producer}}
+doubanId: {{id}}
 isbn: {{isbn}}
 url: {{url}}
 totalPage: {{totalPage}}
 price: {{price}}
 binding: {{binding}}
-createTime: {{currentDate}} {{currentTime}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
 > [!douban-info]+ \u{1F4DA} **{{title}}**
@@ -19074,42 +19063,32 @@ ${bookTable}
 ## \u611F\u60F3
 `;
 var musicTable = `> | \u8868\u6F14\u8005 | \`= this.actor\` |
-> | \u6D41\u6D3E | \`= this.genre\` |{{#if albumType}}
-> | \u4E13\u8F91\u7C7B\u578B | \`= this.albumType\` |{{/if}}{{#if medium}}
-> | \u4ECB\u8D28 | \`= this.medium\` |{{/if}}
+> | \u6D41\u6D3E | \`= this.genre\` |
 > | \u53D1\u884C\u65F6\u95F4 | \`= this.datePublished\` |
-> | \u51FA\u7248\u8005 | \`= this.publisher\` |{{#if barcode}}
-> | \u6761\u5F62\u7801 | \`= this.barcode\` |{{/if}}{{#if records}}
-> | \u66F2\u76EE\u6570 | \`= this.records\` |{{/if}}`;
+> | \u51FA\u7248\u8005 | \`= this.publisher\` |`;
 var musicSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-
+> | \u77ED\u8BC4 | \`= this.\u77ED\u8BC4\` |
 > | \u8868\u6F14\u8005 | \`= this.actor\` |
-> | \u6D41\u6D3E | \`= this.genre\` |{{#if albumType}}
-> | \u4E13\u8F91\u7C7B\u578B | \`= this.albumType\` |{{/if}}{{#if medium}}
-> | \u4ECB\u8D28 | \`= this.medium\` |{{/if}}
+> | \u6D41\u6D3E | \`= this.genre\` |
 > | \u53D1\u884C\u65F6\u95F4 | \`= this.datePublished\` |
-> | \u51FA\u7248\u8005 | \`= this.publisher\` |{{#if barcode}}
-> | \u6761\u5F62\u7801 | \`= this.barcode\` |{{/if}}{{#if records}}
-> | \u66F2\u76EE\u6570 | \`= this.records\` |{{/if}}`;
+> | \u51FA\u7248\u8005 | \`= this.publisher\` |`;
 var musicBasic = `---
-doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: "{{image}}"
 actor: {{actor}}
 score: {{score}}
-scoreStar: {{scoreStar}}
 genre: {{genre}}
 medium: {{medium}}
 albumType: {{albumType}}
 datePublished: {{datePublished}}
 publisher: {{publisher}}
 barcode: {{barcode}}
+doubanId: {{id}}
 url: {{url}}
-records: {{records}}
-createTime: {{currentDate}} {{currentTime}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
 > [!douban-info]+ \u{1F3B5} **{{title}}**
@@ -19132,61 +19111,57 @@ Menu:
 ## \u611F\u60F3
 `;
 var noteBasic = `---
-doubanId: {{id}}
 title: {{title}}
 type: {{type}}
-image: "{{image}}"
 author: {{author}}
 authorUrl: {{authorUrl}}
 dateTimePublished: {{datePublished}} {{timePublished}}
+doubanId: {{id}}
 url: {{url}}
-createTime: {{currentDate}} {{currentTime}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
 > [!douban-info]+ \u{1F4DD} **{{title}}**
 >
 > | | |
 > |:------:|:------------------------------------------:|
-> | \u4F5C\u8005 | {{author}} |
-> | \u53D1\u5E03\u65F6\u95F4 | {{datePublished}} {{timePublished}} |
-
-> [!abstract]- **\u7B80\u4ECB**
-> {{desc}}
+> | \u4F5C\u8005 | \`= this.author\` |
+> | \u53D1\u5E03\u65F6\u95F4 | \`= this.dateTimePublished\` |
 
 {{content}}
-
-## \u8BB0\u5F55
-
-## \u611F\u60F3
 `;
-var gameTable = `> | \u7C7B\u578B | \`= this.genre\` |{{#if platform}}
-> | \u5E73\u53F0 | \`= this.platform\` |{{/if}}{{#if developer}}
-> | \u5F00\u53D1\u5546 | \`= this.developer\` |{{/if}}
-> | \u53D1\u884C\u5546 | \`= this.publisher\` |
-> | \u53D1\u884C\u65E5\u671F | \`= this.datePublished\` |`;
-var gameSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
+var gameTable = `> | \u7C7B\u578B | \`= this.genre\` |
+> | \u5E73\u53F0 | \`= this.platform\` |
+> | \u5F00\u53D1\u5546 | \`= this.developer\` |
+> | \u53D1\u884C\u5546 | {{publisher}} |
+> | \u53D1\u884C\u5E74\u4EFD | {{yearPublished}} |`;
+var gameSyncTable = `> | \u6807\u8BED | \`= this.\u6807\u8BED\` |
+> | \u72B6\u6001 | \`= this.state\` |
+> | \u7C7B\u578B | \`= this.genre\` |
 > | \u6807\u7B7E | \`= this.tags\` |
 > | \u8BC4\u5206 | \`= this.myRatingStar\` |
-> | \u7C7B\u578B | \`= this.genre\` |{{#if platform}}
-> | \u5E73\u53F0 | \`= this.platform\` |{{/if}}{{#if developer}}
-> | \u5F00\u53D1\u5546 | \`= this.developer\` |{{/if}}
-> | \u53D1\u884C\u5546 | \`= this.publisher\` |
-> | \u53D1\u884C\u65E5\u671F | \`= this.datePublished\` |`;
+> | \u77ED\u8BC4 | \`= this.\u77ED\u8BC4\` |
+> | \u5F00\u53D1\u5546 | \`= this.developer\` |
+> | \u53D1\u884C\u5546 | {{publisher}} |
+> | \u76F8\u5173 | \`= this.\u76F8\u5173\` |
+> | \u5B58\u50A8 | \`= this.\u5B58\u50A8\` |
+> | \u53D1\u884C\u5E74\u4EFD | {{yearPublished}} |`;
 var gameBasic = `---
-doubanId: {{id}}
 title: {{title}}
-aliases: {{aliases}}
 type: {{type}}
-image: "{{image}}"
+genre: {{genre}}
+platform: {{platform}}
+country: {{country}}
 score: {{score}}
-scoreStar: {{scoreStar}}
+aliases: {{aliases}}
 dateTimePublished: {{datePublished}}
 publisher: {{publisher}}
-genre: {{genre}}
 developer: {{developer}}
-platform: {{platform}}
+doubanId: {{id}}
 url: {{url}}
-createTime: {{currentDate}} {{currentTime}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
 > [!douban-info]+ \u{1F3AE} **{{title}}**
@@ -19204,48 +19179,43 @@ ${gameTable}
 
 ## \u611F\u60F3
 `;
-var teleplayTable = `> | \u7C7B\u578B | \`= this.genre\` |
-> | \u5BFC\u6F14 | \`= this.director\` |
-> | \u4E3B\u6F14 | \`= this.actor\` |{{#if episode}}
-> | \u96C6\u6570 | \`= this.episode\` |{{/if}}
-> | \u5730\u533A | \`= this.country\` |
-> | \u8BED\u8A00 | \`= this.language\` |
-> | \u9996\u64AD | \`= this.datePublished\` |{{#if time}}
-> | \u5355\u96C6\u7247\u957F | \`= this.time\` |{{/if}}{{#if IMDb}}
-> | IMDb | \`= this.IMDb\` |{{/if}}`;
-var teleplaySyncTable = `> | \u72B6\u6001 | \`= this.state\` |
-> | \u6807\u7B7E | \`= this.tags\` |
-> | \u8BC4\u5206 | \`= this.myRatingStar\` |
+var teleplayTable = `> | \u5E74\u4EFD | {{yearPublished}} |
 > | \u7C7B\u578B | \`= this.genre\` |
 > | \u5BFC\u6F14 | \`= this.director\` |
-> | \u4E3B\u6F14 | \`= this.actor\` |{{#if episode}}
-> | \u96C6\u6570 | \`= this.episode\` |{{/if}}
-> | \u5730\u533A | \`= this.country\` |
 > | \u8BED\u8A00 | \`= this.language\` |
-> | \u9996\u64AD | \`= this.datePublished\` |{{#if time}}
-> | \u5355\u96C6\u7247\u957F | \`= this.time\` |{{/if}}{{#if IMDb}}
-> | IMDb | \`= this.IMDb\` |{{/if}}`;
+> | \u96C6\u6570 | {{episode}} |`;
+var teleplaySyncTable = `> | \u6807\u8BED | \`= this.\u6807\u8BED\` |
+> | \u72B6\u6001 | \`= this.state\` |
+> | \u7C7B\u578B | \`= this.genre\` |
+> | \u6807\u7B7E | \`= this.tags\` |
+> | \u8BC4\u5206 | \`= this.myRatingStar\` |
+> | \u77ED\u8BC4 | \`= this.\u77ED\u8BC4\` |
+> | \u5BFC\u6F14 | \`= this.director\` |
+> | \u8BED\u8A00 | \`= this.language\` |
+> | \u5B58\u50A8 | \`= this.\u5B58\u50A8\` |
+> | \u76F8\u5173 | \`= this.\u76F8\u5173\` |
+> | \u5E74\u4EFD | {{yearPublished}} |
+> | \u96C6\u6570 | {{episode}} |`;
 var teleplayBasic = `---
-doubanId: {{id}}
 title: {{title}}
-type: {{type}}
-image: "{{image}}"
-score: {{score}}
-scoreStar: {{scoreStar}}
 originalTitle: {{originalTitle}}
+type: {{type}}
 genre: {{genre}}
+country: {{country}}
+score: {{score}}
+aliases: {{aliases}}
 datePublished: {{datePublished}}
-director: {{director}}
+episode: {{episode}}
+director: "[[{{director}}]]"
 actor: {{actor}}
 author: {{author}}
-url: {{url}}
-aliases: {{aliases}}
-country: {{country}}
 language: {{language}}
-IMDb: {{IMDb}}
 time: {{time}}
-episode: {{episode}}
-createTime: {{currentDate}} {{currentTime}}
+doubanId: {{id}}
+IMDb: {{IMDb}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
 ---
 
 > [!douban-info]+ \u{1F4FA} **{{title}}**
