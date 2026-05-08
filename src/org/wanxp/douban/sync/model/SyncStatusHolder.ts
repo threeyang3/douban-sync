@@ -123,12 +123,12 @@ export default class SyncStatusHolder {
 		this.updateResult(id, title, SyncItemStatus.fail);
 	}
 
-	public failByDiffType(id:string, title:string) {
-		this.updateResult(id, title, SyncItemStatus.failByDiffType);
+	public failByDiffType(id:string, title:string, detailMsg?: string) {
+		this.updateResult(id, title, SyncItemStatus.failByDiffType, undefined, detailMsg);
 	}
 
-	private updateResult(id:string, title:string, status:SyncItemStatus, fileName?:string) {
-		this.syncResultMap.set(id, {id: id,title:title,status:status, fileName: fileName});
+	private updateResult(id:string, title:string, status:SyncItemStatus, fileName?:string, detailMsg?: string) {
+		this.syncResultMap.set(id, {id: id,title:title,status:status, fileName: fileName, detailMsg: detailMsg});
 		this.statusHandleMap.set(status, this.statusHandleMap.get(status) + 1);
 		this.handled(1);
 	}

@@ -326,8 +326,16 @@ export class VariableUtil {
 			return YamlUtil.handleText(v, dataField);
 		}
 		if (targetType === 'text') {
-			// desc 在正文中以 callout 形式呈现，需要为每行添加 > 前缀以保持 callout 格式
+			// desc 在正文中以 callout 形式呈现，需要规范化文本并添加 > 前缀
 			if (dataField && dataField.name === 'desc' && v) {
+				// 去除全角空格
+				v = v.replace(/[　]/g, '');
+				// 去除每行首尾空白，并过滤掉纯空白行
+				v = v.split('\n')
+					.map(line => line.trim())
+					.filter(line => line.length > 0)
+					.join('\n');
+				// 为每行添加 > 前缀以保持 callout 格式
 				return v.replaceAll('\n', '\n> ');
 			}
 			return  v;

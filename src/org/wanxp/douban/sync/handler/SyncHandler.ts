@@ -97,8 +97,11 @@ export default class SyncHandler {
 		for (const [, value] of syncResultMap) {
 			if (value.status == 'unHandle') {
 				// @ts-ignore
-				details+= `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}
-`;
+				details+= `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}`;
+				if (value.detailMsg) {
+					details+= ` (${value.detailMsg})`;
+				}
+				details+= '\n';
 			}else {
 				// 使用保存的实际文件名生成链接
 				// fileName 可能是完整路径，需要提取文件名（不含扩展名）
@@ -118,8 +121,11 @@ export default class SyncHandler {
 					linkName = FileUtil.replaceSpecialCharactersForFileName(value.title);
 				}
 				// @ts-ignore
-				details+= `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}
-`;
+				details+= `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}`;
+				if (value.detailMsg) {
+					details+= ` (${value.detailMsg})`;
+				}
+				details+= '\n';
 			}
 
 		}

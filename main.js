@@ -19745,6 +19745,8 @@ var VariableUtil = class {
     }
     if (targetType === "text") {
       if (dataField && dataField.name === "desc" && v) {
+        v = v.replace(/[　]/g, "");
+        v = v.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join("\n");
         return v.replaceAll("\n", "\n> ");
       }
       return v;
@@ -21063,8 +21065,8 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
     let desc = "";
     for (const p of descElements) {
       const text3 = html3(p).text().trim();
-      if (text3.length > desc.length) {
-        desc = text3;
+      if (text3) {
+        desc += (desc ? "\n" : "") + text3;
       }
     }
     if (!desc) {
@@ -25282,11 +25284,11 @@ var SyncStatusHolder = class {
   fail(id, title) {
     this.updateResult(id, title, SyncItemStatus.fail);
   }
-  failByDiffType(id, title) {
-    this.updateResult(id, title, SyncItemStatus.failByDiffType);
+  failByDiffType(id, title, detailMsg) {
+    this.updateResult(id, title, SyncItemStatus.failByDiffType, void 0, detailMsg);
   }
-  updateResult(id, title, status, fileName) {
-    this.syncResultMap.set(id, { id, title, status, fileName });
+  updateResult(id, title, status, fileName, detailMsg) {
+    this.syncResultMap.set(id, { id, title, status, fileName, detailMsg });
     this.statusHandleMap.set(status, this.statusHandleMap.get(status) + 1);
     this.handled(1);
   }
@@ -25844,6 +25846,7 @@ var SettingsManager = class {
     this.settings.debugMode = DEFAULT_SETTINGS.debugMode;
     this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
     this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
+    this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
   }
   clearLoginInfo() {
     this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginHeadersContent;
@@ -26421,8 +26424,11 @@ var SyncHandler = class {
       let details = "";
       for (const [, value] of syncResultMap) {
         if (value.status == "unHandle") {
-          details += `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}
-`;
+          details += `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}`;
+          if (value.detailMsg) {
+            details += ` (${value.detailMsg})`;
+          }
+          details += "\n";
         } else {
           let linkName = value.fileName;
           if (linkName) {
@@ -26436,8 +26442,11 @@ var SyncHandler = class {
           } else {
             linkName = FileUtil.replaceSpecialCharactersForFileName(value.title);
           }
-          details += `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}
-`;
+          details += `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}`;
+          if (value.detailMsg) {
+            details += ` (${value.detailMsg})`;
+          }
+          details += "\n";
         }
       }
       const result = i18nHelper.getMessage("110037", condition, summary, details);
@@ -27427,7 +27436,7 @@ var DoubanPlugin = class extends import_obsidian43.Plugin {
           extract3.handledStatus = SubjectHandledStatus.syncTypeDiffAbort;
           if (Action.Sync == context.action) {
             this.showStatus(i18nHelper.getMessage("140207", syncStatus.getHasHandle(), syncStatus.getTotal(), extract3.title));
-            syncStatus.failByDiffType(extract3.id, extract3.title);
+            syncStatus.failByDiffType(extract3.id, extract3.title, `${i18nHelper.getMessage(extract3.guessType)} -> ${extract3.type}`);
           } else {
             console.log(i18nHelper.getMessage("140102", extract3.type, extract3.title, extract3.guessType));
           }

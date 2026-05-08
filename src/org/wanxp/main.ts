@@ -65,7 +65,8 @@ export default class DoubanPlugin extends Plugin {
 				extract.handledStatus = SubjectHandledStatus.syncTypeDiffAbort;
 				if (Action.Sync == context.action) {
 					this.showStatus(i18nHelper.getMessage('140207', syncStatus.getHasHandle(), syncStatus.getTotal(), extract.title));
-					syncStatus.failByDiffType(extract.id, extract.title);
+					syncStatus.failByDiffType(extract.id, extract.title,
+						`${i18nHelper.getMessage(extract.guessType)} -> ${extract.type}`);
 				}else {
 					console.log(i18nHelper.getMessage('140102', extract.type, extract.title, extract.guessType));
 				}

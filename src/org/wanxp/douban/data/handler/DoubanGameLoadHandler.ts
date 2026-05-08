@@ -79,14 +79,13 @@ export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<Dou
 		let detailDom = html(html("dl.thing-attr").get(0));
 		let dt = detailDom.find("dt");
 		let image = html(html("#content > div > div.article > div.mod.item-subject > div.item-subject-info > div > a > img").get(0)).attr("src");
-		// 获取所有#link-report > p元素，选择最长的（完整版简介）
-		// 豆瓣页面可能同时存在折叠部分和完整部分，选择最长的避免重复
+		// 获取所有#link-report > p元素，按段落拼接
 		const descElements = html("#link-report > p").get();
 		let desc = '';
 		for (const p of descElements) {
 			const text = html(p).text().trim();
-			if (text.length > desc.length) {
-				desc = text;
+			if (text) {
+				desc += (desc ? '\n' : '') + text;
 			}
 		}
 		// fallback: 从 meta 标签获取简介
