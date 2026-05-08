@@ -19866,11 +19866,20 @@ var DoubanAbstractLoadHandler = class {
       context.plugin.settingsManager.debug(`\u5F00\u59CB\u8BF7\u6C42\u5730\u5740:${url}`);
       context.plugin.settingsManager.debug(`(\u6CE8\u610F:\u8BF7\u52FF\u5411\u4EFB\u4F55\u4EBA\u900F\u9732\u4F60\u7684Cookie,\u6B64\u5904\u82E5\u9700\u8981\u622A\u56FE\u8BF7**\u6253\u7801**)\u8BF7\u6C42header:${context.settings.loginHeadersContent}`);
       return yield DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager).then(load).then((data2) => this.analysisUserState(data2, context)).then(({ data: data2, userState }) => {
+        var _a5;
         let guessType = this.getSupportType();
         if (context.syncActive) {
           guessType = this.getGuessType(data2);
         }
         const sub = this.parseSubjectFromHtml(data2, context);
+        if (!sub) {
+          if (context.syncActive && guessType && guessType !== this.getSupportType()) {
+            const id2 = StringUtil.analyzeIdByUrl(url);
+            (_a5 = context.syncStatusHolder) == null ? void 0 : _a5.syncStatus.failByDiffType(id2, "", `${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`);
+            return void 0;
+          }
+          throw new Error("parseSubjectFromHtml returned null");
+        }
         sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
         sub.userState = userState;
         sub.guessType = guessType;
@@ -19897,6 +19906,58 @@ var DoubanAbstractLoadHandler = class {
           }
         }
       }
+      const ldJsonType = this.getGuessTypeFromJsonLd(data2);
+      if (ldJsonType) {
+        return ldJsonType;
+      }
+      const ogType = this.getGuessTypeFromOgType(data2);
+      if (ogType) {
+        return ogType;
+      }
+    }
+    return null;
+  }
+  getGuessTypeFromJsonLd(data2) {
+    const ldJsonMap = {
+      "Book": SupportType.book,
+      "Movie": SupportType.movie,
+      "TVSeries": SupportType.teleplay,
+      "MusicAlbum": SupportType.music,
+      "VideoGame": SupportType.game
+    };
+    try {
+      const scripts = data2("script").get();
+      for (const s of scripts) {
+        if (data2(s).attr("type") === "application/ld+json") {
+          const text3 = data2(s).text();
+          if (text3) {
+            const obj = JSON.parse(text3.replace(/[\r\n\t]+/g, ""));
+            const type = obj["@type"];
+            if (type && ldJsonMap[type]) {
+              return ldJsonMap[type];
+            }
+          }
+          break;
+        }
+      }
+    } catch (_) {
+    }
+    return null;
+  }
+  getGuessTypeFromOgType(data2) {
+    const ogTypeMap = {
+      "book": SupportType.book,
+      "video.movie": SupportType.movie,
+      "video.tv_show": SupportType.teleplay,
+      "music.album": SupportType.music,
+      "video.other": SupportType.game
+    };
+    try {
+      const ogType = data2('meta[property="og:type"]').attr("content");
+      if (ogType && ogTypeMap[ogType]) {
+        return ogTypeMap[ogType];
+      }
+    } catch (_) {
     }
     return null;
   }
@@ -26463,7 +26524,55 @@ var SyncHandler = class {
           details += "\n";
         }
       }
-      const result = i18nHelper.getMessage("110037", condition, summary, details);
+      let analysis = "";
+      try {
+        const folderPath = this.syncConfig.dataFilePath || "";
+        const allMdFiles = this.app.vault.getMarkdownFiles();
+        const normalizedFolder = folderPath.replace(/\\/g, "/");
+        const actualFileCount = allMdFiles.filter((f) => {
+          const fp = f.path.replace(/\\/g, "/");
+          return normalizedFolder ? fp.startsWith(normalizedFolder + "/") || fp.startsWith(normalizedFolder) : true;
+        }).length;
+        const createdCount = statusHandleMap.get(SyncItemStatus.create) || 0;
+        const replacedCount = statusHandleMap.get(SyncItemStatus.replace) || 0;
+        const existsCount = statusHandleMap.get(SyncItemStatus.exists) || 0;
+        const failCount = statusHandleMap.get(SyncItemStatus.fail) || 0;
+        const diffTypeCount = statusHandleMap.get(SyncItemStatus.failByDiffType) || 0;
+        const expectedCreated = createdCount + replacedCount + existsCount;
+        if (expectedCreated !== actualFileCount) {
+          const diff = expectedCreated - actualFileCount;
+          analysis = "\n### \u6587\u4EF6\u6570\u91CF\u5206\u6790\n\n";
+          analysis += `- \u9884\u671F\u672C\u5730\u6761\u76EE\u6587\u4EF6\u6570: **${expectedCreated}**\uFF08\u521B\u5EFA ${createdCount} + \u66FF\u6362 ${replacedCount} + \u5DF2\u5B58\u5728 ${existsCount}\uFF09
+`;
+          analysis += `- \u5B9E\u9645\u672C\u5730\u6587\u4EF6\u6570: **${actualFileCount}**
+`;
+          analysis += `- \u5DEE\u989D: **${diff}** \u4E2A
+`;
+          if (diff === diffTypeCount + failCount) {
+            analysis += `
+\u5DEE\u989D\u4E0E\u5931\u8D25\u6761\u76EE\u6570\u4E00\u81F4\uFF08\u7C7B\u578B\u4E0D\u5339\u914D ${diffTypeCount} + \u5931\u8D25 ${failCount}\uFF09\uFF0C\u539F\u56E0\uFF1A
+`;
+            if (diffTypeCount > 0) {
+              analysis += `- \u7C7B\u578B\u4E0D\u5339\u914D\u7684 ${diffTypeCount} \u4E2A\u6761\u76EE\u5DF2\u88AB\u8DF3\u8FC7\uFF08\u8BE6\u89C1\u4E0A\u65B9\u660E\u7EC6\u4E2D\u6807\u8BB0\u4E3A [\u7C7B\u578B\u4E0D\u5339\u914D] \u7684\u6761\u76EE\uFF09
+`;
+            }
+            if (failCount > 0) {
+              analysis += `- ${failCount} \u4E2A\u6761\u76EE\u540C\u6B65\u5931\u8D25\uFF08\u8BE6\u89C1\u4E0A\u65B9\u660E\u7EC6\u4E2D\u6807\u8BB0\u4E3A [\u5DF2\u5931\u8D25] \u7684\u6761\u76EE\uFF09
+`;
+            }
+          } else {
+            analysis += `
+\u5DEE\u989D\u4E0E\u5931\u8D25\u7EDF\u8BA1\u4E0D\u5B8C\u5168\u5339\u914D\uFF0C\u53EF\u80FD\u539F\u56E0\uFF1A
+`;
+            analysis += `- \u90E8\u5206\u6761\u76EE\u751F\u6210\u7684\u6587\u4EF6\u540D\u53EF\u80FD\u4E0E\u73B0\u6709\u6587\u4EF6\u51B2\u7A81\u6216\u88AB\u8986\u76D6
+`;
+            analysis += `- \u624B\u52A8\u5220\u9664\u6216\u79FB\u52A8\u8FC7\u90E8\u5206\u6761\u76EE\u6587\u4EF6
+`;
+          }
+        }
+      } catch (_) {
+      }
+      const result = i18nHelper.getMessage("110037", condition, summary, details + analysis);
       const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian36.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
       yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
     });

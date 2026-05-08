@@ -9,7 +9,7 @@ import { DoubanMusicSyncHandler } from "./DoubanMusicSyncHandler";
 import { DoubanBookSyncHandler } from "./DoubanBookSyncHandler";
 import {i18nHelper} from "../../../lang/helper";
 import {DoubanTeleplaySyncHandler} from "./DoubanTeleplaySyncHandler";
-import {SyncConditionType} from "../../../constant/Constsant";
+import {SyncConditionType, SyncItemStatus} from "../../../constant/Constsant";
 import {DoubanGameSyncHandler} from "./DoubanGameSyncHandler";
 import {FileUtil} from "../../../utils/FileUtil";
 
@@ -129,7 +129,44 @@ export default class SyncHandler {
 			}
 
 		}
-		const result = i18nHelper.getMessage('110037', condition, summary, details);
+		// 同步结束后分析本地文件数量与同步统计的差异
+		let analysis = '';
+		try {
+			const folderPath = this.syncConfig.dataFilePath || '';
+			const allMdFiles = this.app.vault.getMarkdownFiles();
+			const normalizedFolder = folderPath.replace(/\\/g, '/');
+			const actualFileCount = allMdFiles.filter(f => {
+				const fp = f.path.replace(/\\/g, '/');
+				return normalizedFolder ? fp.startsWith(normalizedFolder + '/') || fp.startsWith(normalizedFolder) : true;
+			}).length;
+			const createdCount = statusHandleMap.get(SyncItemStatus.create) || 0;
+			const replacedCount = statusHandleMap.get(SyncItemStatus.replace) || 0;
+			const existsCount = statusHandleMap.get(SyncItemStatus.exists) || 0;
+			const failCount = statusHandleMap.get(SyncItemStatus.fail) || 0;
+			const diffTypeCount = statusHandleMap.get(SyncItemStatus.failByDiffType) || 0;
+			const expectedCreated = createdCount + replacedCount + existsCount;
+			if (expectedCreated !== actualFileCount) {
+				const diff = expectedCreated - actualFileCount;
+				analysis = '\n### 文件数量分析\n\n';
+				analysis += `- 预期本地条目文件数: **${expectedCreated}**（创建 ${createdCount} + 替换 ${replacedCount} + 已存在 ${existsCount}）\n`;
+				analysis += `- 实际本地文件数: **${actualFileCount}**\n`;
+				analysis += `- 差额: **${diff}** 个\n`;
+				if (diff === diffTypeCount + failCount) {
+					analysis += `\n差额与失败条目数一致（类型不匹配 ${diffTypeCount} + 失败 ${failCount}），原因：\n`;
+					if (diffTypeCount > 0) {
+						analysis += `- 类型不匹配的 ${diffTypeCount} 个条目已被跳过（详见上方明细中标记为 [类型不匹配] 的条目）\n`;
+					}
+					if (failCount > 0) {
+						analysis += `- ${failCount} 个条目同步失败（详见上方明细中标记为 [已失败] 的条目）\n`;
+					}
+				} else {
+					analysis += `\n差额与失败统计不完全匹配，可能原因：\n`;
+					analysis += `- 部分条目生成的文件名可能与现有文件冲突或被覆盖\n`;
+					analysis += `- 手动删除或移动过部分条目文件\n`;
+				}
+			}
+		} catch (_) { /* ignore count errors */ }
+		const result = i18nHelper.getMessage('110037', condition, summary, details + analysis);
 		const resultFileName = `${i18nHelper.getMessage('110038')}_${moment(new Date()).format('YYYYMMDDHHmmss')}`
 		await this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
 	}

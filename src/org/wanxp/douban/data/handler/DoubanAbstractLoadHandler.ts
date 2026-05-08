@@ -127,6 +127,16 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					guessType = this.getGuessType(data);
 				}
 				const sub = this.parseSubjectFromHtml(data, context);
+				if (!sub) {
+					// M-hM-7M-#M-fM-^^M-^PM-eM--1M-hM-4M-%M-fM-^WM-6M-oM-<M-^LM-hM-^KM-%M-gM-1M-;M-eM-^^M-^KM-dM-8M-^MM-eM-^LM-9M-iM-^EM-^MM-oM-<M-^LM-fM- M-^GM-hM-.M-0M-dM-8M-: failByDiffType M-hM-^@M-^LM-iM-^]M-^^M-fM-^IM-)M-fM-;M-^BM-iM-^@M-^ZM fail
+					if (context.syncActive && guessType && guessType !== this.getSupportType()) {
+						const id = StringUtil.analyzeIdByUrl(url);
+						context.syncStatusHolder?.syncStatus.failByDiffType(id, '',
+							`${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`);
+						return undefined;
+					}
+					throw new Error('parseSubjectFromHtml returned null');
+				}
 				sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
 				sub.userState = userState;
 				sub.guessType = guessType;
@@ -162,7 +172,66 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					}
 				}
 			}
+			// 关键词匹配失败时，尝试从 JSON-LD 和 og:type 推断类型
+			const ldJsonType = this.getGuessTypeFromJsonLd(data);
+			if (ldJsonType) {
+				return ldJsonType;
+			}
+			const ogType = this.getGuessTypeFromOgType(data);
+			if (ogType) {
+				return ogType;
+			}
 		}
+		return null;
+	}
+
+	/**
+	 * 从 JSON-LD @type 推断内容类型
+	 */
+	private getGuessTypeFromJsonLd(data: CheerioAPI): SupportType | null {
+		const ldJsonMap: Record<string, SupportType> = {
+			'Book': SupportType.book,
+			'Movie': SupportType.movie,
+			'TVSeries': SupportType.teleplay,
+			'MusicAlbum': SupportType.music,
+			'VideoGame': SupportType.game,
+		};
+		try {
+			const scripts = data('script').get();
+			for (const s of scripts) {
+				if (data(s).attr('type') === 'application/ld+json') {
+					const text = data(s).text();
+					if (text) {
+						const obj = JSON.parse(text.replace(/[\r\n\t]+/g, ''));
+						const type = obj['@type'];
+						if (type && ldJsonMap[type]) {
+							return ldJsonMap[type];
+						}
+					}
+					break;
+				}
+			}
+		} catch (_) { /* ignore parse errors */ }
+		return null;
+	}
+
+	/**
+	 * 从 og:type 推断内容类型
+	 */
+	private getGuessTypeFromOgType(data: CheerioAPI): SupportType | null {
+		const ogTypeMap: Record<string, SupportType> = {
+			'book': SupportType.book,
+			'video.movie': SupportType.movie,
+			'video.tv_show': SupportType.teleplay,
+			'music.album': SupportType.music,
+			'video.other': SupportType.game,
+		};
+		try {
+			const ogType = data('meta[property="og:type"]').attr('content');
+			if (ogType && ogTypeMap[ogType]) {
+				return ogTypeMap[ogType];
+			}
+		} catch (_) { /* ignore parse errors */ }
 		return null;
 	}
 
