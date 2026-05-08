@@ -20246,6 +20246,15 @@ var DoubanAbstractLoadHandler = class {
   getPropertyValue(html3, name) {
     return HtmlUtil.getHtmlText(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), name));
   }
+  filterCommentText(text3) {
+    if (!text3) {
+      return "";
+    }
+    if (/^标签[:：]/.test(text3.trim())) {
+      return "";
+    }
+    return text3;
+  }
 };
 
 // src/org/wanxp/douban/data/model/DoubanBookSubject.ts
@@ -20539,7 +20548,8 @@ var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
     return { data: html3, userState };
   }
   getComment(html3, context) {
-    const component = html3("div#interest_sect_level > div.a_stars > span.color_gray").next().next().text().trim();
+    let component = html3("div#interest_sect_level > div.a_stars > span.color_gray").next().next().text().trim();
+    component = this.filterCommentText(component);
     if (component) {
       return component;
     }
@@ -20687,7 +20697,8 @@ var DoubanMusicLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10").next().text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = html3("span#rating").next().next().next().next().text().trim();
+    let component = html3("span#rating").next().next().next().next().text().trim();
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -20883,7 +20894,8 @@ var DoubanTeleplayLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = rating.next().next().next().next().text().trim();
+    let component = rating.next().next().next().next().text().trim();
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -21040,7 +21052,8 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = collected.find("span.collection-result").text().trim();
     const collectionDateStr = collected.find("span.color_gray").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = rating.parent().next().next().text().trim();
+    let component = rating.parent().next().next().text().trim();
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -21158,7 +21171,8 @@ var DoubanTheaterLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = html3("#interest_sect_level > h2").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = this.getPropertyValue(html3, PropertyName.comment);
+    let component = this.getPropertyValue(html3, PropertyName.comment);
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,

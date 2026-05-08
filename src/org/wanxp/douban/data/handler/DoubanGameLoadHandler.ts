@@ -56,7 +56,8 @@ export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<Dou
 		const stateWord = collected.find('span.collection-result').text().trim();
 		const collectionDateStr = collected.find('span.color_gray').text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		const component = rating.parent().next().next().text().trim();
+		let component = rating.parent().next().next().text().trim();
+			component = this.filterCommentText(component);
 
 		const userState: UserStateSubject = {
 			tags: tags,

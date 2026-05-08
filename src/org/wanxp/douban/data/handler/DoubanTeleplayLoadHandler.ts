@@ -71,7 +71,8 @@ export class DoubanTeleplayLoadHandler extends DoubanAbstractLoadHandler<DoubanT
 		const stateWord = html('div#interest_sect_level > div.a_stars > span.mr10').text().trim();
 		const collectionDateStr = html('div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date').text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		const component = rating.next().next().next().next().text().trim();
+		let component = rating.next().next().next().next().text().trim();
+			component = this.filterCommentText(component);
 
 		const userState: UserStateSubject = {
 			tags: tags,

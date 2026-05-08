@@ -640,7 +640,18 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		return HtmlUtil.getHtmlText(html, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), name));
 	}
 
-
+	/**
+	 * 过滤掉被误识别为短评的标签文本
+	 */
+	protected filterCommentText(text: string): string {
+		if (!text) {
+			return '';
+		}
+		if (/^标签[:：]/.test(text.trim())) {
+			return '';
+		}
+		return text;
+	}
 
 
 }
