@@ -198,7 +198,11 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 			} else {
 				value = html(info.next).text().trim();
 			}
-			valueMap.set(BookKeyValueMap.get(key), value);
+			let lookupKey = key;
+			if (lookupKey.endsWith(':') || lookupKey.endsWith('：')) {
+				lookupKey = lookupKey.slice(0, -1);
+			}
+			valueMap.set(BookKeyValueMap.get(lookupKey), value);
 		})
 		let id = StringUtil.analyzeIdByUrl(url);
 		let menuIdDom = html('#dir_' + id + '_full') ? html('#dir_' + id + '_full') : html('#dir_' + id + '_short');
@@ -242,7 +246,8 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 		if (comment) {
 			return comment;
 		}
-		return this.getPropertyValue(html, PropertyName.comment);
+		const fallback = this.getPropertyValue(html, PropertyName.comment);
+		return this.isCommentCandidate(fallback) ? fallback : '';
 	}
 
 	private isCommentCandidate(text: string): boolean {
@@ -272,16 +277,16 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 
 const BookKeyValueMap: Map<string, string> = new Map(
 	[['作者', 'author'],
-		['出版社:', 'publisher'],
-		['原作名:', 'originalTitle'],
-		['出版年:', 'datePublished'],
-		['页数:', 'totalPage'],
-		['定价:', 'price'],
-		['装帧:', 'binding'],
-		['丛书:', 'series'],
-		['ISBN:', 'isbn'],
+		['出版社', 'publisher'],
+		['原作名', 'originalTitle'],
+		['出版年', 'datePublished'],
+		['页数', 'totalPage'],
+		['定价', 'price'],
+		['装帧', 'binding'],
+		['丛书', 'series'],
+		['ISBN', 'isbn'],
 		['译者', 'translator'],
-		['副标题:', 'subTitle'],
-		['出品方:', 'producer'],
+		['副标题', 'subTitle'],
+		['出品方', 'producer'],
 	]
 );

@@ -95,7 +95,8 @@ export default class DoubanMovieLoadHandler extends DoubanAbstractLoadHandler<Do
 		if (component) {
 			return component;
 		}
-		return this.getPropertyValue(html, PropertyName.comment);
+		const fallback = this.getPropertyValue(html, PropertyName.comment);
+		return this.filterCommentText(fallback);
 	}
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanMovieSubject {

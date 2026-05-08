@@ -18957,6 +18957,8 @@ tags: {{myTags}}
 myRatingStar: {{myRatingStar}}
 \u77ED\u8BC4: {{myComment}}
 \u6807\u8BED: 
+\u5355\u8BC4: false
+\u7B14\u8BB0: ""
 \u5B58\u50A8: 
 \u76F8\u5173: 
 collectionDate: {{myCollectionDate}}
@@ -19046,6 +19048,8 @@ totalPage: {{totalPage}}
 price: {{price}}
 binding: {{binding}}
 image: {{image}}
+\u62E5\u6709: false
+\u4F4D\u7F6E: ""
 createTime: {{currentDate}}
 ---
 
@@ -19461,24 +19465,21 @@ var YamlUtil = class {
     return '"' + text3 + '"';
   }
   static handleText(text3, dataField = null) {
-    if (YamlUtil.hasSpecialChar(text3)) {
-      text3 = text3.replaceAll('"', '\\"').replaceAll(/\s+/g, " ").replaceAll("\n", "\u3002").replaceAll("\u3002\u3002", "\u3002").replace(/^" /, '"').replace(/ "$/, '"');
-      if (dataField && dataField.type === DataValueType.date) {
-        return text3;
-      }
-      text3 = YamlUtil.handleSpecialChar(text3);
-    }
-    return text3;
-  }
-  static handleMultiLineText(text3) {
-    if (!text3) {
-      return "";
-    }
     if (!YamlUtil.hasSpecialChar(text3)) {
       return text3;
     }
-    text3 = text3.replaceAll('"', '\\"').replaceAll("\n", "\u3002").replaceAll("\u3002\u3002", "\u3002").replaceAll(/\s+/g, " ").trim();
+    if (text3.includes("\n")) {
+      const lines = text3.split("\n");
+      return "|\n" + lines.map((line) => "  " + line).join("\n");
+    }
+    if (dataField && dataField.type === DataValueType.date) {
+      return text3;
+    }
+    text3 = text3.replaceAll('"', '\\"').replaceAll(/\s+/g, " ").replaceAll("\u3002\u3002", "\u3002").replace(/^" /, '"').replace(/ "$/, '"');
     return '"' + text3 + '"';
+  }
+  static handleMultiLineText(text3) {
+    return YamlUtil.handleText(text3);
   }
 };
 var SPECIAL_CHAR_REG = /[{}\[\]&*#?|\-<>=!%@:"`,\n]/;
@@ -20476,7 +20477,11 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
       } else {
         value = html3(info.next).text().trim();
       }
-      valueMap.set(BookKeyValueMap.get(key), value);
+      let lookupKey = key;
+      if (lookupKey.endsWith(":") || lookupKey.endsWith("\uFF1A")) {
+        lookupKey = lookupKey.slice(0, -1);
+      }
+      valueMap.set(BookKeyValueMap.get(lookupKey), value);
     });
     let id = StringUtil.analyzeIdByUrl(url);
     let menuIdDom = html3("#dir_" + id + "_full") ? html3("#dir_" + id + "_full") : html3("#dir_" + id + "_short");
@@ -20513,7 +20518,8 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
     if (comment) {
       return comment;
     }
-    return this.getPropertyValue(html3, PropertyName.comment);
+    const fallback = this.getPropertyValue(html3, PropertyName.comment);
+    return this.isCommentCandidate(fallback) ? fallback : "";
   }
   isCommentCandidate(text3) {
     if (!text3) {
@@ -20536,17 +20542,17 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
 };
 var BookKeyValueMap = new Map([
   ["\u4F5C\u8005", "author"],
-  ["\u51FA\u7248\u793E:", "publisher"],
-  ["\u539F\u4F5C\u540D:", "originalTitle"],
-  ["\u51FA\u7248\u5E74:", "datePublished"],
-  ["\u9875\u6570:", "totalPage"],
-  ["\u5B9A\u4EF7:", "price"],
-  ["\u88C5\u5E27:", "binding"],
-  ["\u4E1B\u4E66:", "series"],
-  ["ISBN:", "isbn"],
+  ["\u51FA\u7248\u793E", "publisher"],
+  ["\u539F\u4F5C\u540D", "originalTitle"],
+  ["\u51FA\u7248\u5E74", "datePublished"],
+  ["\u9875\u6570", "totalPage"],
+  ["\u5B9A\u4EF7", "price"],
+  ["\u88C5\u5E27", "binding"],
+  ["\u4E1B\u4E66", "series"],
+  ["ISBN", "isbn"],
   ["\u8BD1\u8005", "translator"],
-  ["\u526F\u6807\u9898:", "subTitle"],
-  ["\u51FA\u54C1\u65B9:", "producer"]
+  ["\u526F\u6807\u9898", "subTitle"],
+  ["\u51FA\u54C1\u65B9", "producer"]
 ]);
 
 // src/org/wanxp/utils/SchemaOrg.ts
@@ -20614,7 +20620,8 @@ var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
     if (component) {
       return component;
     }
-    return this.getPropertyValue(html3, PropertyName.comment);
+    const fallback = this.getPropertyValue(html3, PropertyName.comment);
+    return this.filterCommentText(fallback);
   }
   parseSubjectFromHtml(html3, context) {
     let movie = html3("script").get().filter((scd) => html3(scd).attr("type") == "application/ld+json").map((i) => {
