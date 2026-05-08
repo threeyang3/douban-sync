@@ -15,7 +15,7 @@ export default class NetFileHandler {
 		this.fileHandler = fileHandler;
 	}
 
-	async downloadDBFile(url: string, folder:string, filename: string, context:HandleContext, showError:boolean, headers?:any): Promise<{ success: boolean, error:string, filepath: string }> {
+	async downloadDBFile(url: string, folder:string, filename: string, context:HandleContext, showError:boolean, headers?:any, overwrite: boolean = false): Promise<{ success: boolean, error:string, filepath: string }> {
 		const filePath:string = FileUtil.join(folder, filename);
 			return HttpUtil.httpRequestBuffer(url, headers, context.plugin.settingsManager)
 				.then((response) => {
@@ -34,7 +34,7 @@ export default class NetFileHandler {
 				if (!buffer || buffer.byteLength == 0) {
 					return 0;
 				}
-				this.fileHandler.creatAttachmentWithData(filePath, buffer);
+				this.fileHandler.creatAttachmentWithData(filePath, buffer, overwrite);
 				return buffer.byteLength;
 			}).then((size) => {
 				if (size == 0) {

@@ -147,6 +147,7 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			dataFileNamePath: (settings.dataFileNamePath == '' || settings.dataFileNamePath == null) ?  DEFAULT_SETTINGS.dataFileNamePath : settings.dataFileNamePath,
 			cacheImage: ( settings.cacheImage == null) ?  DEFAULT_SETTINGS.cacheImage : settings.cacheImage,
 			cacheHighQuantityImage: ( settings.cacheHighQuantityImage == null) ?  DEFAULT_SETTINGS.cacheHighQuantityImage : settings.cacheHighQuantityImage,
+			overwriteCoverImage: ( settings.overwriteCoverImage == null) ?  DEFAULT_SETTINGS.overwriteCoverImage : settings.overwriteCoverImage,
 			attachmentPath: (settings.attachmentPath == '' || settings.attachmentPath == null) ?  DEFAULT_SETTINGS.attachmentPath : settings.attachmentPath,
 			attachmentFileName: (settings.attachmentFileName == '' || settings.attachmentFileName == null) ?  DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
 			templateFile:  this.getDefaultTemplatePath(SyncType.movie),
@@ -465,6 +466,18 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 					});
 			})
 			.setDisabled(disable);
+
+			new Setting(containerEl)
+				.setName(i18nHelper.getMessage('121470'))
+				.setDesc(i18nHelper.getMessage('121471'))
+				.addToggle((toggleComponent) => {
+					toggleComponent
+						.setValue(config.overwriteCoverImage)
+						.onChange(async (value) => {
+							config.overwriteCoverImage = value;
+						});
+				})
+				.setDisabled(disable);
 	}
 
 	showUpdateAllConfig(containerEl: HTMLElement, config: SyncConfig, disable:boolean) {

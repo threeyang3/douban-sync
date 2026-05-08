@@ -225,6 +225,7 @@ export default class SettingsManager {
 		this.settings.debugMode = DEFAULT_SETTINGS.debugMode;
 		this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
 		this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
+		this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
 	}
 
 	clearLoginInfo() {

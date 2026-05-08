@@ -47,6 +47,7 @@ export interface DoubanPluginSetting {
 	loginHeadersContent: string,
 	cacheImage: boolean,
 	cacheHighQuantityImage: boolean,
+		overwriteCoverImage: boolean,
 	attachmentPath: string,
 	attachmentFileName: string,
 	pictureBedFlag: boolean

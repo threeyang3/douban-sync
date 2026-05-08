@@ -236,6 +236,17 @@ export function constructAttachmentFileSettingsUI(containerEl: HTMLElement, mana
 						constructAttachmentFileSettingsUI(containerEl, manager);
 					});
 			});
+			new Setting(containerEl)
+				.setName(i18nHelper.getMessage('121470'))
+				.setDesc(i18nHelper.getMessage('121471'))
+				.addToggle((toggleComponent) => {
+					toggleComponent
+						.setValue(manager.plugin.settings.overwriteCoverImage)
+						.onChange(async (value) => {
+							manager.plugin.settings.overwriteCoverImage = value;
+							await manager.plugin.saveSettings();
+						});
+				});
 	}
 }
 

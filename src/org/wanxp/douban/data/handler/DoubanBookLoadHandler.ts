@@ -112,6 +112,8 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 		// 查找包含"内容简介"的 h2 标题，然后获取其后面的内容
 		const contentIntro = html("h2:contains('内容简介')").parent().find(".indent").first();
 		if (contentIntro.length > 0) {
+			// 移除 <style> 标签，防止 CSS 内容混入描述文本
+			contentIntro.find("style").remove();
 			// 检查是否有隐藏的完整内容
 			const hiddenContent = contentIntro.find("span.all.hidden").text().trim();
 			if (hiddenContent) {
@@ -139,6 +141,7 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 		if (!desc) {
 			const linkReport = html("#link-report .intro").first();
 			if (linkReport.length > 0) {
+				linkReport.find("style").remove();
 				const hiddenContent = linkReport.find("span.all.hidden").text().trim();
 				if (hiddenContent) {
 					desc = hiddenContent;

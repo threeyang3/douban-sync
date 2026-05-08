@@ -115,7 +115,8 @@ ${bookTable}
 > [!abstract]- **简介**
 > {{desc}}
 
-{{menu}}
+> [!abstract]- **目录**
+> {{menu}}
 
 ## 记录
 
@@ -166,9 +167,8 @@ ${musicTable}
 > [!abstract]- **简介**
 > {{desc}}
 
----
-Menu:
-{{menu}}
+> [!abstract]- **曲目列表**
+> {{menu}}
 
 ## 记录
 

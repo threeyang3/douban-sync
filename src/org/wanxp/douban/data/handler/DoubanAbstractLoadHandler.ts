@@ -512,6 +512,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		}
 		fileName = this.parsePartPath(fileName, extract, context, variableMap)
 		fileName = fileName + fileNameSuffix;
+		const overwriteCoverImage = syncConfig ? (syncConfig.overwriteCoverImage ?? false) : context.settings.overwriteCoverImage;
 		const imageReferer = (extract.id ? this.getSubjectUrl(extract.id) : '') || extract.url;
 		const referHeaders = HttpUtil.buildImageRequestHeaders(
 			context.plugin.settingsManager.getHeaders() as Record<string, any>,
@@ -525,7 +526,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					context.plugin.settingsManager.getHeaders() as Record<string, any>,
 					imageReferer
 				);
-				const resultValue = await this.handleImage(highImage, folder, fileName, context, false, highImageHeaders);
+				const resultValue = await this.handleImage(highImage, folder, fileName, context, false, highImageHeaders, overwriteCoverImage);
 				if (resultValue && resultValue.success) {
 					extract.image = resultValue.filepath;
 					extract.imageUrl = highImage;
@@ -537,7 +538,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				console.error('下载高清封面失败，将会使用普通封面')
 			}
 		}
-		const resultValue = await this.handleImage(image, folder, fileName, context, true, referHeaders);
+		const resultValue = await this.handleImage(image, folder, fileName, context, true, referHeaders, overwriteCoverImage);
 		if (resultValue && resultValue.success) {
 			extract.image = resultValue.filepath;
 			this.initImageVariableMap(extract, context, variableMap);
@@ -568,7 +569,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 
 	}
 
-	private async handleImage(image: string, folder: string, filename: string, context: HandleContext, showError: boolean, headers?: any) {
+	private async handleImage(image: string, folder: string, filename: string, context: HandleContext, showError: boolean, headers?: any, overwrite: boolean = false) {
 		//只有在桌面版且开启了图片上传才会使用PicGo，并且开启图床功能
 		if (context.settings.pictureBedFlag && Platform.isDesktopApp) {
 			//临时限定只支持PicGo
@@ -576,11 +577,11 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			if (!checked) {
 				//TODO 国际化
 				log.notice('连接PicGo软件失败, 请检查是否已开启PicGo的Server服务 或 检查插件中配置地址是否正确，现使用默认的下载到本地的方式');
-				return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers);
+				return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers, overwrite);
 			}
 			return await context.netFileHandler.downloadDBUploadPicGoByClipboard(image, filename, context, showError, headers);
 		}else {
-			return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers);
+			return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers, overwrite);
 		}
 
 	}
