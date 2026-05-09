@@ -498,7 +498,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			!!extract.userState &&
 			extract.userState.collectionDate != null;
 
-		if (!config || config.source === 'builtin') {
+		if (config.source === 'builtin') {
 			return getDefaultTemplateContent(tempKey, useUserState);
 		}
 

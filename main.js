@@ -20148,7 +20148,7 @@ var DoubanAbstractLoadHandler = class {
         config = { source: "builtin" };
       }
       const useUserState = context.userComponent.isLogin() && !!extract3.userState && extract3.userState.collectionDate != null;
-      if (!config || config.source === "builtin") {
+      if (config.source === "builtin") {
         return getDefaultTemplateContent(tempKey, useUserState);
       }
       if (config.source === "file" && config.filePath) {
@@ -23324,7 +23324,15 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
 }
 function resolveTemplateContent(manager, templateKey, configKey) {
   return __async(this, null, function* () {
-    const config = manager.getSetting(configKey) || { source: "builtin" };
+    const raw = manager.getSetting(configKey);
+    let config;
+    if (raw && typeof raw === "object" && "source" in raw) {
+      config = raw;
+    } else if (raw && typeof raw === "string") {
+      config = { source: "file", filePath: raw };
+    } else {
+      config = { source: "builtin" };
+    }
     switch (config.source) {
       case "builtin":
         return getDefaultBuiltinContent(templateKey);
@@ -23340,6 +23348,8 @@ function resolveTemplateContent(manager, templateKey, configKey) {
         return getDefaultBuiltinContent(templateKey);
       case "custom":
         return config.customContent || getDefaultBuiltinContent(templateKey);
+      default:
+        return getDefaultBuiltinContent(templateKey);
     }
   });
 }
@@ -24925,32 +24935,13 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
   }
   getDefaultTemplatePath(value) {
     const { settings } = this.plugin;
-    let config;
-    switch (value) {
-      case SyncType.movie:
-        config = settings.movieTemplateConfig;
-        break;
-      case SyncType.book:
-        config = settings.bookTemplateConfig;
-        break;
-      case SyncType.music:
-        config = settings.musicTemplateConfig;
-        break;
-      case SyncType.teleplay:
-        config = settings.teleplayTemplateConfig;
-        break;
-      case SyncType.game:
-        config = settings.gameTemplateConfig;
-        break;
-      default:
-        return "";
-    }
-    if (config && typeof config === "string") {
-      return config;
-    }
-    if (config && config.source === "file" && config.filePath) {
-      return config.filePath;
-    }
+    const raw = value === SyncType.movie ? settings.movieTemplateConfig : value === SyncType.book ? settings.bookTemplateConfig : value === SyncType.music ? settings.musicTemplateConfig : value === SyncType.teleplay ? settings.teleplayTemplateConfig : value === SyncType.game ? settings.gameTemplateConfig : void 0;
+    if (!raw)
+      return "";
+    if (typeof raw === "string")
+      return raw;
+    if (raw.source === "file" && raw.filePath)
+      return raw.filePath;
     return "";
   }
   showScopeDropdown(containerEl, scopeSelections, config, disable) {

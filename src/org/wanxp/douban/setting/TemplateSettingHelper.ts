@@ -175,7 +175,15 @@ export async function resolveTemplateContent(
 	templateKey: TemplateKey,
 	configKey: keyof DoubanPluginSetting
 ): Promise<string> {
-	const config = (manager.getSetting(configKey) as TemplateConfig) || { source: 'builtin' };
+	const raw = manager.getSetting(configKey);
+	let config: TemplateConfig;
+	if (raw && typeof raw === 'object' && 'source' in raw) {
+		config = raw as TemplateConfig;
+	} else if (raw && typeof raw === 'string') {
+		config = { source: 'file', filePath: raw };
+	} else {
+		config = { source: 'builtin' };
+	}
 	switch (config.source) {
 		case 'builtin':
 			return getDefaultBuiltinContent(templateKey);
@@ -190,6 +198,8 @@ export async function resolveTemplateContent(
 			return getDefaultBuiltinContent(templateKey);
 		case 'custom':
 			return config.customContent || getDefaultBuiltinContent(templateKey);
+		default:
+			return getDefaultBuiltinContent(templateKey);
 	}
 }
 
@@ -201,10 +211,8 @@ export function createFolderSelectionSetting({
 											  name, desc, placeholder, key, manager,
 										  }: CreateTemplateSelectParams, filePathDisplayExample?:HTMLDivElement) {
 	return (setting: Setting) => {
-		// @ts-ignore
-		setting.setName( i18nHelper.getMessage(name));
-		// @ts-ignore
-		setting.setDesc( i18nHelper.getMessage(desc));
+		setting.setName(i18nHelper.getMessage(name));
+		setting.setDesc(i18nHelper.getMessage(desc));
 	};
 }
 

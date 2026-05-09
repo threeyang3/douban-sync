@@ -5,6 +5,7 @@ import {
 } from "obsidian";
 
 import DoubanPlugin from "../../main";
+import {TemplateConfig} from "../setting/model/DoubanPluginSetting";
 import {i18nHelper} from "src/org/wanxp/lang/helper";
 import HandleContext from "../data/model/HandleContext";
 import {
@@ -266,22 +267,16 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 
 	private getDefaultTemplatePath(value: string) {
 		const {settings} = this.plugin;
-		let config: any;
-		switch (value) {
-			case SyncType.movie: config = settings.movieTemplateConfig; break;
-			case SyncType.book: config = settings.bookTemplateConfig; break;
-			case SyncType.music: config = settings.musicTemplateConfig; break;
-			case SyncType.teleplay: config = settings.teleplayTemplateConfig; break;
-			case SyncType.game: config = settings.gameTemplateConfig; break;
-			default: return '';
-		}
-		// Auto-repair: handle corrupted config (stored as plain string)
-		if (config && typeof config === 'string') {
-			return config;
-		}
-		if (config && config.source === 'file' && config.filePath) {
-			return config.filePath;
-		}
+		const raw: TemplateConfig | string | undefined =
+			value === SyncType.movie ? settings.movieTemplateConfig :
+			value === SyncType.book ? settings.bookTemplateConfig :
+			value === SyncType.music ? settings.musicTemplateConfig :
+			value === SyncType.teleplay ? settings.teleplayTemplateConfig :
+			value === SyncType.game ? settings.gameTemplateConfig :
+			undefined;
+		if (!raw) return '';
+		if (typeof raw === 'string') return raw;
+		if (raw.source === 'file' && raw.filePath) return raw.filePath;
 		return '';
 	}
 
