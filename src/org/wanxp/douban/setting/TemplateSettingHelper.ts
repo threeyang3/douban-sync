@@ -65,7 +65,15 @@ function createTemplateSourceSetting(
 	templateKey: TemplateKey
 ) {
 	const getConfig = (): TemplateConfig => {
-		return (manager.getSetting(configKey) as TemplateConfig) || { source: 'builtin' };
+		const raw = manager.getSetting(configKey);
+		if (raw && typeof raw === 'object' && 'source' in raw) {
+			return raw as TemplateConfig;
+		}
+		// Auto-repair: if stored as a plain string (legacy/corrupted), treat as file path
+		if (raw && typeof raw === 'string') {
+			return { source: 'file', filePath: raw };
+		}
+		return { source: 'builtin' };
 	};
 
 	const setting = new Setting(containerEl);

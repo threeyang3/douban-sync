@@ -1,6 +1,7 @@
 import {App, TAbstractFile, TFile, TFolder} from "obsidian";
 import {TextInputSuggest} from "./TextInputSuggest";
 import SettingsManager from "../SettingsManager";
+import {TemplateConfig} from "./DoubanPluginSetting";
 
 export class FileTreeSelectSuggest extends TextInputSuggest<TAbstractFile> {
 	parentPath: string = "/";
@@ -73,18 +74,17 @@ export class FileTreeSelectSuggest extends TextInputSuggest<TAbstractFile> {
 	selectSuggestion(file: TAbstractFile): void {
 		this.inputEl.value = file.path;
 		this.parentPath = file.path;
-		// this.inputEl.addEventListener("change", () => {
-		// 	this.onInputChanged()
-		// })
 		if (file instanceof TFolder) {
 			this.inputEl.value += "/";
 			this.inputEl.trigger("input");
 		}else {
-			//@ts-ignore
-			this.manager.updateSetting(this.settingKey, file.path);
+			const raw = this.manager.getSetting(this.settingKey as any);
+			const config: TemplateConfig = (raw && typeof raw === 'object' && 'source' in raw)
+				? raw as TemplateConfig
+				: { source: 'file' };
+			config.filePath = file.path;
+			this.manager.updateSetting(this.settingKey as any, config);
 			this.close();
 		}
-
-
 	}
 }

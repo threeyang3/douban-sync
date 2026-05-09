@@ -23075,7 +23075,10 @@ var FileTreeSelectSuggest = class extends TextInputSuggest {
       this.inputEl.value += "/";
       this.inputEl.trigger("input");
     } else {
-      this.manager.updateSetting(this.settingKey, file.path);
+      const raw = this.manager.getSetting(this.settingKey);
+      const config = raw && typeof raw === "object" && "source" in raw ? raw : { source: "file" };
+      config.filePath = file.path;
+      this.manager.updateSetting(this.settingKey, config);
       this.close();
     }
   }
@@ -23240,7 +23243,14 @@ function constructTemplateUI(containerEl, manager) {
 }
 function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, templateKey) {
   const getConfig = () => {
-    return manager.getSetting(configKey) || { source: "builtin" };
+    const raw = manager.getSetting(configKey);
+    if (raw && typeof raw === "object" && "source" in raw) {
+      return raw;
+    }
+    if (raw && typeof raw === "string") {
+      return { source: "file", filePath: raw };
+    }
+    return { source: "builtin" };
   };
   const setting = new import_obsidian21.Setting(containerEl);
   setting.setName(i18nHelper.getMessage(nameKey));
