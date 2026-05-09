@@ -135,7 +135,7 @@ export class DoubanNoteManager {
 
 		return {
 			doubanId,
-			title: (toStr(frontmatter['title']) || localFile.basename).replaceAll('"', ''),
+			title: (toStr(frontmatter['title']) || localFile.basename).replace(/[""\"\"＂«»''「」『』]/g, ''),
 			type: toStr(frontmatter['type']) || '',
 		};
 	}
