@@ -65,7 +65,7 @@ export class DoubanNoteManager {
 		}
 
 		await this.app.fileManager.processFrontMatter(localFile, (fm) => {
-			fm['笔记'] = `[[${stripMd(notePath)}]]`;
+			fm['笔记'] = `[[${stripMd(notePath)}|${context.title}]]`;
 		});
 
 		await this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
