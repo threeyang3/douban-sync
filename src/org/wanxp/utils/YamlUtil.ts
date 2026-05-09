@@ -16,6 +16,10 @@ export default class YamlUtil {
 		if (!YamlUtil.hasSpecialChar(text)) {
 			return text;
 		}
+		// Obsidian frontmatter 能直接识别 [[wiki link]]，无需加引号
+		if (/^\[\[.+\]\]$/.test(text)) {
+			return text;
+		}
 		// 多行文本使用 YAML 块标量语法，保留换行结构
 		if (text.includes('\n')) {
 			const lines = text.split('\n');
