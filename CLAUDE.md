@@ -59,6 +59,7 @@ npm run docs:build     # 文档站构建
 - 同步列表 handler 通过 `DoubanAbstractListHandler.create(syncType, doType)` 工厂方法创建，不再需要叶子类文件
 - 路径自动补全使用 `PathSuggest`（mode: 'folder' | 'file'），替代原 FolderSuggest/FileSuggest
 - 模板变量定义在 `DefaultTemplateContent.ts`，解析在 `VariableUtil.ts`
+- 模板中变量用 `[[ ]]` 包裹为 wiki link 时，必须用双引号括起来（如 `"[[{{image}}]]"`），否则 `[` 被 YAML 特殊字符处理会多出一层引号
 - YAML frontmatter 生成在 `YamlUtil.ts`，多行文本使用 `handleMultiLineText()`
 - 语言检测使用 `moment.locale()`（非 localStorage）
 - 文档站导航在 `doc/.vitepress/config.mts`，新增外部可见文档时同步更新 sidebar

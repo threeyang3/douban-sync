@@ -156,8 +156,8 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					throw new Error('parseSubjectFromHtml returned null');
 				}
 				sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
-				// 从云端获取的 title 可能包含双引号（如《"解忧杂货店"》），统一去除
-				sub.title = sub.title?.replaceAll('"', '') ?? sub.title;
+				// 从云端获取的 title 可能包含各类引号（如《"解忧杂货店"》），统一去除
+				sub.title = sub.title?.replace(/[""“”＂«»‘’「」『』]/g, '') ?? sub.title;
 				sub.userState = userState;
 				sub.guessType = guessType;
 				return sub;
