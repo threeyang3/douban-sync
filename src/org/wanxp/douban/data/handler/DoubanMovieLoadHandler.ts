@@ -90,11 +90,13 @@ export default class DoubanMovieLoadHandler extends DoubanAbstractLoadHandler<Do
 
 
 	private getComment(html: CheerioAPI, context: HandleContext) {
-		const component = html('div#interest_sect_level > div.a_stars > span.color_gray').next().next().text().trim();
+		let component = html('div#interest_sect_level > div.a_stars > span.color_gray').next().next().text().trim();
+		component = this.filterCommentText(component);
 		if (component) {
 			return component;
 		}
-		return this.getPropertyValue(html, PropertyName.comment);
+		const fallback = this.getPropertyValue(html, PropertyName.comment);
+		return this.filterCommentText(fallback);
 	}
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanMovieSubject {

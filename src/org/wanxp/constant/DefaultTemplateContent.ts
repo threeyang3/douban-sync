@@ -3,7 +3,7 @@ import {TemplateKey} from "./Constsant";
 function syncify(basic: string, syncTable: string, basicTable: string): string {
 	return basic
 		.replace('createTime:',
-			`state: {{myState}}\ntags: {{myTags}}\nmyRatingStar: {{myRatingStar}}\n短评: {{myComment}}\n标语: \n存储: \n相关: \ncollectionDate: {{myCollectionDate}}\ncoverUrl: {{imageData.url}}\ncreateTime:`)
+			`state: {{myState}}\ntags: {{myTags}}\nmyRatingStar: {{myRatingStar}}\n短评: {{myComment}}\n标语: \n单评: false\n笔记: ""\n存储: \n相关: \ncollectionDate: {{myCollectionDate}}\ncoverUrl: {{imageData.url}}\ncreateTime:`)
 		.replace(basicTable, syncTable)
 		.replace('> [!abstract]- **简介**',
 			'> [!abstract]+ **短评**\n> {{myComment}}\n\n> [!abstract]- **简介**');
@@ -101,6 +101,8 @@ totalPage: {{totalPage}}
 price: {{price}}
 binding: {{binding}}
 image: {{image}}
+拥有: false
+位置: ""
 createTime: {{currentDate}}
 ---
 
@@ -115,7 +117,8 @@ ${bookTable}
 > [!abstract]- **简介**
 > {{desc}}
 
-{{menu}}
+> [!abstract]- **目录**
+> {{menu}}
 
 ## 记录
 
@@ -166,9 +169,8 @@ ${musicTable}
 > [!abstract]- **简介**
 > {{desc}}
 
----
-Menu:
-{{menu}}
+> [!abstract]- **曲目列表**
+> {{menu}}
 
 ## 记录
 

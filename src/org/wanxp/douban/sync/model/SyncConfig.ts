@@ -12,6 +12,7 @@ export interface  SyncConfig {
 	cacheImage:boolean;
 
 	cacheHighQuantityImage:boolean;
+		overwriteCoverImage?: boolean;
 	attachmentPath: string;
 	attachmentFileName: string;
 	templateFile: string;

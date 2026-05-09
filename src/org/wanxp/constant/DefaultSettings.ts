@@ -57,6 +57,7 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	loginHeadersContent: '',
 	cacheImage: true,
 	cacheHighQuantityImage: true,
+		overwriteCoverImage: false,
 	attachmentPath: 'assets',
 	attachmentFileName: "{{title}}",
 	syncHandledDataArray: [],

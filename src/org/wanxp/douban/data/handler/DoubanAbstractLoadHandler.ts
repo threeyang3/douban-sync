@@ -127,6 +127,16 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					guessType = this.getGuessType(data);
 				}
 				const sub = this.parseSubjectFromHtml(data, context);
+				if (!sub) {
+					// M-hM-7M-#M-fM-^^M-^PM-eM--1M-hM-4M-%M-fM-^WM-6M-oM-<M-^LM-hM-^KM-%M-gM-1M-;M-eM-^^M-^KM-dM-8M-^MM-eM-^LM-9M-iM-^EM-^MM-oM-<M-^LM-fM- M-^GM-hM-.M-0M-dM-8M-: failByDiffType M-hM-^@M-^LM-iM-^]M-^^M-fM-^IM-)M-fM-;M-^BM-iM-^@M-^ZM fail
+					if (context.syncActive && guessType && guessType !== this.getSupportType()) {
+						const id = StringUtil.analyzeIdByUrl(url);
+						context.syncStatusHolder?.syncStatus.failByDiffType(id, '',
+							`${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`);
+						return undefined;
+					}
+					throw new Error('parseSubjectFromHtml returned null');
+				}
 				sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
 				sub.userState = userState;
 				sub.guessType = guessType;
@@ -162,7 +172,66 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					}
 				}
 			}
+			// 关键词匹配失败时，尝试从 JSON-LD 和 og:type 推断类型
+			const ldJsonType = this.getGuessTypeFromJsonLd(data);
+			if (ldJsonType) {
+				return ldJsonType;
+			}
+			const ogType = this.getGuessTypeFromOgType(data);
+			if (ogType) {
+				return ogType;
+			}
 		}
+		return null;
+	}
+
+	/**
+	 * 从 JSON-LD @type 推断内容类型
+	 */
+	private getGuessTypeFromJsonLd(data: CheerioAPI): SupportType | null {
+		const ldJsonMap: Record<string, SupportType> = {
+			'Book': SupportType.book,
+			'Movie': SupportType.movie,
+			'TVSeries': SupportType.teleplay,
+			'MusicAlbum': SupportType.music,
+			'VideoGame': SupportType.game,
+		};
+		try {
+			const scripts = data('script').get();
+			for (const s of scripts) {
+				if (data(s).attr('type') === 'application/ld+json') {
+					const text = data(s).text();
+					if (text) {
+						const obj = JSON.parse(text.replace(/[\r\n\t]+/g, ''));
+						const type = obj['@type'];
+						if (type && ldJsonMap[type]) {
+							return ldJsonMap[type];
+						}
+					}
+					break;
+				}
+			}
+		} catch (_) { /* ignore parse errors */ }
+		return null;
+	}
+
+	/**
+	 * 从 og:type 推断内容类型
+	 */
+	private getGuessTypeFromOgType(data: CheerioAPI): SupportType | null {
+		const ogTypeMap: Record<string, SupportType> = {
+			'book': SupportType.book,
+			'video.movie': SupportType.movie,
+			'video.tv_show': SupportType.teleplay,
+			'music.album': SupportType.music,
+			'video.other': SupportType.game,
+		};
+		try {
+			const ogType = data('meta[property="og:type"]').attr('content');
+			if (ogType && ogTypeMap[ogType]) {
+				return ogTypeMap[ogType];
+			}
+		} catch (_) { /* ignore parse errors */ }
 		return null;
 	}
 
@@ -416,12 +485,20 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			}
 		}
 		const { templateKey: tempKey, configKey } = this.getTemplateKeys();
-		const config: TemplateConfig = context.settings[configKey] as TemplateConfig;
+		const rawConfig = context.settings[configKey];
+		let config: TemplateConfig;
+		if (rawConfig && typeof rawConfig === 'object' && 'source' in rawConfig) {
+			config = rawConfig as TemplateConfig;
+		} else if (rawConfig && typeof rawConfig === 'string') {
+			config = { source: 'file', filePath: rawConfig };
+		} else {
+			config = { source: 'builtin' };
+		}
 		const useUserState = context.userComponent.isLogin() &&
 			!!extract.userState &&
 			extract.userState.collectionDate != null;
 
-		if (!config || config.source === 'builtin') {
+		if (config.source === 'builtin') {
 			return getDefaultTemplateContent(tempKey, useUserState);
 		}
 
@@ -512,6 +589,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		}
 		fileName = this.parsePartPath(fileName, extract, context, variableMap)
 		fileName = fileName + fileNameSuffix;
+		const overwriteCoverImage = syncConfig ? (syncConfig.overwriteCoverImage ?? false) : context.settings.overwriteCoverImage;
 		const imageReferer = (extract.id ? this.getSubjectUrl(extract.id) : '') || extract.url;
 		const referHeaders = HttpUtil.buildImageRequestHeaders(
 			context.plugin.settingsManager.getHeaders() as Record<string, any>,
@@ -525,7 +603,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					context.plugin.settingsManager.getHeaders() as Record<string, any>,
 					imageReferer
 				);
-				const resultValue = await this.handleImage(highImage, folder, fileName, context, false, highImageHeaders);
+				const resultValue = await this.handleImage(highImage, folder, fileName, context, false, highImageHeaders, overwriteCoverImage);
 				if (resultValue && resultValue.success) {
 					extract.image = resultValue.filepath;
 					extract.imageUrl = highImage;
@@ -537,7 +615,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				console.error('下载高清封面失败，将会使用普通封面')
 			}
 		}
-		const resultValue = await this.handleImage(image, folder, fileName, context, true, referHeaders);
+		const resultValue = await this.handleImage(image, folder, fileName, context, true, referHeaders, overwriteCoverImage);
 		if (resultValue && resultValue.success) {
 			extract.image = resultValue.filepath;
 			this.initImageVariableMap(extract, context, variableMap);
@@ -568,7 +646,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 
 	}
 
-	private async handleImage(image: string, folder: string, filename: string, context: HandleContext, showError: boolean, headers?: any) {
+	private async handleImage(image: string, folder: string, filename: string, context: HandleContext, showError: boolean, headers?: any, overwrite: boolean = false) {
 		//只有在桌面版且开启了图片上传才会使用PicGo，并且开启图床功能
 		if (context.settings.pictureBedFlag && Platform.isDesktopApp) {
 			//临时限定只支持PicGo
@@ -576,11 +654,11 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			if (!checked) {
 				//TODO 国际化
 				log.notice('连接PicGo软件失败, 请检查是否已开启PicGo的Server服务 或 检查插件中配置地址是否正确，现使用默认的下载到本地的方式');
-				return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers);
+				return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers, overwrite);
 			}
 			return await context.netFileHandler.downloadDBUploadPicGoByClipboard(image, filename, context, showError, headers);
 		}else {
-			return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers);
+			return  await context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers, overwrite);
 		}
 
 	}
@@ -639,7 +717,18 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		return HtmlUtil.getHtmlText(html, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), name));
 	}
 
-
+	/**
+	 * 过滤掉被误识别为短评的标签文本
+	 */
+	protected filterCommentText(text: string): string {
+		if (!text) {
+			return '';
+		}
+		if (/^标签[:：]/.test(text.trim())) {
+			return '';
+		}
+		return text;
+	}
 
 
 }

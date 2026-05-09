@@ -109,7 +109,8 @@ export class VariableUtil {
 		}
 
 		// 正文上下文（表格单元格内）使用内联格式，避免换行破坏 Markdown 表格
-		if (targetType === 'text') {
+		// menu 需要在正文中以列表形式呈现，跳过内联转换
+		if (targetType === 'text' && variable.key !== 'menu') {
 			arraySettings = {
 				...arraySettings,
 				arrayElementStart: '',
@@ -117,6 +118,19 @@ export class VariableUtil {
 				arraySpiltV2: '、',
 				arrayStart: '',
 				arrayEnd: '',
+			};
+		}
+
+		// menu 在正文中使用 Markdown 列表格式
+		if (targetType === 'text' && variable.key === 'menu') {
+			arraySettings = {
+				arrayName: 'menu',
+				arrayElementStart: '- ',
+				arrayElementEnd: '',
+				arraySpiltV2: '\n',
+				arrayStart: '',
+				arrayEnd: '',
+				index: 0,
 			};
 		}
 
@@ -130,7 +144,11 @@ export class VariableUtil {
 			.filter(v => v)
 			.map(v => this.handleText(v, targetType))
 		;
-		const arrayValue = StringUtil.handleArray(strValues, arraySettings);
+		let arrayValue = StringUtil.handleArray(strValues, arraySettings);
+		// menu 在 callout 中需要为每行添加 > 前缀
+		if (targetType === 'text' && variable.key === 'menu' && arrayValue) {
+			arrayValue = arrayValue.replace(/\n/g, '\n> ');
+		}
 		content = content.replaceAll(variableStr, arrayValue);
 		return content;
 	}
@@ -308,8 +326,16 @@ export class VariableUtil {
 			return YamlUtil.handleText(v, dataField);
 		}
 		if (targetType === 'text') {
-			// desc 在正文中以 callout 形式呈现，需要为每行添加 > 前缀以保持 callout 格式
+			// desc 在正文中以 callout 形式呈现，需要规范化文本并添加 > 前缀
 			if (dataField && dataField.name === 'desc' && v) {
+				// 去除全角空格
+				v = v.replace(/[　]/g, '');
+				// 去除每行首尾空白，并过滤掉纯空白行
+				v = v.split('\n')
+					.map(line => line.trim())
+					.filter(line => line.length > 0)
+					.join('\n');
+				// 为每行添加 > 前缀以保持 callout 格式
 				return v.replaceAll('\n', '\n> ');
 			}
 			return  v;

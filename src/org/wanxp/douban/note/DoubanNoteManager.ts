@@ -54,7 +54,7 @@ export class DoubanNoteManager {
 
 		if (!(existingFile instanceof TFile)) {
 			const parentPath = notePath.substring(0, notePath.lastIndexOf('/'));
-			if (parentPath) {
+			if (parentPath && !this.app.vault.getAbstractFileByPath(parentPath)) {
 				await this.app.vault.createFolder(parentPath);
 			}
 			const template = this.plugin.settings.noteTemplateContent;
@@ -65,7 +65,8 @@ export class DoubanNoteManager {
 		}
 
 		await this.app.fileManager.processFrontMatter(localFile, (fm) => {
-			fm['笔记'] = `[[${stripMd(notePath)}]]`;
+			const noteName = notePath.substring(notePath.lastIndexOf('/') + 1).replace(/\.md$/i, '');
+			fm['笔记'] = `[[${stripMd(notePath)}|${noteName}]]`;
 		});
 
 		await this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);

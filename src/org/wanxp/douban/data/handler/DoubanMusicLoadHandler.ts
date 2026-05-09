@@ -41,7 +41,8 @@ export default class DoubanMusicLoadHandler extends DoubanAbstractLoadHandler<Do
 		const stateWord = html('div#interest_sect_level > div.a_stars > span.mr10').text().trim();
 		const collectionDateStr = html('div#interest_sect_level > div.a_stars > span.mr10').next().text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		const component = html('span#rating').next().next().next().next().text().trim();
+		let component = html('span#rating').next().next().next().next().text().trim();
+			component = this.filterCommentText(component);
 
 		const userState: UserStateSubject = {
 			tags: tags,

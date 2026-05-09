@@ -77,7 +77,8 @@ export default class DoubanTheaterLoadHandler extends DoubanAbstractLoadHandler<
 		const stateWord = html('#interest_sect_level > h2').text().trim();
 		const collectionDateStr = html('div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date').text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		const component = this.getPropertyValue(html, PropertyName.comment);
+		let component = this.getPropertyValue(html, PropertyName.comment);
+			component = this.filterCommentText(component);
 		const userState: UserStateSubject = {
 			tags: tags,
 			rate: rate ? Number(rate) : null,

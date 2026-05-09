@@ -2212,8 +2212,8 @@ PS: This file could be delete if you want to.
   "110091": `Error`,
   "110095": `The smaller the number, the closer to now. For example, the latest update on Douban is the first one, and the earliest update is the last one.`,
   "110096": `This is the update time of our entry on Douban`,
-  "110097": `Inherit old note data:`,
-  "110098": `Only works when forced replacement is enabled. Preserves custom frontmatter properties and "\u8BB0\u5F55"/"\u611F\u60F3" body sections from the old note`,
+  "110097": `Inherit old item data:`,
+  "110098": `Only works when forced replacement is enabled. Preserves custom frontmatter properties and "\u8BB0\u5F55"/"\u611F\u60F3" body sections from the old item`,
   "exists": `[exists]`,
   "unHandle": `[unHandle]`,
   "replace": `[replace]`,
@@ -2384,17 +2384,18 @@ PS: This file could be delete if you want to.
   "121436": `High Definition Cover looks better but it will take more space, and you must login douban in this plugin`,
   "121437": `Please login first, Then this function could be enable`,
   "121438": `High Definition Cover looks better but it will take more space`,
+  "121470": `Overwrite existing cover`,
+  "121471": `When enabled, existing cover images will be deleted and re-downloaded during import or sync`,
   "121440": `Use Picture Bed`,
   "121441": `Save attachment file to picture bed`,
   "121450": `Picture Bed Type`,
   "121451": `Select picture bed type`,
   "121461": `PicGo Upload Url`,
-  "121501": `Note folder`,
-  "121502": `Nodes created from Obsidian-Douban will be placed in this folder, If blank, they will be placed in the default location for this vault. `,
+  "121501": `Item folder`,
+  "121502": `Items imported from Douban will be placed in this folder. If blank, they will be placed in the default location for this vault. `,
   "121503": `Default Folder`,
-  "121601": `Note Name`,
-  "121602": `Nodes created from Obsidian-Douban will use this fileName as template(also support filePath), and support 
-	 If blank, they will be created by default name. support all basic template variables. example: {{type}}/{{title}}`,
+  "121601": `Item file name`,
+  "121602": `Items imported from Douban will use this file name as template (also supports file paths). Supports all basic template variables. Example: {{type}}/{{title}}. If blank, the default name will be used.`,
   "121604": `Note Path Previous`,
   "120603": `Display Preview`,
   "120604": `ArrayTypeName:`,
@@ -2417,10 +2418,10 @@ PS: This file could be delete if you want to.
   "121912": `Basic preset`,
   "121913": `Compact preset`,
   "121914": `Sync preset`,
-  "121920": `Note path template`,
-  "121921": `Path template for note files, available variables: {{id}}, {{title}}, {{type}}`,
-  "121922": `Note template content`,
-  "121923": `Template content used when creating notes, available variables: {{id}}, {{title}}, {{type}}`,
+  "121920": `Linked note path template`,
+  "121921": `Path template for linked note files, available variables: {{id}}, {{title}}, {{type}}`,
+  "121922": `Linked note template content`,
+  "121923": `Template content used when creating linked notes, available variables: {{id}}, {{title}}, {{type}}`,
   "121930": `Template Preview`,
   "121931": `Edit Template`,
   "121932": `Available Variables`,
@@ -2790,7 +2791,7 @@ var zh_cn_default = {
   "110104": "\u641C\u7D22\u4E66\u7C4D\u5E76\u521B\u5EFA",
   "110105": "\u641C\u7D22\u97F3\u4E50\u5E76\u521B\u5EFA",
   "110106": "\u641C\u7D22\u6E38\u620F\u5E76\u521B\u5EFA",
-  "110107": "\u4E3A\u5F53\u524D\u6761\u76EE\u521B\u5EFA\u7B14\u8BB0",
+  "110107": "\u4E3A\u5F53\u524D\u6761\u76EE\u521B\u5EFA\u5173\u8054\u7B14\u8BB0",
   "110109": "\u5BFC\u51FA\u8C46\u74E3\u7528\u6237\u6570\u636E",
   "110110": "\u5BFC\u5165\u8C46\u74E3\u7528\u6237\u6570\u636E",
   "110007": `\u5F00\u59CB\u540C\u6B65`,
@@ -2818,8 +2819,8 @@ var zh_cn_default = {
   "110073": `\u6761`,
   "110095": `\u6570\u5B57\u8D8A\u5C0F\u4EE3\u8868\u8D8A\u63A5\u8FD1\u73B0\u5728\uFF0C\u6BD4\u5982\u5728\u8C46\u74E3\u4E0A\u6211\u4EEC\u6700\u65B0\u66F4\u65B0\u4E00\u6761\u5185\u5BB9\u4E3A\u7B2C\u4E00\u6761\uFF0C\u53CD\u4E4B\u6700\u65E9\u66F4\u65B0\u7684\u5C31\u662F\u6700\u540E\u4E00\u6761\u4E86`,
   "110096": `\u8FD9\u662F\u6211\u4EEC\u5728\u8C46\u74E3\u4E0A\u6761\u76EE\u7684\u66F4\u65B0\u65F6\u95F4`,
-  "110097": `\u7EE7\u627F\u65E7\u7B14\u8BB0\u6570\u636E:`,
-  "110098": `\u4EC5\u5728\u5F00\u542F\u201D\u66FF\u6362\u540C\u540D\u6587\u6863\u201D\u540E\u751F\u6548\u3002\u5F00\u542F\u540E\u81EA\u52A8\u4FDD\u7559\u65E7\u7B14\u8BB0\u4E2D\u7684\u81EA\u5B9A\u4E49\u5C5E\u6027\u548C\u300C\u8BB0\u5F55\u300D\u300C\u611F\u60F3\u300D\u6B63\u6587\u5206\u533A`,
+  "110097": `\u7EE7\u627F\u65E7\u6761\u76EE\u6570\u636E:`,
+  "110098": `\u4EC5\u5728\u5F00\u542F\u201D\u66FF\u6362\u540C\u540D\u6587\u6863\u201D\u540E\u751F\u6548\u3002\u5F00\u542F\u540E\u81EA\u52A8\u4FDD\u7559\u65E7\u6761\u76EE\u4E2D\u7684\u81EA\u5B9A\u4E49\u5C5E\u6027\u548C\u300C\u8BB0\u5F55\u300D\u300C\u611F\u60F3\u300D\u6B63\u6587\u5206\u533A`,
   "110080": `\u6570\u5B57`,
   "112080": `\u81EA\u5B9A\u4E49\u7684\u6570\u91CF\u8F93\u5165\u4E0D\u662F\u4E2A\u6570\u5B57`,
   "110081": `\u5F00\u59CB\u65F6\u95F4\u548C\u7ED3\u675F\u65F6\u95F4\u5FC5\u987B\u586B\u5199\u4E00\u4E2A\u6216\u90FD\u586B\u5199`,
@@ -3051,15 +3052,17 @@ var zh_cn_default = {
   "121436": `\u9AD8\u6E05\u5C01\u9762\u56FE\u7247\u8D28\u91CF\u66F4\u9AD8\u6E05\u6670\u5EA6\u66F4\u597D, \u9700\u8981\u60A8\u5728\u6B64\u63D2\u4EF6 \u767B\u5F55\u8C46\u74E3 \u624D\u80FD\u751F\u6548, \u82E5\u672A\u767B\u5F55\u5219\u9ED8\u8BA4\u4F7F\u7528\u4F4E\u7CBE\u5EA6\u7248\u672C\u5C01\u9762`,
   "121437": `\u767B\u5F55\u540E\u6B64\u529F\u80FD\u624D\u4F1A\u751F\u6548`,
   "121438": `\u9AD8\u6E05\u5C01\u9762\u56FE\u7247\u8D28\u91CF\u66F4\u9AD8, \u6E05\u6670\u5EA6\u66F4\u597D, \u4F46\u5360\u7528\u7A7A\u95F4\u4F1A\u6BD4\u666E\u901A\u6E05\u6670\u5EA6\u5C01\u9762\u66F4\u591A`,
+  "121470": `\u8986\u76D6\u5DF2\u6709\u5C01\u9762`,
+  "121471": `\u5F00\u542F\u540E\uFF0C\u5BFC\u5165\u6216\u540C\u6B65\u65F6\u82E5\u672C\u5730\u5DF2\u5B58\u5728\u540C\u540D\u5C01\u9762\u56FE\u7247\uFF0C\u5C06\u5220\u9664\u65E7\u6587\u4EF6\u5E76\u91CD\u65B0\u4E0B\u8F7D`,
   "121440": `\u4F7F\u7528\u9644\u4EF6\u56FE\u5E8A`,
   "121441": `\u5F00\u542F\u6B64\u9009\u9879\u5C06\u4F1A\u628A\u5BFC\u5165\u7684\u5C01\u9762\u6587\u4EF6\u4E0A\u4F20\u56FE\u5E8A\uFF0C\u800C\u4E0D\u662F\u4FDD\u5B58\u5728\u672C\u5730`,
   "121450": `\u56FE\u5E8A\u7C7B\u578B`,
   "121451": `\u9009\u62E9\u56FE\u5E8A\u7C7B\u578B`,
   "121461": `PicGo\u4E0A\u4F20Url`,
-  "121501": `\u7B14\u8BB0\u5B58\u653E\u4F4D\u7F6E`,
-  "121502": `\u521B\u5EFA\u7684\u7B14\u8BB0\u5C06\u4F1A\u5B58\u653E\u81F3\u8BE5\u6587\u4EF6\u5939\u4E2D. \u5982\u679C\u4E3A\u7A7A, \u7B14\u8BB0\u5C06\u4F1A\u5B58\u653E\u5230Obsidian\u7684\u9ED8\u8BA4\u4F4D\u7F6E`,
-  "121601": `\u7B14\u8BB0\u540D\u79F0`,
-  "121602": `\u521B\u5EFA\u7684\u7B14\u8BB0\u5C06\u4F1A\u4F7F\u7528\u6B64\u540D\u79F0\u4F5C\u4E3A\u6A21\u677F, \u652F\u6301\u6240\u6709'\u901A\u7528'\u7684\u53C2\u6570\u4F5C\u4E3A\u540D\u79F0(\u5982:{{type}}/{{title}}), \u4E14\u652F\u6301\u8DEF\u5F84, \u6BD4\u5982: 'MyData/{{title}}'. \u5982\u679C\u4E3A\u7A7A, \u7B14\u8BB0\u5C06\u4F1A\u4F7F\u7528\u9ED8\u8BA4\u540D\u79F0. `,
+  "121501": `\u6761\u76EE\u5B58\u653E\u4F4D\u7F6E`,
+  "121502": `\u5BFC\u5165\u7684\u6761\u76EE\u5C06\u4F1A\u5B58\u653E\u81F3\u8BE5\u6587\u4EF6\u5939\u4E2D. \u5982\u679C\u4E3A\u7A7A, \u6761\u76EE\u5C06\u4F1A\u5B58\u653E\u5230Obsidian\u7684\u9ED8\u8BA4\u4F4D\u7F6E`,
+  "121601": `\u6761\u76EE\u6587\u4EF6\u540D\u79F0`,
+  "121602": `\u5BFC\u5165\u7684\u6761\u76EE\u5C06\u4F7F\u7528\u6B64\u540D\u79F0\u4F5C\u4E3A\u6A21\u677F, \u652F\u6301\u6240\u6709'\u901A\u7528'\u7684\u53C2\u6570\u4F5C\u4E3A\u540D\u79F0(\u5982:{{type}}/{{title}}), \u4E14\u652F\u6301\u8DEF\u5F84, \u6BD4\u5982: 'MyData/{{title}}'. \u5982\u679C\u4E3A\u7A7A, \u6761\u76EE\u5C06\u4F7F\u7528\u9ED8\u8BA4\u540D\u79F0. `,
   "121604": `\u6587\u4EF6\u8DEF\u5F84\u9884\u89C8`,
   "120603": `\u8F93\u51FA\u6548\u679C\u9884\u89C8`,
   "120604": `\u6570\u7EC4\u7C7B\u578B\u540D\u79F0:`,
@@ -3079,10 +3082,10 @@ var zh_cn_default = {
   "121912": `\u57FA\u7840\u6A21\u677F`,
   "121913": `\u7B80\u6D01\u6A21\u677F`,
   "121914": `\u540C\u6B65\u6A21\u677F`,
-  "121920": `\u7B14\u8BB0\u8DEF\u5F84\u6A21\u677F`,
-  "121921": `\u7B14\u8BB0\u6587\u4EF6\u7684\u8DEF\u5F84\u6A21\u677F\uFF0C\u53EF\u7528\u53D8\u91CF: {{id}}, {{title}}, {{type}}`,
-  "121922": `\u7B14\u8BB0\u6A21\u677F\u5185\u5BB9`,
-  "121923": `\u521B\u5EFA\u7B14\u8BB0\u65F6\u4F7F\u7528\u7684\u6A21\u677F\u5185\u5BB9\uFF0C\u53EF\u7528\u53D8\u91CF: {{id}}, {{title}}, {{type}}`,
+  "121920": `\u5173\u8054\u7B14\u8BB0\u8DEF\u5F84\u6A21\u677F`,
+  "121921": `\u5173\u8054\u7B14\u8BB0\u6587\u4EF6\u7684\u8DEF\u5F84\u6A21\u677F\uFF0C\u53EF\u7528\u53D8\u91CF: {{id}}, {{title}}, {{type}}`,
+  "121922": `\u5173\u8054\u7B14\u8BB0\u6A21\u677F\u5185\u5BB9`,
+  "121923": `\u521B\u5EFA\u5173\u8054\u7B14\u8BB0\u65F6\u4F7F\u7528\u7684\u6A21\u677F\u5185\u5BB9\uFF0C\u53EF\u7528\u53D8\u91CF: {{id}}, {{title}}, {{type}}`,
   "121930": `\u6A21\u677F\u9884\u89C8`,
   "121931": `\u7F16\u8F91\u6A21\u677F`,
   "121932": `\u53EF\u7528\u53D8\u91CF\u53C2\u8003`,
@@ -3101,10 +3104,10 @@ var zh_cn_default = {
   "130110": `\u5199\u5165\u526A\u8D34\u677F\u5931\u8D25`,
   "130120": `\u540C\u6B65\u65F6\u53D1\u751F\u9519\u8BEF\uFF0C\u4F46\u540C\u6B65\u5C06\u4F1A\u7EE7\u7EED\u3002\u9519\u8BEF\u9879\u76EE\u662F {}\u3002`,
   "130121": `\u603B\u6570\u53EA\u6709{0}, \u9009\u62E9\u7684\u5F00\u59CB\u6BD4\u603B\u6570\u8FD8\u8981\u5927\uFF0C\u5C06\u4E0D\u4F1A\u540C\u6B65\u3002`,
-  "130130": `\u5F53\u524D\u6587\u4EF6\u7F3A\u5C11\u6709\u6548\u7684\u8C46\u74E3ID\uFF0C\u65E0\u6CD5\u521B\u5EFA\u7B14\u8BB0`,
-  "130131": `\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u7B14\u8BB0\u8DEF\u5F84\u6A21\u677F`,
-  "130132": `\u7B14\u8BB0\u5DF2\u521B\u5EFA: {0}`,
-  "130133": `\u7B14\u8BB0\u5DF2\u5B58\u5728\uFF0C\u5DF2\u6253\u5F00: {0}`,
+  "130130": `\u5F53\u524D\u6587\u4EF6\u7F3A\u5C11\u6709\u6548\u7684\u8C46\u74E3ID\uFF0C\u65E0\u6CD5\u521B\u5EFA\u5173\u8054\u7B14\u8BB0`,
+  "130131": `\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u5173\u8054\u7B14\u8BB0\u8DEF\u5F84\u6A21\u677F`,
+  "130132": `\u5173\u8054\u7B14\u8BB0\u5DF2\u521B\u5EFA: {0}`,
+  "130133": `\u5173\u8054\u7B14\u8BB0\u5DF2\u5B58\u5728\uFF0C\u5DF2\u6253\u5F00: {0}`,
   "125100": `\u6570\u636E\u4FDD\u62A4`,
   "125101": `\u5F3A\u5236\u540C\u6B65\u65F6\u4FDD\u62A4\u7528\u6237\u81EA\u5B9A\u4E49\u6570\u636E\u4E0D\u88AB\u8986\u76D6`,
   "125102": `\u4FDD\u7559\u81EA\u5B9A\u4E49\u5C5E\u6027`,
@@ -3388,7 +3391,7 @@ var zh_cn_default = {
   "MOVIE": `\u7535\u5F71`,
   "BOOK": `\u4E66\u7C4D`,
   "MUSIC": `\u97F3\u4E50`,
-  "NOTE": `\u7B14\u8BB0`,
+  "NOTE": `\u65E5\u8BB0`,
   "GAME": `\u6E38\u620F`,
   "TELEPLAY": `\u7535\u89C6\u5267`,
   "THEATER": `\u620F\u5267`,
@@ -3397,7 +3400,7 @@ var zh_cn_default = {
   "movie": `\u7535\u5F71`,
   "book": `\u4E66\u7C4D`,
   "music": `\u97F3\u4E50`,
-  "note": `\u7B14\u8BB0`,
+  "note": `\u65E5\u8BB0`,
   "game": `\u6E38\u620F`,
   "teleplay": `\u7535\u89C6\u5267`,
   "theater": `\u620F\u5267`,
@@ -4084,6 +4087,7 @@ var DEFAULT_SETTINGS = {
   loginHeadersContent: "",
   cacheImage: true,
   cacheHighQuantityImage: true,
+  overwriteCoverImage: false,
   attachmentPath: "assets",
   attachmentFileName: "{{title}}",
   syncHandledDataArray: [],
@@ -18953,6 +18957,8 @@ tags: {{myTags}}
 myRatingStar: {{myRatingStar}}
 \u77ED\u8BC4: {{myComment}}
 \u6807\u8BED: 
+\u5355\u8BC4: false
+\u7B14\u8BB0: ""
 \u5B58\u50A8: 
 \u76F8\u5173: 
 collectionDate: {{myCollectionDate}}
@@ -19042,6 +19048,8 @@ totalPage: {{totalPage}}
 price: {{price}}
 binding: {{binding}}
 image: {{image}}
+\u62E5\u6709: false
+\u4F4D\u7F6E: ""
 createTime: {{currentDate}}
 ---
 
@@ -19056,7 +19064,8 @@ ${bookTable}
 > [!abstract]- **\u7B80\u4ECB**
 > {{desc}}
 
-{{menu}}
+> [!abstract]- **\u76EE\u5F55**
+> {{menu}}
 
 ## \u8BB0\u5F55
 
@@ -19102,9 +19111,8 @@ ${musicTable}
 > [!abstract]- **\u7B80\u4ECB**
 > {{desc}}
 
----
-Menu:
-{{menu}}
+> [!abstract]- **\u66F2\u76EE\u5217\u8868**
+> {{menu}}
 
 ## \u8BB0\u5F55
 
@@ -19457,24 +19465,21 @@ var YamlUtil = class {
     return '"' + text3 + '"';
   }
   static handleText(text3, dataField = null) {
-    if (YamlUtil.hasSpecialChar(text3)) {
-      text3 = text3.replaceAll('"', '\\"').replaceAll(/\s+/g, " ").replaceAll("\n", "\u3002").replaceAll("\u3002\u3002", "\u3002").replace(/^" /, '"').replace(/ "$/, '"');
-      if (dataField && dataField.type === DataValueType.date) {
-        return text3;
-      }
-      text3 = YamlUtil.handleSpecialChar(text3);
-    }
-    return text3;
-  }
-  static handleMultiLineText(text3) {
-    if (!text3) {
-      return "";
-    }
     if (!YamlUtil.hasSpecialChar(text3)) {
       return text3;
     }
-    text3 = text3.replaceAll('"', '\\"').replaceAll("\n", "\u3002").replaceAll("\u3002\u3002", "\u3002").replaceAll(/\s+/g, " ").trim();
+    if (text3.includes("\n")) {
+      const lines = text3.split("\n");
+      return "|\n" + lines.map((line) => "  " + line).join("\n");
+    }
+    if (dataField && dataField.type === DataValueType.date) {
+      return text3;
+    }
+    text3 = text3.replaceAll('"', '\\"').replaceAll(/\s+/g, " ").replaceAll("\u3002\u3002", "\u3002").replace(/^" /, '"').replace(/ "$/, '"');
     return '"' + text3 + '"';
+  }
+  static handleMultiLineText(text3) {
+    return YamlUtil.handleText(text3);
   }
 };
 var SPECIAL_CHAR_REG = /[{}\[\]&*#?|\-<>=!%@:"`,\n]/;
@@ -19577,7 +19582,7 @@ var VariableUtil = class {
       log.warn(i18nHelper.getMessage(`130107`, variable.variable, outTypeName));
       return content;
     }
-    if (targetType === "text") {
+    if (targetType === "text" && variable.key !== "menu") {
       arraySettings = __spreadProps(__spreadValues({}, arraySettings), {
         arrayElementStart: "",
         arrayElementEnd: "",
@@ -19586,6 +19591,17 @@ var VariableUtil = class {
         arrayEnd: ""
       });
     }
+    if (targetType === "text" && variable.key === "menu") {
+      arraySettings = {
+        arrayName: "menu",
+        arrayElementStart: "- ",
+        arrayElementEnd: "",
+        arraySpiltV2: "\n",
+        arrayStart: "",
+        arrayEnd: "",
+        index: 0
+      };
+    }
     const strValues = value.map((v) => {
       if (typeof v === "string") {
         return v;
@@ -19593,7 +19609,10 @@ var VariableUtil = class {
         return v ? v.toString() : null;
       }
     }).filter((v) => v).map((v) => this.handleText(v, targetType));
-    const arrayValue = StringUtil.handleArray(strValues, arraySettings);
+    let arrayValue = StringUtil.handleArray(strValues, arraySettings);
+    if (targetType === "text" && variable.key === "menu" && arrayValue) {
+      arrayValue = arrayValue.replace(/\n/g, "\n> ");
+    }
     content = content.replaceAll(variableStr, arrayValue);
     return content;
   }
@@ -19727,6 +19746,8 @@ var VariableUtil = class {
     }
     if (targetType === "text") {
       if (dataField && dataField.name === "desc" && v) {
+        v = v.replace(/[　]/g, "");
+        v = v.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).join("\n");
         return v.replaceAll("\n", "\n> ");
       }
       return v;
@@ -19846,11 +19867,20 @@ var DoubanAbstractLoadHandler = class {
       context.plugin.settingsManager.debug(`\u5F00\u59CB\u8BF7\u6C42\u5730\u5740:${url}`);
       context.plugin.settingsManager.debug(`(\u6CE8\u610F:\u8BF7\u52FF\u5411\u4EFB\u4F55\u4EBA\u900F\u9732\u4F60\u7684Cookie,\u6B64\u5904\u82E5\u9700\u8981\u622A\u56FE\u8BF7**\u6253\u7801**)\u8BF7\u6C42header:${context.settings.loginHeadersContent}`);
       return yield DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager).then(load).then((data2) => this.analysisUserState(data2, context)).then(({ data: data2, userState }) => {
+        var _a5;
         let guessType = this.getSupportType();
         if (context.syncActive) {
           guessType = this.getGuessType(data2);
         }
         const sub = this.parseSubjectFromHtml(data2, context);
+        if (!sub) {
+          if (context.syncActive && guessType && guessType !== this.getSupportType()) {
+            const id2 = StringUtil.analyzeIdByUrl(url);
+            (_a5 = context.syncStatusHolder) == null ? void 0 : _a5.syncStatus.failByDiffType(id2, "", `${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`);
+            return void 0;
+          }
+          throw new Error("parseSubjectFromHtml returned null");
+        }
         sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
         sub.userState = userState;
         sub.guessType = guessType;
@@ -19877,6 +19907,58 @@ var DoubanAbstractLoadHandler = class {
           }
         }
       }
+      const ldJsonType = this.getGuessTypeFromJsonLd(data2);
+      if (ldJsonType) {
+        return ldJsonType;
+      }
+      const ogType = this.getGuessTypeFromOgType(data2);
+      if (ogType) {
+        return ogType;
+      }
+    }
+    return null;
+  }
+  getGuessTypeFromJsonLd(data2) {
+    const ldJsonMap = {
+      "Book": SupportType.book,
+      "Movie": SupportType.movie,
+      "TVSeries": SupportType.teleplay,
+      "MusicAlbum": SupportType.music,
+      "VideoGame": SupportType.game
+    };
+    try {
+      const scripts = data2("script").get();
+      for (const s of scripts) {
+        if (data2(s).attr("type") === "application/ld+json") {
+          const text3 = data2(s).text();
+          if (text3) {
+            const obj = JSON.parse(text3.replace(/[\r\n\t]+/g, ""));
+            const type = obj["@type"];
+            if (type && ldJsonMap[type]) {
+              return ldJsonMap[type];
+            }
+          }
+          break;
+        }
+      }
+    } catch (_) {
+    }
+    return null;
+  }
+  getGuessTypeFromOgType(data2) {
+    const ogTypeMap = {
+      "book": SupportType.book,
+      "video.movie": SupportType.movie,
+      "video.tv_show": SupportType.teleplay,
+      "music.album": SupportType.music,
+      "video.other": SupportType.game
+    };
+    try {
+      const ogType = data2('meta[property="og:type"]').attr("content");
+      if (ogType && ogTypeMap[ogType]) {
+        return ogTypeMap[ogType];
+      }
+    } catch (_) {
     }
     return null;
   }
@@ -20056,9 +20138,17 @@ var DoubanAbstractLoadHandler = class {
         }
       }
       const { templateKey: tempKey, configKey } = this.getTemplateKeys();
-      const config = context.settings[configKey];
+      const rawConfig = context.settings[configKey];
+      let config;
+      if (rawConfig && typeof rawConfig === "object" && "source" in rawConfig) {
+        config = rawConfig;
+      } else if (rawConfig && typeof rawConfig === "string") {
+        config = { source: "file", filePath: rawConfig };
+      } else {
+        config = { source: "builtin" };
+      }
       const useUserState = context.userComponent.isLogin() && !!extract3.userState && extract3.userState.collectionDate != null;
-      if (!config || config.source === "builtin") {
+      if (config.source === "builtin") {
         return getDefaultTemplateContent(tempKey, useUserState);
       }
       if (config.source === "file" && config.filePath) {
@@ -20121,6 +20211,7 @@ var DoubanAbstractLoadHandler = class {
   }
   saveImage(extract3, context, variableMap) {
     return __async(this, null, function* () {
+      var _a5;
       const { syncConfig } = context;
       if (!extract3.image || syncConfig && !syncConfig.cacheImage || !context.settings.cacheImage) {
         return;
@@ -20141,6 +20232,7 @@ var DoubanAbstractLoadHandler = class {
       }
       fileName = this.parsePartPath(fileName, extract3, context, variableMap);
       fileName = fileName + fileNameSuffix;
+      const overwriteCoverImage = syncConfig ? (_a5 = syncConfig.overwriteCoverImage) != null ? _a5 : false : context.settings.overwriteCoverImage;
       const imageReferer = (extract3.id ? this.getSubjectUrl(extract3.id) : "") || extract3.url;
       const referHeaders = HttpUtil.buildImageRequestHeaders(context.plugin.settingsManager.getHeaders(), imageReferer);
       if ((syncConfig ? syncConfig.cacheHighQuantityImage : context.settings.cacheHighQuantityImage) && context.userComponent.isLogin()) {
@@ -20148,7 +20240,7 @@ var DoubanAbstractLoadHandler = class {
           const highImageFilename = this.getImageFilename(image);
           const highImage = this.getHighQuantityImageUrl(highImageFilename);
           const highImageHeaders = HttpUtil.buildImageRequestHeaders(context.plugin.settingsManager.getHeaders(), imageReferer);
-          const resultValue2 = yield this.handleImage(highImage, folder, fileName, context, false, highImageHeaders);
+          const resultValue2 = yield this.handleImage(highImage, folder, fileName, context, false, highImageHeaders, overwriteCoverImage);
           if (resultValue2 && resultValue2.success) {
             extract3.image = resultValue2.filepath;
             extract3.imageUrl = highImage;
@@ -20160,7 +20252,7 @@ var DoubanAbstractLoadHandler = class {
           console.error("\u4E0B\u8F7D\u9AD8\u6E05\u5C01\u9762\u5931\u8D25\uFF0C\u5C06\u4F1A\u4F7F\u7528\u666E\u901A\u5C01\u9762");
         }
       }
-      const resultValue = yield this.handleImage(image, folder, fileName, context, true, referHeaders);
+      const resultValue = yield this.handleImage(image, folder, fileName, context, true, referHeaders, overwriteCoverImage);
       if (resultValue && resultValue.success) {
         extract3.image = resultValue.filepath;
         this.initImageVariableMap(extract3, context, variableMap);
@@ -20178,17 +20270,17 @@ var DoubanAbstractLoadHandler = class {
     variableMap.set(DoubanParameterName.IMAGE_URL, new DataField(DoubanParameterName.IMAGE_URL, DataValueType.url, extract3.imageUrl, extract3.imageUrl));
     variableMap.set(DoubanParameterName.IMAGE, new DataField(DoubanParameterName.IMAGE, DataValueType.path, extract3.image, extract3.image));
   }
-  handleImage(image, folder, filename, context, showError, headers) {
+  handleImage(image, folder, filename, context, showError, headers, overwrite = false) {
     return __async(this, null, function* () {
       if (context.settings.pictureBedFlag && import_obsidian9.Platform.isDesktopApp) {
         const checked = yield context.netFileHandler.downloadDBUploadPicGoByClipboardBefore(context);
         if (!checked) {
           log.notice("\u8FDE\u63A5PicGo\u8F6F\u4EF6\u5931\u8D25, \u8BF7\u68C0\u67E5\u662F\u5426\u5DF2\u5F00\u542FPicGo\u7684Server\u670D\u52A1 \u6216 \u68C0\u67E5\u63D2\u4EF6\u4E2D\u914D\u7F6E\u5730\u5740\u662F\u5426\u6B63\u786E\uFF0C\u73B0\u4F7F\u7528\u9ED8\u8BA4\u7684\u4E0B\u8F7D\u5230\u672C\u5730\u7684\u65B9\u5F0F");
-          return yield context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers);
+          return yield context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers, overwrite);
         }
         return yield context.netFileHandler.downloadDBUploadPicGoByClipboard(image, filename, context, showError, headers);
       } else {
-        return yield context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers);
+        return yield context.netFileHandler.downloadDBFile(image, folder, filename, context, false, headers, overwrite);
       }
     });
   }
@@ -20223,6 +20315,15 @@ var DoubanAbstractLoadHandler = class {
   }
   getPropertyValue(html3, name) {
     return HtmlUtil.getHtmlText(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), name));
+  }
+  filterCommentText(text3) {
+    if (!text3) {
+      return "";
+    }
+    if (/^标签[:：]/.test(text3.trim())) {
+      return "";
+    }
+    return text3;
   }
 };
 
@@ -20311,6 +20412,7 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
     let desc = "";
     const contentIntro = html3("h2:contains('\u5185\u5BB9\u7B80\u4ECB')").parent().find(".indent").first();
     if (contentIntro.length > 0) {
+      contentIntro.find("style").remove();
       const hiddenContent = contentIntro.find("span.all.hidden").text().trim();
       if (hiddenContent) {
         desc = hiddenContent;
@@ -20333,6 +20435,7 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
     if (!desc) {
       const linkReport = html3("#link-report .intro").first();
       if (linkReport.length > 0) {
+        linkReport.find("style").remove();
         const hiddenContent = linkReport.find("span.all.hidden").text().trim();
         if (hiddenContent) {
           desc = hiddenContent;
@@ -20382,7 +20485,11 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
       } else {
         value = html3(info.next).text().trim();
       }
-      valueMap.set(BookKeyValueMap.get(key), value);
+      let lookupKey = key;
+      if (lookupKey.endsWith(":") || lookupKey.endsWith("\uFF1A")) {
+        lookupKey = lookupKey.slice(0, -1);
+      }
+      valueMap.set(BookKeyValueMap.get(lookupKey), value);
     });
     let id = StringUtil.analyzeIdByUrl(url);
     let menuIdDom = html3("#dir_" + id + "_full") ? html3("#dir_" + id + "_full") : html3("#dir_" + id + "_short");
@@ -20419,7 +20526,8 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
     if (comment) {
       return comment;
     }
-    return this.getPropertyValue(html3, PropertyName.comment);
+    const fallback = this.getPropertyValue(html3, PropertyName.comment);
+    return this.isCommentCandidate(fallback) ? fallback : "";
   }
   isCommentCandidate(text3) {
     if (!text3) {
@@ -20442,17 +20550,17 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
 };
 var BookKeyValueMap = new Map([
   ["\u4F5C\u8005", "author"],
-  ["\u51FA\u7248\u793E:", "publisher"],
-  ["\u539F\u4F5C\u540D:", "originalTitle"],
-  ["\u51FA\u7248\u5E74:", "datePublished"],
-  ["\u9875\u6570:", "totalPage"],
-  ["\u5B9A\u4EF7:", "price"],
-  ["\u88C5\u5E27:", "binding"],
-  ["\u4E1B\u4E66:", "series"],
-  ["ISBN:", "isbn"],
+  ["\u51FA\u7248\u793E", "publisher"],
+  ["\u539F\u4F5C\u540D", "originalTitle"],
+  ["\u51FA\u7248\u5E74", "datePublished"],
+  ["\u9875\u6570", "totalPage"],
+  ["\u5B9A\u4EF7", "price"],
+  ["\u88C5\u5E27", "binding"],
+  ["\u4E1B\u4E66", "series"],
+  ["ISBN", "isbn"],
   ["\u8BD1\u8005", "translator"],
-  ["\u526F\u6807\u9898:", "subTitle"],
-  ["\u51FA\u54C1\u65B9:", "producer"]
+  ["\u526F\u6807\u9898", "subTitle"],
+  ["\u51FA\u54C1\u65B9", "producer"]
 ]);
 
 // src/org/wanxp/utils/SchemaOrg.ts
@@ -20515,11 +20623,13 @@ var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
     return { data: html3, userState };
   }
   getComment(html3, context) {
-    const component = html3("div#interest_sect_level > div.a_stars > span.color_gray").next().next().text().trim();
+    let component = html3("div#interest_sect_level > div.a_stars > span.color_gray").next().next().text().trim();
+    component = this.filterCommentText(component);
     if (component) {
       return component;
     }
-    return this.getPropertyValue(html3, PropertyName.comment);
+    const fallback = this.getPropertyValue(html3, PropertyName.comment);
+    return this.filterCommentText(fallback);
   }
   parseSubjectFromHtml(html3, context) {
     let movie = html3("script").get().filter((scd) => html3(scd).attr("type") == "application/ld+json").map((i) => {
@@ -20663,7 +20773,8 @@ var DoubanMusicLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10").next().text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = html3("span#rating").next().next().next().next().text().trim();
+    let component = html3("span#rating").next().next().next().next().text().trim();
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -20859,7 +20970,8 @@ var DoubanTeleplayLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = rating.next().next().next().next().text().trim();
+    let component = rating.next().next().next().next().text().trim();
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -21016,7 +21128,8 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = collected.find("span.collection-result").text().trim();
     const collectionDateStr = collected.find("span.color_gray").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = rating.parent().next().next().text().trim();
+    let component = rating.parent().next().next().text().trim();
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -21041,8 +21154,8 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
     let desc = "";
     for (const p of descElements) {
       const text3 = html3(p).text().trim();
-      if (text3.length > desc.length) {
-        desc = text3;
+      if (text3) {
+        desc += (desc ? "\n" : "") + text3;
       }
     }
     if (!desc) {
@@ -21134,7 +21247,8 @@ var DoubanTheaterLoadHandler = class extends DoubanAbstractLoadHandler {
     const stateWord = html3("#interest_sect_level > h2").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    const component = this.getPropertyValue(html3, PropertyName.comment);
+    let component = this.getPropertyValue(html3, PropertyName.comment);
+    component = this.filterCommentText(component);
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
@@ -22896,7 +23010,9 @@ var TextInputSuggest = class {
   close() {
     this.app.keymap.popScope(this.scope);
     this.suggest.setSuggestions([]);
-    this.popper.destroy();
+    if (this.popper) {
+      this.popper.destroy();
+    }
     this.suggestEl.detach();
   }
 };
@@ -22967,7 +23083,10 @@ var FileTreeSelectSuggest = class extends TextInputSuggest {
       this.inputEl.value += "/";
       this.inputEl.trigger("input");
     } else {
-      this.manager.updateSetting(this.settingKey, file.path);
+      const raw = this.manager.getSetting(this.settingKey);
+      const config = raw && typeof raw === "object" && "source" in raw ? raw : { source: "file" };
+      config.filePath = file.path;
+      this.manager.updateSetting(this.settingKey, config);
       this.close();
     }
   }
@@ -23132,7 +23251,14 @@ function constructTemplateUI(containerEl, manager) {
 }
 function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, templateKey) {
   const getConfig = () => {
-    return manager.getSetting(configKey) || { source: "builtin" };
+    const raw = manager.getSetting(configKey);
+    if (raw && typeof raw === "object" && "source" in raw) {
+      return raw;
+    }
+    if (raw && typeof raw === "string") {
+      return { source: "file", filePath: raw };
+    }
+    return { source: "builtin" };
   };
   const setting = new import_obsidian21.Setting(containerEl);
   setting.setName(i18nHelper.getMessage(nameKey));
@@ -23198,7 +23324,15 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
 }
 function resolveTemplateContent(manager, templateKey, configKey) {
   return __async(this, null, function* () {
-    const config = manager.getSetting(configKey) || { source: "builtin" };
+    const raw = manager.getSetting(configKey);
+    let config;
+    if (raw && typeof raw === "object" && "source" in raw) {
+      config = raw;
+    } else if (raw && typeof raw === "string") {
+      config = { source: "file", filePath: raw };
+    } else {
+      config = { source: "builtin" };
+    }
     switch (config.source) {
       case "builtin":
         return getDefaultBuiltinContent(templateKey);
@@ -23214,6 +23348,8 @@ function resolveTemplateContent(manager, templateKey, configKey) {
         return getDefaultBuiltinContent(templateKey);
       case "custom":
         return config.customContent || getDefaultBuiltinContent(templateKey);
+      default:
+        return getDefaultBuiltinContent(templateKey);
     }
   });
 }
@@ -23410,6 +23546,12 @@ function constructAttachmentFileSettingsUI(containerEl, manager) {
         manager.plugin.settings.cacheHighQuantityImage = value;
         yield manager.plugin.saveSettings();
         constructAttachmentFileSettingsUI(containerEl, manager);
+      }));
+    });
+    new import_obsidian23.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
+      toggleComponent.setValue(manager.plugin.settings.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
+        manager.plugin.settings.overwriteCoverImage = value;
+        yield manager.plugin.saveSettings();
       }));
     });
   }
@@ -24690,6 +24832,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
       dataFileNamePath: settings.dataFileNamePath == "" || settings.dataFileNamePath == null ? DEFAULT_SETTINGS.dataFileNamePath : settings.dataFileNamePath,
       cacheImage: settings.cacheImage == null ? DEFAULT_SETTINGS.cacheImage : settings.cacheImage,
       cacheHighQuantityImage: settings.cacheHighQuantityImage == null ? DEFAULT_SETTINGS.cacheHighQuantityImage : settings.cacheHighQuantityImage,
+      overwriteCoverImage: settings.overwriteCoverImage == null ? DEFAULT_SETTINGS.overwriteCoverImage : settings.overwriteCoverImage,
       attachmentPath: settings.attachmentPath == "" || settings.attachmentPath == null ? DEFAULT_SETTINGS.attachmentPath : settings.attachmentPath,
       attachmentFileName: settings.attachmentFileName == "" || settings.attachmentFileName == null ? DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
       templateFile: this.getDefaultTemplatePath(SyncType.movie),
@@ -24792,29 +24935,13 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
   }
   getDefaultTemplatePath(value) {
     const { settings } = this.plugin;
-    let config;
-    switch (value) {
-      case SyncType.movie:
-        config = settings.movieTemplateConfig;
-        break;
-      case SyncType.book:
-        config = settings.bookTemplateConfig;
-        break;
-      case SyncType.music:
-        config = settings.musicTemplateConfig;
-        break;
-      case SyncType.teleplay:
-        config = settings.teleplayTemplateConfig;
-        break;
-      case SyncType.game:
-        config = settings.gameTemplateConfig;
-        break;
-      default:
-        return "";
-    }
-    if (config && config.source === "file" && config.filePath) {
-      return config.filePath;
-    }
+    const raw = value === SyncType.movie ? settings.movieTemplateConfig : value === SyncType.book ? settings.bookTemplateConfig : value === SyncType.music ? settings.musicTemplateConfig : value === SyncType.teleplay ? settings.teleplayTemplateConfig : value === SyncType.game ? settings.gameTemplateConfig : void 0;
+    if (!raw)
+      return "";
+    if (typeof raw === "string")
+      return raw;
+    if (raw.source === "file" && raw.filePath)
+      return raw.filePath;
     return "";
   }
   showScopeDropdown(containerEl, scopeSelections, config, disable) {
@@ -24912,6 +25039,11 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121438")).addToggle((toggleComponent) => {
       toggleComponent.setValue(config.cacheHighQuantityImage).onChange((value) => __async(this, null, function* () {
         config.cacheHighQuantityImage = value;
+      }));
+    }).setDisabled(disable);
+    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
+      toggleComponent.setValue(config.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
+        config.overwriteCoverImage = value;
       }));
     }).setDisabled(disable);
   }
@@ -25057,7 +25189,7 @@ var FileHandler = class {
       }
     });
   }
-  creatAttachmentWithData(originalFilePath, data2) {
+  creatAttachmentWithData(originalFilePath, data2, overwrite = false) {
     return __async(this, null, function* () {
       const { vault } = this._app;
       const { adapter: adapter2 } = vault;
@@ -25067,7 +25199,11 @@ var FileHandler = class {
       try {
         const fileExists = yield adapter2.exists(filePath);
         if (fileExists) {
-          return;
+          if (overwrite) {
+            yield adapter2.remove(filePath);
+          } else {
+            return;
+          }
         }
         if (dir !== "") {
           yield this.createDirectory(dir);
@@ -25244,11 +25380,11 @@ var SyncStatusHolder = class {
   fail(id, title) {
     this.updateResult(id, title, SyncItemStatus.fail);
   }
-  failByDiffType(id, title) {
-    this.updateResult(id, title, SyncItemStatus.failByDiffType);
+  failByDiffType(id, title, detailMsg) {
+    this.updateResult(id, title, SyncItemStatus.failByDiffType, void 0, detailMsg);
   }
-  updateResult(id, title, status, fileName) {
-    this.syncResultMap.set(id, { id, title, status, fileName });
+  updateResult(id, title, status, fileName, detailMsg) {
+    this.syncResultMap.set(id, { id, title, status, fileName, detailMsg });
     this.statusHandleMap.set(status, this.statusHandleMap.get(status) + 1);
     this.handled(1);
   }
@@ -25533,7 +25669,7 @@ var NetFileHandler = class {
   constructor(fileHandler) {
     this.fileHandler = fileHandler;
   }
-  downloadDBFile(url, folder, filename, context, showError, headers) {
+  downloadDBFile(url, folder, filename, context, showError, headers, overwrite = false) {
     return __async(this, null, function* () {
       const filePath = FileUtil.join(folder, filename);
       return HttpUtil.httpRequestBuffer(url, headers, context.plugin.settingsManager).then((response) => {
@@ -25551,7 +25687,7 @@ var NetFileHandler = class {
         if (!buffer || buffer.byteLength == 0) {
           return 0;
         }
-        this.fileHandler.creatAttachmentWithData(filePath, buffer);
+        this.fileHandler.creatAttachmentWithData(filePath, buffer, overwrite);
         return buffer.byteLength;
       }).then((size) => {
         if (size == 0) {
@@ -25806,6 +25942,7 @@ var SettingsManager = class {
     this.settings.debugMode = DEFAULT_SETTINGS.debugMode;
     this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
     this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
+    this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
   }
   clearLoginInfo() {
     this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginHeadersContent;
@@ -26383,8 +26520,11 @@ var SyncHandler = class {
       let details = "";
       for (const [, value] of syncResultMap) {
         if (value.status == "unHandle") {
-          details += `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}
-`;
+          details += `${value.id}-  ${value.title}  :  ${i18nHelper.getMessage(value.status)}`;
+          if (value.detailMsg) {
+            details += ` (${value.detailMsg})`;
+          }
+          details += "\n";
         } else {
           let linkName = value.fileName;
           if (linkName) {
@@ -26398,11 +26538,62 @@ var SyncHandler = class {
           } else {
             linkName = FileUtil.replaceSpecialCharactersForFileName(value.title);
           }
-          details += `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}
-`;
+          details += `${value.id}-[[${linkName}]]:  ${i18nHelper.getMessage(value.status)}`;
+          if (value.detailMsg) {
+            details += ` (${value.detailMsg})`;
+          }
+          details += "\n";
         }
       }
-      const result = i18nHelper.getMessage("110037", condition, summary, details);
+      let analysis = "";
+      try {
+        const folderPath = this.syncConfig.dataFilePath || "";
+        const allMdFiles = this.app.vault.getMarkdownFiles();
+        const normalizedFolder = folderPath.replace(/\\/g, "/");
+        const actualFileCount = allMdFiles.filter((f) => {
+          const fp = f.path.replace(/\\/g, "/");
+          return normalizedFolder ? fp.startsWith(normalizedFolder + "/") || fp.startsWith(normalizedFolder) : true;
+        }).length;
+        const createdCount = statusHandleMap.get(SyncItemStatus.create) || 0;
+        const replacedCount = statusHandleMap.get(SyncItemStatus.replace) || 0;
+        const existsCount = statusHandleMap.get(SyncItemStatus.exists) || 0;
+        const failCount = statusHandleMap.get(SyncItemStatus.fail) || 0;
+        const diffTypeCount = statusHandleMap.get(SyncItemStatus.failByDiffType) || 0;
+        const expectedCreated = createdCount + replacedCount + existsCount;
+        if (expectedCreated !== actualFileCount) {
+          const diff = expectedCreated - actualFileCount;
+          analysis = "\n### \u6587\u4EF6\u6570\u91CF\u5206\u6790\n\n";
+          analysis += `- \u9884\u671F\u672C\u5730\u6761\u76EE\u6587\u4EF6\u6570: **${expectedCreated}**\uFF08\u521B\u5EFA ${createdCount} + \u66FF\u6362 ${replacedCount} + \u5DF2\u5B58\u5728 ${existsCount}\uFF09
+`;
+          analysis += `- \u5B9E\u9645\u672C\u5730\u6587\u4EF6\u6570: **${actualFileCount}**
+`;
+          analysis += `- \u5DEE\u989D: **${diff}** \u4E2A
+`;
+          if (diff === diffTypeCount + failCount) {
+            analysis += `
+\u5DEE\u989D\u4E0E\u5931\u8D25\u6761\u76EE\u6570\u4E00\u81F4\uFF08\u7C7B\u578B\u4E0D\u5339\u914D ${diffTypeCount} + \u5931\u8D25 ${failCount}\uFF09\uFF0C\u539F\u56E0\uFF1A
+`;
+            if (diffTypeCount > 0) {
+              analysis += `- \u7C7B\u578B\u4E0D\u5339\u914D\u7684 ${diffTypeCount} \u4E2A\u6761\u76EE\u5DF2\u88AB\u8DF3\u8FC7\uFF08\u8BE6\u89C1\u4E0A\u65B9\u660E\u7EC6\u4E2D\u6807\u8BB0\u4E3A [\u7C7B\u578B\u4E0D\u5339\u914D] \u7684\u6761\u76EE\uFF09
+`;
+            }
+            if (failCount > 0) {
+              analysis += `- ${failCount} \u4E2A\u6761\u76EE\u540C\u6B65\u5931\u8D25\uFF08\u8BE6\u89C1\u4E0A\u65B9\u660E\u7EC6\u4E2D\u6807\u8BB0\u4E3A [\u5DF2\u5931\u8D25] \u7684\u6761\u76EE\uFF09
+`;
+            }
+          } else {
+            analysis += `
+\u5DEE\u989D\u4E0E\u5931\u8D25\u7EDF\u8BA1\u4E0D\u5B8C\u5168\u5339\u914D\uFF0C\u53EF\u80FD\u539F\u56E0\uFF1A
+`;
+            analysis += `- \u90E8\u5206\u6761\u76EE\u751F\u6210\u7684\u6587\u4EF6\u540D\u53EF\u80FD\u4E0E\u73B0\u6709\u6587\u4EF6\u51B2\u7A81\u6216\u88AB\u8986\u76D6
+`;
+            analysis += `- \u624B\u52A8\u5220\u9664\u6216\u79FB\u52A8\u8FC7\u90E8\u5206\u6761\u76EE\u6587\u4EF6
+`;
+          }
+        }
+      } catch (_) {
+      }
+      const result = i18nHelper.getMessage("110037", condition, summary, details + analysis);
       const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian36.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
       yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
     });
@@ -26616,7 +26807,7 @@ var DoubanNoteManager = class {
       const existingFile = this.app.vault.getAbstractFileByPath(notePath);
       if (!(existingFile instanceof import_obsidian38.TFile)) {
         const parentPath = notePath.substring(0, notePath.lastIndexOf("/"));
-        if (parentPath) {
+        if (parentPath && !this.app.vault.getAbstractFileByPath(parentPath)) {
           yield this.app.vault.createFolder(parentPath);
         }
         const template = this.plugin.settings.noteTemplateContent;
@@ -26634,7 +26825,8 @@ title: ${context.title}
         yield this.app.vault.create(notePath, content);
       }
       yield this.app.fileManager.processFrontMatter(localFile, (fm) => {
-        fm["\u7B14\u8BB0"] = `[[${stripMd(notePath)}]]`;
+        const noteName = notePath.substring(notePath.lastIndexOf("/") + 1).replace(/\.md$/i, "");
+        fm["\u7B14\u8BB0"] = `[[${stripMd(notePath)}|${noteName}]]`;
       });
       yield this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
       new import_obsidian38.Notice(i18nHelper.getMessage(existingFile instanceof import_obsidian38.TFile ? "130133" : "130132", notePath));
@@ -27389,7 +27581,7 @@ var DoubanPlugin = class extends import_obsidian43.Plugin {
           extract3.handledStatus = SubjectHandledStatus.syncTypeDiffAbort;
           if (Action.Sync == context.action) {
             this.showStatus(i18nHelper.getMessage("140207", syncStatus.getHasHandle(), syncStatus.getTotal(), extract3.title));
-            syncStatus.failByDiffType(extract3.id, extract3.title);
+            syncStatus.failByDiffType(extract3.id, extract3.title, `${i18nHelper.getMessage(extract3.guessType)} -> ${extract3.type}`);
           } else {
             console.log(i18nHelper.getMessage("140102", extract3.type, extract3.title, extract3.guessType));
           }
@@ -27699,8 +27891,13 @@ var DoubanPlugin = class extends import_obsidian43.Plugin {
       { configKey: "teleplayTemplateConfig", fileKey: "teleplayTemplateFile" }
     ];
     for (const { configKey, fileKey } of templateKeys) {
-      if (this.settings[configKey])
+      const existing = this.settings[configKey];
+      if (existing && typeof existing === "object" && "source" in existing)
         continue;
+      if (existing && typeof existing === "string") {
+        this.settings[configKey] = { source: "file", filePath: existing };
+        continue;
+      }
       const filePath = this.settings[fileKey];
       if (filePath && typeof filePath === "string" && filePath.trim()) {
         this.settings[configKey] = { source: "file", filePath: filePath.trim() };

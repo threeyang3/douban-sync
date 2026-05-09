@@ -74,7 +74,7 @@ export default class FileHandler {
 	 * A new markdown file will be created at the given file path (`input`)
 	 * in the specified parent folder (`this.folder`)
 	 */
-	async creatAttachmentWithData(originalFilePath: string, data:ArrayBuffer): Promise<void> {
+	async creatAttachmentWithData(originalFilePath: string, data:ArrayBuffer, overwrite: boolean = false): Promise<void> {
 		const {vault} = this._app;
 		const {adapter} = vault;
 		const prependDirInput = FileUtil.join("", originalFilePath);
@@ -84,9 +84,11 @@ export default class FileHandler {
 		try {
 			const fileExists = await adapter.exists(filePath);
 			if (fileExists) {
-				// If the file already exists, respond with error
-				// throw new Error(i18nHelper.getMessage('110201').replace('{0}', filePath??''));
-				return ;
+				if (overwrite) {
+					await adapter.remove(filePath);
+				} else {
+					return ;
+				}
 			}
 			if (dir !== '') {
 				// If `input` includes a directory part, create it
