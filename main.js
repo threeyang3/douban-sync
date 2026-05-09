@@ -27645,15 +27645,15 @@ var UserDataImporter = class {
               updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
               changed = true;
             } else {
-              if (this.isEmptyValue(diff.localValue)) {
-                updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
-                changed = true;
-              } else if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
+              if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
                 const merged = [...new Set([...diff.localValue, ...diff.importValue])];
                 if (JSON.stringify(merged) !== JSON.stringify(diff.localValue)) {
                   updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
                   changed = true;
                 }
+              } else {
+                updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+                changed = true;
               }
             }
           }

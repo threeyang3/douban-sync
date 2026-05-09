@@ -201,21 +201,20 @@ export class UserDataImporter {
 						changed = true;
 					} else {
 						// smart_merge
-						if (this.isEmptyValue(diff.localValue)) {
-							// 本地为空，直接覆盖
-							updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName)
-								? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue)
-								: this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
-							changed = true;
-						} else if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
+						if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
 							// 数组合并去重
 							const merged = [...new Set([...diff.localValue, ...diff.importValue])];
 							if (JSON.stringify(merged) !== JSON.stringify(diff.localValue)) {
 								updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
 								changed = true;
 							}
+						} else {
+							// 字符串/其他类型：用导入值覆盖
+							updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName)
+								? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue)
+								: this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+							changed = true;
 						}
-						// 字符串类型 smart_merge：保留本地，不修改
 					}
 				}
 
