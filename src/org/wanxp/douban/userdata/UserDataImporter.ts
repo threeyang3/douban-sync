@@ -106,6 +106,8 @@ export class UserDataImporter {
 				// 两者都为空或值完全相同 → 无差异
 				if (localEmpty && importEmpty) continue;
 				if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue)) continue;
+				// 本地有值但导入为空 → 保留本地，不产生差异
+				if (!localEmpty && importEmpty) continue;
 
 				identical = false;
 				const strategy: FieldStrategy = localEmpty && !importEmpty ? 'overwrite' : 'smart_merge';
@@ -133,6 +135,8 @@ export class UserDataImporter {
 
 				if (localEmpty && importEmpty) continue;
 				if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue)) continue;
+				// 本地有值但导入为空 → 保留本地
+				if (!localEmpty && importEmpty) continue;
 
 				identical = false;
 				const strategy: FieldStrategy = localEmpty && !importEmpty ? 'overwrite' : 'smart_merge';
@@ -209,10 +213,9 @@ export class UserDataImporter {
 								changed = true;
 							}
 						} else {
-							// 字符串/其他类型：用导入值覆盖
-							updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName)
-								? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue)
-								: this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+							// 字符串/其他类型：拼接两者
+							const merged = String(diff.localValue ?? '') + ' / ' + String(diff.importValue ?? '');
+							updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
 							changed = true;
 						}
 					}

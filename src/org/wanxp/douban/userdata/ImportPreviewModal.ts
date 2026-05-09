@@ -31,8 +31,6 @@ export class ImportPreviewModal extends Modal {
 	private attrActions = new Map<string, AttrAction>();
 	// 导入数据中发现的所有自定义属性名（去重排序）
 	private importAttrNames: string[] = [];
-	// 本地所有自定义属性名（用于别名目标下拉）
-	private localCustomFieldNames: string[] = [];
 
 	constructor(app: App) {
 		super(app);
@@ -78,7 +76,6 @@ export class ImportPreviewModal extends Modal {
 	private rebuildDiffs() {
 		if (!this.importData) return;
 		this.collectImportAttributes();
-		this.localCustomFieldNames = this.importer.collectLocalCustomFields();
 		const settings = this.parseAttributeSettings();
 		this.diffs = this.importer.buildDiffs(this.importData, settings);
 	}
@@ -247,8 +244,6 @@ export class ImportPreviewModal extends Modal {
 			collapseIcon.setText(collapsed ? '▾' : '▸');
 		});
 
-		const aliasTargetOptions = this.localCustomFieldNames;
-
 		// 属性表格
 		const tableEl = bodyEl.createEl('table', { cls: 'import-attr-table' });
 		const thead = tableEl.createEl('thead');
@@ -265,26 +260,49 @@ export class ImportPreviewModal extends Modal {
 			const actionCell = row.createEl('td');
 			const currentAction = this.attrActions.get(attrName) ?? 'keep';
 
+			// 保持/忽略/别名 下拉
 			new Setting(actionCell)
 				.addDropdown(dropdown => {
 					dropdown
 						.addOption('keep', i18nHelper.getMessage('130266'))
-						.addOption('ignore', i18nHelper.getMessage('130267'));
-
-					// 添加别名选项（本地已有的字段）
-					for (const localName of aliasTargetOptions) {
-						if (localName !== attrName) {
-							dropdown.addOption(localName, `${i18nHelper.getMessage('130268')}: ${localName}`);
-						}
-					}
-
-					dropdown
-						.setValue(currentAction)
+						.addOption('ignore', i18nHelper.getMessage('130267'))
+						.addOption('alias', i18nHelper.getMessage('130268'))
+						.setValue(currentAction === 'keep' || currentAction === 'ignore' ? currentAction : 'alias')
 						.onChange((value) => {
-							this.attrActions.set(attrName, value);
+							if (value === 'alias') {
+								const textInput = actionCell.querySelector('.import-alias-input') as HTMLInputElement | null;
+								const aliasTarget = textInput?.value?.trim() || '';
+								this.attrActions.set(attrName, aliasTarget || 'alias');
+							} else {
+								this.attrActions.set(attrName, value);
+							}
+							this.rebuildDiffs();
+							this.refreshListCheckboxes(true);
+							this.reRenderAttributePanel();
 						});
 				});
+
+			// 别名目标文本框（当前为别名模式时显示）
+			const isAlias = currentAction !== 'keep' && currentAction !== 'ignore';
+			if (isAlias) {
+				const aliasInput = actionCell.createEl('input', {
+					cls: 'import-alias-input',
+					attr: { type: 'text', placeholder: i18nHelper.getMessage('130269') },
+				});
+				aliasInput.value = currentAction;
+				aliasInput.addEventListener('input', () => {
+					const val = aliasInput.value.trim();
+					this.attrActions.set(attrName, val || 'alias');
+				});
+			}
 		}
+	}
+
+	private reRenderAttributePanel() {
+		const panel = this.contentEl.querySelector('.import-attr-panel');
+		if (!panel) return;
+		panel.remove();
+		this.renderAttributeSettingsPanel();
 	}
 
 	// ── Step 2: 属性差异 ──

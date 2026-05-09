@@ -2528,6 +2528,7 @@ PS: This file could be delete if you want to.
   "130266": `Keep comparing`,
   "130267": `Ignore`,
   "130268": `Alias to`,
+  "130269": `Enter local field name`,
   "140201": `[OB-Douban]: searching '{0}'...`,
   "140202": `[OB-Douban]: result {0} rows`,
   "140203": `[OB-Douban]: request '{0}'`,
@@ -3197,6 +3198,7 @@ var zh_cn_default = {
   "130266": `\u4FDD\u6301\u5BF9\u6BD4`,
   "130267": `\u5FFD\u7565`,
   "130268": `\u522B\u540D\u4E3A`,
+  "130269": `\u8F93\u5165\u672C\u5730\u5C5E\u6027\u540D`,
   "140201": `[OB-Douban]: \u5F00\u59CB\u641C\u7D22'{0}'...`,
   "140202": `[OB-Douban]: \u641C\u7D22\u6761\u6570{0}\u6761`,
   "140203": `[OB-Douban]: \u8BF7\u6C42\u8C46\u74E3'{0}'...`,
@@ -27565,6 +27567,8 @@ var UserDataImporter = class {
           continue;
         if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
           continue;
+        if (!localEmpty && importEmpty)
+          continue;
         identical = false;
         const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
         fieldDiffs.push({
@@ -27591,6 +27595,8 @@ var UserDataImporter = class {
           continue;
         if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
           continue;
+        if (!localEmpty && importEmpty)
+          continue;
         identical = false;
         const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
         fieldDiffs.push({
@@ -27615,6 +27621,7 @@ var UserDataImporter = class {
   }
   applyDiffs(diffs, onProgress) {
     return __async(this, null, function* () {
+      var _a5, _b;
       const result = {
         success: 0,
         skipped: 0,
@@ -27652,7 +27659,8 @@ var UserDataImporter = class {
                   changed = true;
                 }
               } else {
-                updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+                const merged = String((_a5 = diff.localValue) != null ? _a5 : "") + " / " + String((_b = diff.importValue) != null ? _b : "");
+                updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
                 changed = true;
               }
             }
@@ -27880,7 +27888,6 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     this.importResult = null;
     this.attrActions = new Map();
     this.importAttrNames = [];
-    this.localCustomFieldNames = [];
     this.importer = new UserDataImporter(app);
   }
   onOpen() {
@@ -27920,7 +27927,6 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     if (!this.importData)
       return;
     this.collectImportAttributes();
-    this.localCustomFieldNames = this.importer.collectLocalCustomFields();
     const settings = this.parseAttributeSettings();
     this.diffs = this.importer.buildDiffs(this.importData, settings);
   }
@@ -28052,7 +28058,6 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       bodyEl.hidden = !collapsed;
       collapseIcon.setText(collapsed ? "\u25BE" : "\u25B8");
     });
-    const aliasTargetOptions = this.localCustomFieldNames;
     const tableEl = bodyEl.createEl("table", { cls: "import-attr-table" });
     const thead = tableEl.createEl("thead");
     const headerRow = thead.createEl("tr");
@@ -28065,17 +28070,40 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       const actionCell = row.createEl("td");
       const currentAction = (_a5 = this.attrActions.get(attrName)) != null ? _a5 : "keep";
       new import_obsidian43.Setting(actionCell).addDropdown((dropdown) => {
-        dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267"));
-        for (const localName of aliasTargetOptions) {
-          if (localName !== attrName) {
-            dropdown.addOption(localName, `${i18nHelper.getMessage("130268")}: ${localName}`);
+        dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267")).addOption("alias", i18nHelper.getMessage("130268")).setValue(currentAction === "keep" || currentAction === "ignore" ? currentAction : "alias").onChange((value) => {
+          var _a6;
+          if (value === "alias") {
+            const textInput = actionCell.querySelector(".import-alias-input");
+            const aliasTarget = ((_a6 = textInput == null ? void 0 : textInput.value) == null ? void 0 : _a6.trim()) || "";
+            this.attrActions.set(attrName, aliasTarget || "alias");
+          } else {
+            this.attrActions.set(attrName, value);
           }
-        }
-        dropdown.setValue(currentAction).onChange((value) => {
-          this.attrActions.set(attrName, value);
+          this.rebuildDiffs();
+          this.refreshListCheckboxes(true);
+          this.reRenderAttributePanel();
         });
       });
+      const isAlias = currentAction !== "keep" && currentAction !== "ignore";
+      if (isAlias) {
+        const aliasInput = actionCell.createEl("input", {
+          cls: "import-alias-input",
+          attr: { type: "text", placeholder: i18nHelper.getMessage("130269") }
+        });
+        aliasInput.value = currentAction;
+        aliasInput.addEventListener("input", () => {
+          const val2 = aliasInput.value.trim();
+          this.attrActions.set(attrName, val2 || "alias");
+        });
+      }
     }
+  }
+  reRenderAttributePanel() {
+    const panel = this.contentEl.querySelector(".import-attr-panel");
+    if (!panel)
+      return;
+    panel.remove();
+    this.renderAttributeSettingsPanel();
   }
   renderDiffs() {
     var _a5, _b;

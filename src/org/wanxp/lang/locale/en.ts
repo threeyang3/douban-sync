@@ -453,6 +453,7 @@ PS: This file could be delete if you want to.
 	'130266': `Keep comparing`,
 	'130267': `Ignore`,
 	'130268': `Alias to`,
+	'130269': `Enter local field name`,
 
 	'140201': `[OB-Douban]: searching '{0}'...`,
 	'140202': `[OB-Douban]: result {0} rows`,
