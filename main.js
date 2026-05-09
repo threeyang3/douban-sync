@@ -26844,7 +26844,7 @@ title: ${context.title}
     }
     return {
       doubanId,
-      title: toStr(frontmatter["title"]) || localFile.basename,
+      title: (toStr(frontmatter["title"]) || localFile.basename).replaceAll('"', ""),
       type: toStr(frontmatter["type"]) || ""
     };
   }
