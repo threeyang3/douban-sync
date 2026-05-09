@@ -428,6 +428,21 @@ PS: This file could be delete if you want to.
 	'130232': `Skipped: {0}`,
 	'130233': `Errors: {0}`,
 
+	// Import preview
+	'130240': `Import Preview`,
+	'130241': `{0} entries, {1} matched locally, {2} skipped`,
+	'130242': `Next`,
+	'130243': `Field Differences`,
+	'130244': `Keep Local`,
+	'130245': `Overwrite`,
+	'130246': `Smart Merge`,
+	'130247': `Confirm Import`,
+	'130248': `The following {0} entries match import data`,
+	'130249': `No differences`,
+	'130250': `Local`,
+	'130251': `Import`,
+	'130252': `Strategy`,
+
 	'140201': `[OB-Douban]: searching '{0}'...`,
 	'140202': `[OB-Douban]: result {0} rows`,
 	'140203': `[OB-Douban]: request '{0}'`,

@@ -12,6 +12,10 @@ import {
 	ImportOptions,
 	ImportResult,
 	MissingFieldDecision,
+	FieldDiff,
+	EntryDiff,
+	FieldStrategy,
+	DOUBAN_FIELDS,
 } from './types';
 import { scanVaultForDoubanIds, DoubanFileEntry } from '../../utils/VaultUtil';
 
@@ -37,6 +41,173 @@ export class UserDataImporter {
 
 		const content = await this.app.vault.read(file);
 		return this.importFromText(filePath, content, options, onProgress);
+	}
+
+	/**
+	 * 解析导入文件内容为 UserDataExport
+	 */
+	parseImportContent(fileName: string, content: string): UserDataExport {
+		try {
+			return JSON.parse(content) as UserDataExport;
+		} catch (error: unknown) {
+			throw new Error(`Failed to parse import file ${fileName}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+
+	/**
+	 * 仅构建差异列表，不写入
+	 */
+	buildDiffs(importData: UserDataExport): EntryDiff[] {
+		this.fileCache = scanVaultForDoubanIds(this.app);
+		const results: EntryDiff[] = [];
+
+		for (const [doubanId, userData] of Object.entries(importData.items)) {
+			const localEntry = this.fileCache.get(doubanId) ?? null;
+			const localFile = localEntry?.file ?? null;
+
+			if (!localFile) {
+				results.push({
+					doubanId,
+					title: userData.identifier?.title ?? doubanId,
+					type: userData.identifier?.type ?? '',
+					localFile: null,
+					fieldDiffs: [],
+					identical: false,
+				});
+				continue;
+			}
+
+			const localFrontmatter = localEntry.frontmatter ?? {};
+			const importCustom = userData.customProperties ?? {};
+			const fieldDiffs: FieldDiff[] = [];
+			let identical = true;
+
+			// 收集所有自定义属性名（导入中有 + 本地中非 DOUBAN_FIELDS 的）
+			const allFieldNames = new Set<string>();
+			for (const key of Object.keys(importCustom)) {
+				if (!DOUBAN_FIELDS.has(key)) allFieldNames.add(key);
+			}
+			const localFm = localFrontmatter as Record<string, unknown>;
+			for (const key of Object.keys(localFm)) {
+				if (!DOUBAN_FIELDS.has(key)) allFieldNames.add(key);
+			}
+
+			for (const fieldName of allFieldNames) {
+				const localValue = localFm[fieldName];
+				const importValue = importCustom[fieldName];
+				const localEmpty = this.isEmptyValue(localValue);
+				const importEmpty = this.isEmptyValue(importValue);
+
+				// 两者都为空或值完全相同 → 无差异
+				if (localEmpty && importEmpty) continue;
+				if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue)) continue;
+
+				identical = false;
+				const strategy: FieldStrategy = localEmpty && !importEmpty ? 'overwrite' : 'smart_merge';
+				fieldDiffs.push({
+					fieldName,
+					localValue,
+					importValue,
+					strategy,
+				});
+			}
+
+			results.push({
+				doubanId,
+				title: userData.identifier?.title ?? doubanId,
+				type: userData.identifier?.type ?? '',
+				localFile,
+				fieldDiffs,
+				identical,
+			});
+		}
+
+		this.fileCache = null;
+		return results;
+	}
+
+	/**
+	 * 按用户选择的策略执行导入
+	 */
+	async applyDiffs(diffs: EntryDiff[], onProgress?: (current: number, total: number) => void): Promise<ImportResult> {
+		const result: ImportResult = {
+			success: 0,
+			skipped: 0,
+			errors: [],
+			missingFields: [],
+		};
+
+		const total = diffs.length;
+		for (let i = 0; i < diffs.length; i++) {
+			const entry = diffs[i];
+			onProgress?.(i + 1, total);
+
+			if (!entry.localFile) {
+				result.skipped++;
+				continue;
+			}
+
+			if (entry.identical) {
+				result.skipped++;
+				continue;
+			}
+
+			try {
+				const content = await this.app.vault.read(entry.localFile);
+				let updatedContent = content;
+				let changed = false;
+
+				for (const diff of entry.fieldDiffs) {
+					if (diff.strategy === 'keep_local') continue;
+
+					if (diff.strategy === 'overwrite') {
+						updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName)
+							? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue)
+							: this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+						changed = true;
+					} else {
+						// smart_merge
+						if (this.isEmptyValue(diff.localValue)) {
+							// 本地为空，直接覆盖
+							updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName)
+								? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue)
+								: this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+							changed = true;
+						} else if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
+							// 数组合并去重
+							const merged = [...new Set([...diff.localValue, ...diff.importValue])];
+							if (JSON.stringify(merged) !== JSON.stringify(diff.localValue)) {
+								updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
+								changed = true;
+							}
+						}
+						// 字符串类型 smart_merge：保留本地，不修改
+					}
+				}
+
+				if (changed) {
+					await this.app.vault.process(entry.localFile, () => updatedContent);
+					result.success++;
+				} else {
+					result.skipped++;
+				}
+			} catch (error) {
+				result.errors.push({
+					doubanId: entry.doubanId,
+					title: entry.title,
+					error: String(error),
+				});
+			}
+		}
+
+		return result;
+	}
+
+	private isEmptyValue(value: unknown): boolean {
+		if (value === null || value === undefined) return true;
+		if (typeof value === 'string' && value.trim() === '') return true;
+		if (Array.isArray(value) && value.length === 0) return true;
+		return false;
 	}
 
 	async importFromText(

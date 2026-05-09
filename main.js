@@ -2506,6 +2506,19 @@ PS: This file could be delete if you want to.
   "130231": `Success: {0}`,
   "130232": `Skipped: {0}`,
   "130233": `Errors: {0}`,
+  "130240": `Import Preview`,
+  "130241": `{0} entries, {1} matched locally, {2} skipped`,
+  "130242": `Next`,
+  "130243": `Field Differences`,
+  "130244": `Keep Local`,
+  "130245": `Overwrite`,
+  "130246": `Smart Merge`,
+  "130247": `Confirm Import`,
+  "130248": `The following {0} entries match import data`,
+  "130249": `No differences`,
+  "130250": `Local`,
+  "130251": `Import`,
+  "130252": `Strategy`,
   "140201": `[OB-Douban]: searching '{0}'...`,
   "140202": `[OB-Douban]: result {0} rows`,
   "140203": `[OB-Douban]: request '{0}'`,
@@ -3153,6 +3166,19 @@ var zh_cn_default = {
   "130231": `\u6210\u529F: {0} \u6761`,
   "130232": `\u8DF3\u8FC7: {0} \u6761`,
   "130233": `\u9519\u8BEF: {0} \u6761`,
+  "130240": `\u5BFC\u5165\u9884\u89C8`,
+  "130241": `\u5171 {0} \u6761\uFF0C\u672C\u5730\u5339\u914D {1} \u6761\uFF0C\u8DF3\u8FC7 {2} \u6761`,
+  "130242": `\u4E0B\u4E00\u6B65`,
+  "130243": `\u5C5E\u6027\u5DEE\u5F02`,
+  "130244": `\u4FDD\u7559\u672C\u5730`,
+  "130245": `\u8986\u76D6\u672C\u5730`,
+  "130246": `\u667A\u80FD\u5408\u5E76`,
+  "130247": `\u786E\u8BA4\u5BFC\u5165`,
+  "130248": `\u4EE5\u4E0B {0} \u4E2A\u6761\u76EE\u4E0E\u5BFC\u5165\u6570\u636E\u4E00\u81F4`,
+  "130249": `\u65E0\u5DEE\u5F02`,
+  "130250": `\u672C\u5730\u503C`,
+  "130251": `\u5BFC\u5165\u503C`,
+  "130252": `\u7B56\u7565`,
   "140201": `[OB-Douban]: \u5F00\u59CB\u641C\u7D22'{0}'...`,
   "140202": `[OB-Douban]: \u641C\u7D22\u6761\u6570{0}\u6761`,
   "140203": `[OB-Douban]: \u8BF7\u6C42\u8C46\u74E3'{0}'...`,
@@ -3982,7 +4008,7 @@ var DoubanSearchResultSubject_TIP_EMPTY = {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian44 = __toModule(require("obsidian"));
+var import_obsidian45 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/types.ts
 var DOUBAN_FIELDS = new Set([
@@ -19483,6 +19509,9 @@ var YamlUtil = class {
     if (!YamlUtil.hasSpecialChar(text3)) {
       return text3;
     }
+    if (/^\[\[.+\]\]$/.test(text3)) {
+      return text3;
+    }
     if (text3.includes("\n")) {
       const lines = text3.split("\n");
       return "|\n" + lines.map((line) => "  " + line).join("\n");
@@ -19592,6 +19621,8 @@ var VariableUtil = class {
     if (!value) {
       return content.replaceAll(variableStr, "");
     }
+    const wikiLinkPattern = `[[${variableStr}]]`;
+    const isWikiLink = content.includes(wikiLinkPattern);
     let arraySettings = this.getArraySetting(outTypeName, settingManager);
     if (!arraySettings) {
       log.warn(i18nHelper.getMessage(`130107`, variable.variable, outTypeName));
@@ -19623,12 +19654,16 @@ var VariableUtil = class {
       } else {
         return v ? v.toString() : null;
       }
-    }).filter((v) => v).map((v) => this.handleText(v, targetType));
+    }).filter((v) => v).map((v) => isWikiLink ? v : this.handleText(v, targetType));
     let arrayValue = StringUtil.handleArray(strValues, arraySettings);
     if (targetType === "text" && variable.key === "menu" && arrayValue) {
       arrayValue = arrayValue.replace(/\n/g, "\n> ");
     }
-    content = content.replaceAll(variableStr, arrayValue);
+    if (isWikiLink) {
+      content = content.replaceAll(wikiLinkPattern, `[[${arrayValue}]]`);
+    } else {
+      content = content.replaceAll(variableStr, arrayValue);
+    }
     return content;
   }
   static keyToVariable(key) {
@@ -19639,6 +19674,10 @@ var VariableUtil = class {
       return content;
     }
     let strValue = value ? value.toString() : "";
+    const wikiLinkPattern = `[[${variable.variable}]]`;
+    if (content.includes(wikiLinkPattern)) {
+      return content.replaceAll(wikiLinkPattern, `[[${strValue}]]`);
+    }
     return content.replaceAll(variable.variable, this.handleText(strValue, targetType, valueField));
   }
   static getAllVariables(content, settingManager) {
@@ -19849,6 +19888,7 @@ var DoubanAbstractLoadHandler = class {
       } else {
         result = this.parsePartText(template, extract3, context, variableMap);
       }
+      this.warnUnresolvedVariables(result, template);
       let filePath = "";
       if (SearchHandleMode.FOR_CREATE == context.mode) {
         filePath = this.parsePartPath(this.getFilePath(context), extract3, context, variableMap);
@@ -19859,6 +19899,16 @@ var DoubanAbstractLoadHandler = class {
       }
       return { content: result, filePath, fileName, subject: extract3 };
     });
+  }
+  warnUnresolvedVariables(result, originalTemplate) {
+    const unresolvedDouble = result.match(/\{\{[a-zA-Z0-9_]+\}\}/g);
+    if (unresolvedDouble && unresolvedDouble.length > 0) {
+      log.warn(`\u6A21\u677F\u53D8\u91CF\u672A\u89E3\u6790: ${unresolvedDouble.join(", ")}\uFF0C\u8BF7\u68C0\u67E5\u6A21\u677F\u8BED\u6CD5\u662F\u5426\u6B63\u786E\uFF08\u5E94\u4F7F\u7528 {{\u53D8\u91CF\u540D}} \u683C\u5F0F\uFF09`);
+    }
+    const unresolvedSingle = result.match(/\{\s*[a-zA-Z0-9_]+\s*\}/g);
+    if (unresolvedSingle && unresolvedSingle.length > 0) {
+      log.warn(`\u68C0\u6D4B\u5230\u53EF\u80FD\u7684\u6A21\u677F\u8BED\u6CD5\u9519\u8BEF: ${unresolvedSingle.join(", ")}\uFF0C\u6A21\u677F\u53D8\u91CF\u5E94\u4F7F\u7528 {{\u53CC\u82B1\u62EC\u53F7}} \u683C\u5F0F\uFF0C\u800C\u975E { \u5355\u82B1\u62EC\u53F7 }`);
+    }
   }
   getFileName(context) {
     const { syncConfig } = context;
@@ -19897,7 +19947,7 @@ var DoubanAbstractLoadHandler = class {
           throw new Error("parseSubjectFromHtml returned null");
         }
         sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
-        sub.title = (_c = (_b = sub.title) == null ? void 0 : _b.replaceAll('"', "")) != null ? _c : sub.title;
+        sub.title = (_c = (_b = sub.title) == null ? void 0 : _b.replace(/[""“”＂«»‘’「」『』]/g, "")) != null ? _c : sub.title;
         sub.userState = userState;
         sub.guessType = guessType;
         return sub;
@@ -27057,7 +27107,7 @@ title: ${context.title}
     }
     return {
       doubanId,
-      title: (toStr(frontmatter["title"]) || localFile.basename).replaceAll('"', ""),
+      title: (toStr(frontmatter["title"]) || localFile.basename).replace(/[""\"\"＂«»''「」『』]/g, ""),
       type: toStr(frontmatter["type"]) || ""
     };
   }
@@ -27352,7 +27402,7 @@ function stripQuotedValue(value) {
 }
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var import_obsidian43 = __toModule(require("obsidian"));
+var import_obsidian44 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataExporter.ts
 var import_obsidian41 = __toModule(require("obsidian"));
@@ -27425,6 +27475,9 @@ var UserDataExporter = class {
   }
 };
 
+// src/org/wanxp/douban/userdata/ImportPreviewModal.ts
+var import_obsidian43 = __toModule(require("obsidian"));
+
 // src/org/wanxp/douban/userdata/UserDataImporter.ts
 var import_obsidian42 = __toModule(require("obsidian"));
 var UserDataImporter = class {
@@ -27442,6 +27495,144 @@ var UserDataImporter = class {
       const content = yield this.app.vault.read(file);
       return this.importFromText(filePath, content, options, onProgress);
     });
+  }
+  parseImportContent(fileName, content) {
+    try {
+      return JSON.parse(content);
+    } catch (error) {
+      throw new Error(`Failed to parse import file ${fileName}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  buildDiffs(importData) {
+    var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
+    this.fileCache = scanVaultForDoubanIds(this.app);
+    const results = [];
+    for (const [doubanId, userData] of Object.entries(importData.items)) {
+      const localEntry = (_a5 = this.fileCache.get(doubanId)) != null ? _a5 : null;
+      const localFile = (_b = localEntry == null ? void 0 : localEntry.file) != null ? _b : null;
+      if (!localFile) {
+        results.push({
+          doubanId,
+          title: (_d = (_c = userData.identifier) == null ? void 0 : _c.title) != null ? _d : doubanId,
+          type: (_f = (_e = userData.identifier) == null ? void 0 : _e.type) != null ? _f : "",
+          localFile: null,
+          fieldDiffs: [],
+          identical: false
+        });
+        continue;
+      }
+      const localFrontmatter = (_g = localEntry.frontmatter) != null ? _g : {};
+      const importCustom = (_h = userData.customProperties) != null ? _h : {};
+      const fieldDiffs = [];
+      let identical = true;
+      const allFieldNames = new Set();
+      for (const key of Object.keys(importCustom)) {
+        if (!DOUBAN_FIELDS.has(key))
+          allFieldNames.add(key);
+      }
+      const localFm = localFrontmatter;
+      for (const key of Object.keys(localFm)) {
+        if (!DOUBAN_FIELDS.has(key))
+          allFieldNames.add(key);
+      }
+      for (const fieldName of allFieldNames) {
+        const localValue = localFm[fieldName];
+        const importValue = importCustom[fieldName];
+        const localEmpty = this.isEmptyValue(localValue);
+        const importEmpty = this.isEmptyValue(importValue);
+        if (localEmpty && importEmpty)
+          continue;
+        if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
+          continue;
+        identical = false;
+        const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
+        fieldDiffs.push({
+          fieldName,
+          localValue,
+          importValue,
+          strategy
+        });
+      }
+      results.push({
+        doubanId,
+        title: (_j = (_i = userData.identifier) == null ? void 0 : _i.title) != null ? _j : doubanId,
+        type: (_l = (_k = userData.identifier) == null ? void 0 : _k.type) != null ? _l : "",
+        localFile,
+        fieldDiffs,
+        identical
+      });
+    }
+    this.fileCache = null;
+    return results;
+  }
+  applyDiffs(diffs, onProgress) {
+    return __async(this, null, function* () {
+      const result = {
+        success: 0,
+        skipped: 0,
+        errors: [],
+        missingFields: []
+      };
+      const total = diffs.length;
+      for (let i = 0; i < diffs.length; i++) {
+        const entry = diffs[i];
+        onProgress == null ? void 0 : onProgress(i + 1, total);
+        if (!entry.localFile) {
+          result.skipped++;
+          continue;
+        }
+        if (entry.identical) {
+          result.skipped++;
+          continue;
+        }
+        try {
+          const content = yield this.app.vault.read(entry.localFile);
+          let updatedContent = content;
+          let changed = false;
+          for (const diff of entry.fieldDiffs) {
+            if (diff.strategy === "keep_local")
+              continue;
+            if (diff.strategy === "overwrite") {
+              updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+              changed = true;
+            } else {
+              if (this.isEmptyValue(diff.localValue)) {
+                updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
+                changed = true;
+              } else if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
+                const merged = [...new Set([...diff.localValue, ...diff.importValue])];
+                if (JSON.stringify(merged) !== JSON.stringify(diff.localValue)) {
+                  updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
+                  changed = true;
+                }
+              }
+            }
+          }
+          if (changed) {
+            yield this.app.vault.process(entry.localFile, () => updatedContent);
+            result.success++;
+          } else {
+            result.skipped++;
+          }
+        } catch (error) {
+          result.errors.push({
+            doubanId: entry.doubanId,
+            title: entry.title,
+            error: String(error)
+          });
+        }
+      }
+      return result;
+    });
+  }
+  isEmptyValue(value) {
+    if (value === null || value === void 0)
+      return true;
+    if (typeof value === "string" && value.trim() === "")
+      return true;
+    if (Array.isArray(value) && value.length === 0)
+      return true;
+    return false;
   }
   importFromText(fileName, content, options, onProgress) {
     return __async(this, null, function* () {
@@ -27616,8 +27807,179 @@ var UserDataImporter = class {
   }
 };
 
+// src/org/wanxp/douban/userdata/ImportPreviewModal.ts
+var ImportPreviewModal = class extends import_obsidian43.Modal {
+  constructor(app) {
+    super(app);
+    this.importData = null;
+    this.diffs = [];
+    this.currentStep = "overview";
+    this.importResult = null;
+    this.importer = new UserDataImporter(app);
+  }
+  onOpen() {
+    this.openFilePicker();
+  }
+  openFilePicker() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.multiple = false;
+    input.onchange = () => __async(this, null, function* () {
+      const files = input.files;
+      if (!files || files.length === 0)
+        return;
+      const file = files[0];
+      const content = yield file.text();
+      try {
+        this.importData = this.importer.parseImportContent(file.name, content);
+      } catch (error) {
+        this.contentEl.createEl("p", {
+          text: error instanceof Error ? error.message : String(error),
+          cls: "modal-error"
+        });
+        return;
+      }
+      this.diffs = this.importer.buildDiffs(this.importData);
+      this.currentStep = "overview";
+      this.contentEl.empty();
+      this.renderStep();
+    });
+    input.click();
+  }
+  renderStep() {
+    this.contentEl.empty();
+    switch (this.currentStep) {
+      case "overview":
+        this.renderOverview();
+        break;
+      case "diffs":
+        this.renderDiffs();
+        break;
+      case "result":
+        this.renderResult();
+        break;
+    }
+  }
+  renderOverview() {
+    const matched = this.diffs.filter((d) => d.localFile !== null);
+    const skipped = this.diffs.filter((d) => d.localFile === null);
+    this.contentEl.createEl("h3", { text: i18nHelper.getMessage("130240") });
+    this.contentEl.createEl("p", {
+      text: i18nHelper.getMessage("130241", this.diffs.length, matched.length, skipped.length)
+    });
+    const listEl = this.contentEl.createDiv({ cls: "import-preview-list" });
+    for (const diff of this.diffs) {
+      const itemEl = listEl.createDiv({ cls: "import-preview-item" });
+      const hasLocal = diff.localFile !== null;
+      const titleEl = itemEl.createSpan({ cls: "import-preview-title", text: diff.title });
+      if (!hasLocal) {
+        titleEl.createSpan({ cls: "import-preview-badge skip", text: i18nHelper.getMessage("130222") });
+      } else if (diff.identical) {
+        titleEl.createSpan({ cls: "import-preview-badge identical", text: "=" });
+      } else {
+        titleEl.createSpan({ cls: "import-preview-badge diff", text: `${diff.fieldDiffs.length}` });
+      }
+      const typeEl = itemEl.createSpan({ cls: "import-preview-type", text: diff.type });
+      const propsCount = diff.fieldDiffs.length;
+      if (hasLocal && !diff.identical) {
+        itemEl.createSpan({ cls: "import-preview-props", text: `${propsCount}` });
+      }
+    }
+    const controls = this.contentEl.createDiv("controls");
+    controls.addClass("obsidian_douban_search_controls");
+    const hasDiff = matched.some((d) => !d.identical);
+    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(!hasDiff).onClick(() => {
+      this.currentStep = "diffs";
+      this.renderStep();
+    }).setClass("obsidian_douban_search_button");
+    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+  }
+  renderDiffs() {
+    var _a5, _b;
+    this.contentEl.createEl("h3", { text: i18nHelper.getMessage("130243") });
+    const entriesWithDiffs = this.diffs.filter((d) => d.localFile !== null && !d.identical);
+    const identicalEntries = this.diffs.filter((d) => d.localFile !== null && d.identical);
+    for (const entry of entriesWithDiffs) {
+      const entryEl = this.contentEl.createDiv({ cls: "import-diff-entry" });
+      const headerEl = entryEl.createDiv({ cls: "import-diff-header" });
+      headerEl.createEl("strong", { text: entry.title });
+      const collapseEl = entryEl.createDiv({ cls: "import-diff-body" });
+      const tableEl = collapseEl.createEl("table", { cls: "import-diff-table" });
+      const thead = tableEl.createEl("thead");
+      const headerRow = thead.createEl("tr");
+      headerRow.createEl("th", { text: i18nHelper.getMessage("130252") });
+      headerRow.createEl("th", { text: i18nHelper.getMessage("130250") });
+      headerRow.createEl("th", { text: i18nHelper.getMessage("130251") });
+      headerRow.createEl("th", { text: i18nHelper.getMessage("130243") });
+      const tbody = tableEl.createEl("tbody");
+      for (const diff of entry.fieldDiffs) {
+        const row = tbody.createEl("tr");
+        row.createEl("td", { text: diff.fieldName });
+        row.createEl("td", { text: String((_a5 = diff.localValue) != null ? _a5 : "") });
+        row.createEl("td", { text: String((_b = diff.importValue) != null ? _b : "") });
+        const strategyCell = row.createEl("td");
+        new import_obsidian43.Setting(strategyCell).addDropdown((dropdown) => {
+          dropdown.addOption("keep_local", i18nHelper.getMessage("130244")).addOption("overwrite", i18nHelper.getMessage("130245")).addOption("smart_merge", i18nHelper.getMessage("130246")).setValue(diff.strategy).onChange((value) => {
+            diff.strategy = value;
+          });
+        });
+      }
+    }
+    if (identicalEntries.length > 0) {
+      const identicalEl = this.contentEl.createDiv({ cls: "import-diff-identical" });
+      identicalEl.createEl("p", {
+        text: i18nHelper.getMessage("130248", identicalEntries.length)
+      });
+      const names = identicalEntries.map((e) => e.title).join("\u3001");
+      identicalEl.createEl("p", {
+        text: names,
+        cls: "import-diff-identical-names"
+      });
+    }
+    const controls = this.contentEl.createDiv("controls");
+    controls.addClass("obsidian_douban_search_controls");
+    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
+    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+  }
+  renderResult() {
+    const result = this.importResult;
+    this.contentEl.createEl("h3", { text: i18nHelper.getMessage("130230") });
+    const summary = this.contentEl.createDiv();
+    summary.createEl("p", { text: i18nHelper.getMessage("130231", result.success) });
+    summary.createEl("p", { text: i18nHelper.getMessage("130232", result.skipped) });
+    if (result.errors.length > 0) {
+      summary.createEl("p", { text: i18nHelper.getMessage("130233", result.errors.length) });
+      const errorList = summary.createEl("ul");
+      for (const err of result.errors.slice(0, 10)) {
+        errorList.createEl("li", { text: `${err.title}: ${err.error}` });
+      }
+      if (result.errors.length > 10) {
+        errorList.createEl("li", { text: `... ${result.errors.length - 10} more` });
+      }
+    }
+    new import_obsidian43.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
+  }
+  doImport() {
+    return __async(this, null, function* () {
+      this.currentStep = "result";
+      this.contentEl.empty();
+      const progressEl = this.contentEl.createDiv();
+      progressEl.setText(i18nHelper.getMessage("130203"));
+      this.importResult = yield this.importer.applyDiffs(this.diffs, (current, total) => {
+        progressEl.setText(i18nHelper.getMessage("130204", current, total));
+      });
+      progressEl.remove();
+      this.renderStep();
+    });
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var UserDataExportModal = class extends import_obsidian43.Modal {
+var UserDataExportModal = class extends import_obsidian44.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -27630,10 +27992,10 @@ var UserDataExportModal = class extends import_obsidian43.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130201", folderPath) });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
       yield this.doExport(folderPath, outputDir);
     })).setClass("obsidian_douban_search_button");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   doExport(folderPath, outputDir) {
     return __async(this, null, function* () {
@@ -27657,7 +28019,7 @@ var UserDataExportModal = class extends import_obsidian43.Modal {
     this.contentEl.empty();
   }
 };
-var UserDataImportModal = class extends import_obsidian43.Modal {
+var UserDataImportModal = class extends import_obsidian44.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -27666,114 +28028,13 @@ var UserDataImportModal = class extends import_obsidian43.Modal {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: i18nHelper.getMessage("130210") });
     contentEl.createEl("p", { text: i18nHelper.getMessage("130211") });
-    let selectedStrategy = "smart";
-    new import_obsidian43.Setting(contentEl).setName(i18nHelper.getMessage("130212")).addDropdown((dropdown) => {
-      dropdown.addOption("smart", i18nHelper.getMessage("130213")).addOption("prefer_local", i18nHelper.getMessage("130214")).addOption("prefer_import", i18nHelper.getMessage("130215")).setValue("smart").onChange((value) => {
-        selectedStrategy = value;
-      });
-    });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
-      this.openFilePicker(selectedStrategy);
-    }).setClass("obsidian_douban_search_button");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
-  }
-  openFilePicker(strategy) {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.multiple = true;
-    input.onchange = () => __async(this, null, function* () {
-      const files = input.files;
-      if (!files || files.length === 0)
-        return;
+    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
       this.close();
-      yield this.doImport(Array.from(files), strategy);
-    });
-    input.click();
-  }
-  doImport(files, strategy) {
-    return __async(this, null, function* () {
-      const importer = new UserDataImporter(this.app);
-      const fileTexts = [];
-      for (const file of files) {
-        const text3 = yield file.text();
-        fileTexts.push({ name: file.name, content: text3 });
-      }
-      const result = yield importer.importMany(fileTexts, { mergeStrategy: strategy });
-      if (result.missingFields.length > 0) {
-        new MissingFieldModal(this.plugin, result.missingFields, (decisions) => __async(this, null, function* () {
-          yield importer.applyMissingFieldDecisions(decisions);
-          this.showResult(result);
-        })).open();
-      } else {
-        this.showResult(result);
-      }
-    });
-  }
-  showResult(result) {
-    new ImportResultModal(this.plugin, result).open();
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
-var MissingFieldModal = class extends import_obsidian43.Modal {
-  constructor(plugin, decisions, onSubmit) {
-    super(plugin.app);
-    this.decisions = decisions;
-    this.onSubmit = onSubmit;
-  }
-  onOpen() {
-    var _a5;
-    const { contentEl } = this;
-    contentEl.createEl("h3", { text: i18nHelper.getMessage("130220") });
-    contentEl.createEl("p", { text: i18nHelper.getMessage("130221", this.decisions.length) });
-    for (const decision of this.decisions) {
-      const setting = new import_obsidian43.Setting(contentEl);
-      setting.setName(`${decision.title} - ${decision.fieldName}`);
-      setting.setDesc(String((_a5 = decision.fieldValue) != null ? _a5 : ""));
-      setting.addDropdown((dropdown) => {
-        dropdown.addOption("skip", i18nHelper.getMessage("130222")).addOption("add", i18nHelper.getMessage("130223")).setValue("skip").onChange((value) => {
-          decision.decision = value;
-        });
-      });
-    }
-    const controls = contentEl.createDiv("controls");
-    controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130224")).setCta().onClick(() => {
-      this.onSubmit(this.decisions);
-      this.close();
+      new ImportPreviewModal(this.app).open();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
-var ImportResultModal = class extends import_obsidian43.Modal {
-  constructor(plugin, result) {
-    super(plugin.app);
-    this.result = result;
-  }
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl("h3", { text: i18nHelper.getMessage("130230") });
-    const summary = contentEl.createDiv();
-    summary.createEl("p", { text: i18nHelper.getMessage("130231", this.result.success) });
-    summary.createEl("p", { text: i18nHelper.getMessage("130232", this.result.skipped) });
-    if (this.result.errors.length > 0) {
-      summary.createEl("p", { text: i18nHelper.getMessage("130233", this.result.errors.length) });
-      const errorList = summary.createEl("ul");
-      for (const err of this.result.errors.slice(0, 10)) {
-        errorList.createEl("li", { text: `${err.title}: ${err.error}` });
-      }
-      if (this.result.errors.length > 10) {
-        errorList.createEl("li", { text: `... ${this.result.errors.length - 10} more` });
-      }
-    }
-    new import_obsidian43.ButtonComponent(contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
+    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   onClose() {
     this.contentEl.empty();
@@ -27781,8 +28042,8 @@ var ImportResultModal = class extends import_obsidian43.Modal {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian45 = __toModule(require("obsidian"));
-var DoubanPlugin = class extends import_obsidian44.Plugin {
+var import_obsidian46 = __toModule(require("obsidian"));
+var DoubanPlugin = class extends import_obsidian45.Plugin {
   putToObsidian(context, extract3) {
     return __async(this, null, function* () {
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
@@ -27856,7 +28117,7 @@ var DoubanPlugin = class extends import_obsidian44.Plugin {
           let localUserData = null;
           if (existingFilePath) {
             const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
-            if (existingFile instanceof import_obsidian45.TFile) {
+            if (existingFile instanceof import_obsidian46.TFile) {
               const extractor = new UserDataExtractor(this.app);
               localUserData = yield extractor.extractFromFileAsync(existingFile);
             }
@@ -27864,7 +28125,7 @@ var DoubanPlugin = class extends import_obsidian44.Plugin {
           const exists = yield this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
           if (localUserData) {
             const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-            if (newFile instanceof import_obsidian45.TFile) {
+            if (newFile instanceof import_obsidian46.TFile) {
               const merger = new UserDataMerger();
               const currentContent = yield this.app.vault.read(newFile);
               const mergedContent = merger.mergeUserData(currentContent, localUserData, this.settings.dataProtection);
@@ -28161,13 +28422,13 @@ var DoubanPlugin = class extends import_obsidian44.Plugin {
         if (!result) {
           return;
         }
-        new import_obsidian44.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
+        new import_obsidian45.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
         this.initSyncDefaultSettings(syncConfig);
         context.syncStatusHolder.initHandledData();
         this.showStatus(i18nHelper.getMessage("140203", SyncTypeRecords[syncConfig.syncType]));
         const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
         yield syncHandler.sync();
-        new import_obsidian44.Notice(i18nHelper.getMessage("140302"));
+        new import_obsidian45.Notice(i18nHelper.getMessage("140302"));
       } catch (e) {
         log.error(i18nHelper.getMessage("140206", e.message), e);
       } finally {
@@ -28189,7 +28450,7 @@ var DoubanPlugin = class extends import_obsidian44.Plugin {
       }
       if (!uc.isLogin()) {
         this.settingsManager.debug("\u4E3B\u754C\u9762:\u540C\u6B65\u65F6\u7684\u767B\u5F55\u72B6\u6001\u68C0\u6D4B\u5B8C\u6210: \u5C1D\u8BD5\u83B7\u53D6\u7528\u6237\u4FE1\u606F\u5931\u8D25");
-        new import_obsidian44.Notice(i18nHelper.getMessage("140303"));
+        new import_obsidian45.Notice(i18nHelper.getMessage("140303"));
         return false;
       }
       return true;

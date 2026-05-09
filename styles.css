@@ -241,3 +241,112 @@
 	width: 1%;
 	white-space: nowrap;
 }
+
+/* Import Preview Modal */
+.import-preview-list {
+	max-height: 60vh;
+	overflow-y: auto;
+	margin: 8px 0;
+}
+
+.import-preview-item {
+	display: flex;
+	align-items: center;
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	gap: 8px;
+}
+
+.import-preview-title {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.import-preview-badge {
+	font-size: 0.75em;
+	padding: 1px 6px;
+	border-radius: 4px;
+}
+
+.import-preview-badge.skip {
+	background: var(--background-modifier-error);
+	color: var(--text-on-accent);
+}
+
+.import-preview-badge.identical {
+	background: var(--background-modifier-success);
+	color: var(--text-on-accent);
+}
+
+.import-preview-badge.diff {
+	background: var(--text-accent);
+	color: var(--text-on-accent);
+}
+
+.import-preview-type {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.import-preview-props {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.import-diff-entry {
+	margin-bottom: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.import-diff-header {
+	padding: 6px 10px;
+	background: var(--background-secondary);
+	cursor: default;
+}
+
+.import-diff-body {
+	padding: 6px;
+}
+
+.import-diff-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.import-diff-table th,
+.import-diff-table td {
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.import-diff-table th {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.import-diff-table td:nth-child(2),
+.import-diff-table td:nth-child(3) {
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.import-diff-identical {
+	margin-top: 16px;
+	padding: 8px 10px;
+	background: var(--background-secondary);
+	border-radius: 4px;
+	color: var(--text-muted);
+	font-size: 0.9em;
+}
+
+.import-diff-identical-names {
+	margin-top: 4px;
+	word-break: break-all;
+}
