@@ -66,7 +66,11 @@ export class DoubanNoteManager {
 
 		await this.app.fileManager.processFrontMatter(localFile, (fm) => {
 			const noteName = notePath.substring(notePath.lastIndexOf('/') + 1).replace(/\.md$/i, '');
-			fm['笔记'] = `[[${stripMd(notePath)}|${noteName}]]`;
+			const link = `[[${stripMd(notePath)}|${noteName}]]`;
+			// Obsidian 的 YAML 序列化器不会转义值内部的双引号，
+			// 导致含特殊字符的标题（如引号、冒号）破坏 YAML 解析。
+			// 手动转义内部双引号，使 Obsidian 添加的外层引号能正确包裹。
+			fm['笔记'] = link.includes('"') ? link.replaceAll('"', '\\"') : link;
 		});
 
 		await this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
