@@ -54,7 +54,7 @@ export class DoubanNoteManager {
 
 		if (!(existingFile instanceof TFile)) {
 			const parentPath = notePath.substring(0, notePath.lastIndexOf('/'));
-			if (parentPath) {
+			if (parentPath && !this.app.vault.getAbstractFileByPath(parentPath)) {
 				await this.app.vault.createFolder(parentPath);
 			}
 			const template = this.plugin.settings.noteTemplateContent;

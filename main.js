@@ -26816,7 +26816,7 @@ var DoubanNoteManager = class {
       const existingFile = this.app.vault.getAbstractFileByPath(notePath);
       if (!(existingFile instanceof import_obsidian38.TFile)) {
         const parentPath = notePath.substring(0, notePath.lastIndexOf("/"));
-        if (parentPath) {
+        if (parentPath && !this.app.vault.getAbstractFileByPath(parentPath)) {
           yield this.app.vault.createFolder(parentPath);
         }
         const template = this.plugin.settings.noteTemplateContent;
