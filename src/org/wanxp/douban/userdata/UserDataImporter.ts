@@ -237,6 +237,22 @@ export class UserDataImporter {
 		return result;
 	}
 
+	/**
+	 * 扫描 vault 收集所有本地自定义属性名（排除 DOUBAN_FIELDS）
+	 */
+	collectLocalCustomFields(): string[] {
+		const entries = scanVaultForDoubanIds(this.app);
+		const fields = new Set<string>();
+		for (const entry of entries.values()) {
+			const fm = entry.frontmatter as Record<string, unknown>;
+			if (!fm) continue;
+			for (const key of Object.keys(fm)) {
+				if (!DOUBAN_FIELDS.has(key)) fields.add(key);
+			}
+		}
+		return [...fields].sort();
+	}
+
 	private isEmptyValue(value: unknown): boolean {
 		if (value === null || value === undefined) return true;
 		if (typeof value === 'string' && value.trim() === '') return true;

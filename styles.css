@@ -435,3 +435,26 @@
 	font-family: var(--font-interface);
 	font-size: 0.85em;
 }
+
+.import-attr-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.import-attr-table th,
+.import-attr-table td {
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.import-attr-table th {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.import-attr-name {
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+}

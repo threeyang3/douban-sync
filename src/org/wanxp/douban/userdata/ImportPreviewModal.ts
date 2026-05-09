@@ -9,6 +9,7 @@
 import { App, Modal, Setting, ButtonComponent } from 'obsidian';
 import { i18nHelper } from '../../lang/helper';
 import { UserDataImporter } from './UserDataImporter';
+import { DOUBAN_FIELDS } from './types';
 import {
 	UserDataExport,
 	EntryDiff,
@@ -17,6 +18,8 @@ import {
 	ImportAttributeSettings,
 } from './types';
 
+type AttrAction = 'keep' | 'ignore' | string; // string = alias target field name
+
 export class ImportPreviewModal extends Modal {
 	private readonly importer: UserDataImporter;
 	private importData: UserDataExport | null = null;
@@ -24,9 +27,12 @@ export class ImportPreviewModal extends Modal {
 	private currentStep: 'overview' | 'diffs' | 'result' = 'overview';
 	private importResult: ImportResult | null = null;
 
-	// 属性管理
-	private ignoredFieldsText = '';
-	private fieldAliasesText = '';
+	// 属性管理：导入属性名 → 操作
+	private attrActions = new Map<string, AttrAction>();
+	// 导入数据中发现的所有自定义属性名（去重排序）
+	private importAttrNames: string[] = [];
+	// 本地所有自定义属性名（用于别名目标下拉）
+	private localCustomFieldNames: string[] = [];
 
 	constructor(app: App) {
 		super(app);
@@ -71,25 +77,33 @@ export class ImportPreviewModal extends Modal {
 
 	private rebuildDiffs() {
 		if (!this.importData) return;
+		this.collectImportAttributes();
+		this.localCustomFieldNames = this.importer.collectLocalCustomFields();
 		const settings = this.parseAttributeSettings();
 		this.diffs = this.importer.buildDiffs(this.importData, settings);
 	}
 
-	private parseAttributeSettings(): ImportAttributeSettings {
-		const ignoredFields = this.ignoredFieldsText
-			.split('\n')
-			.map(s => s.trim())
-			.filter(s => s.length > 0);
+	private collectImportAttributes() {
+		if (!this.importData) return;
+		const names = new Set<string>();
+		for (const userData of Object.values(this.importData.items)) {
+			if (!userData.customProperties) continue;
+			for (const key of Object.keys(userData.customProperties)) {
+				if (!DOUBAN_FIELDS.has(key)) names.add(key);
+			}
+		}
+		this.importAttrNames = [...names].sort();
+	}
 
+	private parseAttributeSettings(): ImportAttributeSettings {
+		const ignoredFields: string[] = [];
 		const fieldAliases: Record<string, string> = {};
-		for (const line of this.fieldAliasesText.split('\n')) {
-			const trimmed = line.trim();
-			if (!trimmed) continue;
-			// 支持 "→" 和 "->" 两种分隔符
-			const sep = trimmed.includes('→') ? '→' : '->';
-			const parts = trimmed.split(sep).map(s => s.trim());
-			if (parts.length === 2 && parts[0] && parts[1]) {
-				fieldAliases[parts[0]] = parts[1];
+
+		for (const [fieldName, action] of this.attrActions) {
+			if (action === 'ignore') {
+				ignoredFields.push(fieldName);
+			} else if (action !== 'keep' && typeof action === 'string') {
+				fieldAliases[fieldName] = action;
 			}
 		}
 
@@ -109,10 +123,6 @@ export class ImportPreviewModal extends Modal {
 				this.renderResult();
 				break;
 		}
-	}
-
-	private getSelectedDiffs(): EntryDiff[] {
-		return this.diffs.filter(d => d.selected);
 	}
 
 	// ── Step 1: 条目总览 ──
@@ -220,6 +230,8 @@ export class ImportPreviewModal extends Modal {
 	// ── 属性管理面板 ──
 
 	private renderAttributeSettingsPanel() {
+		if (this.importAttrNames.length === 0) return;
+
 		const panel = this.contentEl.createDiv({ cls: 'import-attr-panel' });
 
 		const headerEl = panel.createDiv({ cls: 'import-attr-header' });
@@ -235,27 +247,44 @@ export class ImportPreviewModal extends Modal {
 			collapseIcon.setText(collapsed ? '▾' : '▸');
 		});
 
-		// 忽略属性
-		bodyEl.createEl('label', { text: i18nHelper.getMessage('130261') });
-		const ignoredTa = bodyEl.createEl('textarea', {
-			cls: 'import-attr-textarea',
-			attr: { rows: '3', placeholder: 'fieldA\nfieldB' },
-		});
-		ignoredTa.value = this.ignoredFieldsText;
-		ignoredTa.addEventListener('change', () => {
-			this.ignoredFieldsText = ignoredTa.value;
-		});
+		const aliasTargetOptions = this.localCustomFieldNames;
 
-		// 属性别名
-		bodyEl.createEl('label', { text: i18nHelper.getMessage('130262') });
-		const aliasTa = bodyEl.createEl('textarea', {
-			cls: 'import-attr-textarea',
-			attr: { rows: '3', placeholder: '旧属性名 → 新属性名\nfieldA → fieldB' },
-		});
-		aliasTa.value = this.fieldAliasesText;
-		aliasTa.addEventListener('change', () => {
-			this.fieldAliasesText = aliasTa.value;
-		});
+		// 属性表格
+		const tableEl = bodyEl.createEl('table', { cls: 'import-attr-table' });
+		const thead = tableEl.createEl('thead');
+		const headerRow = thead.createEl('tr');
+		headerRow.createEl('th', { text: i18nHelper.getMessage('130251') }); // 导入属性名
+		headerRow.createEl('th', { text: i18nHelper.getMessage('130252') }); // 操作
+
+		const tbody = tableEl.createEl('tbody');
+		for (const attrName of this.importAttrNames) {
+			const row = tbody.createEl('tr');
+
+			row.createEl('td', { text: attrName, cls: 'import-attr-name' });
+
+			const actionCell = row.createEl('td');
+			const currentAction = this.attrActions.get(attrName) ?? 'keep';
+
+			new Setting(actionCell)
+				.addDropdown(dropdown => {
+					dropdown
+						.addOption('keep', i18nHelper.getMessage('130266'))
+						.addOption('ignore', i18nHelper.getMessage('130267'));
+
+					// 添加别名选项（本地已有的字段）
+					for (const localName of aliasTargetOptions) {
+						if (localName !== attrName) {
+							dropdown.addOption(localName, `${i18nHelper.getMessage('130268')}: ${localName}`);
+						}
+					}
+
+					dropdown
+						.setValue(currentAction)
+						.onChange((value) => {
+							this.attrActions.set(attrName, value);
+						});
+				});
+		}
 	}
 
 	// ── Step 2: 属性差异 ──

@@ -2520,11 +2520,14 @@ PS: This file could be delete if you want to.
   "130251": `Import`,
   "130252": `Strategy`,
   "130260": `Attribute Settings`,
-  "130261": `Ignored fields (one per line)`,
-  "130262": `Field aliases (format: import \u2192 local)`,
+  "130261": ``,
+  "130262": ``,
   "130263": `Select All`,
   "130264": `Deselect All`,
   "130265": `{0} selected`,
+  "130266": `Keep comparing`,
+  "130267": `Ignore`,
+  "130268": `Alias to`,
   "140201": `[OB-Douban]: searching '{0}'...`,
   "140202": `[OB-Douban]: result {0} rows`,
   "140203": `[OB-Douban]: request '{0}'`,
@@ -3186,11 +3189,14 @@ var zh_cn_default = {
   "130251": `\u5BFC\u5165\u503C`,
   "130252": `\u7B56\u7565`,
   "130260": `\u5C5E\u6027\u7BA1\u7406`,
-  "130261": `\u5FFD\u7565\u5C5E\u6027\uFF08\u6BCF\u884C\u4E00\u4E2A\uFF09`,
-  "130262": `\u5C5E\u6027\u522B\u540D\uFF08\u683C\u5F0F\uFF1A\u5BFC\u5165\u540D \u2192 \u672C\u5730\u540D\uFF09`,
+  "130261": ``,
+  "130262": ``,
   "130263": `\u5168\u9009`,
   "130264": `\u5168\u4E0D\u9009`,
   "130265": `\u5DF2\u9009 {0} \u6761`,
+  "130266": `\u4FDD\u6301\u5BF9\u6BD4`,
+  "130267": `\u5FFD\u7565`,
+  "130268": `\u522B\u540D\u4E3A`,
   "140201": `[OB-Douban]: \u5F00\u59CB\u641C\u7D22'{0}'...`,
   "140202": `[OB-Douban]: \u641C\u7D22\u6761\u6570{0}\u6761`,
   "140203": `[OB-Douban]: \u8BF7\u6C42\u8C46\u74E3'{0}'...`,
@@ -27668,6 +27674,20 @@ var UserDataImporter = class {
       return result;
     });
   }
+  collectLocalCustomFields() {
+    const entries = scanVaultForDoubanIds(this.app);
+    const fields = new Set();
+    for (const entry of entries.values()) {
+      const fm = entry.frontmatter;
+      if (!fm)
+        continue;
+      for (const key of Object.keys(fm)) {
+        if (!DOUBAN_FIELDS.has(key))
+          fields.add(key);
+      }
+    }
+    return [...fields].sort();
+  }
   isEmptyValue(value) {
     if (value === null || value === void 0)
       return true;
@@ -27858,8 +27878,9 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     this.diffs = [];
     this.currentStep = "overview";
     this.importResult = null;
-    this.ignoredFieldsText = "";
-    this.fieldAliasesText = "";
+    this.attrActions = new Map();
+    this.importAttrNames = [];
+    this.localCustomFieldNames = [];
     this.importer = new UserDataImporter(app);
   }
   onOpen() {
@@ -27898,20 +27919,33 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
   rebuildDiffs() {
     if (!this.importData)
       return;
+    this.collectImportAttributes();
+    this.localCustomFieldNames = this.importer.collectLocalCustomFields();
     const settings = this.parseAttributeSettings();
     this.diffs = this.importer.buildDiffs(this.importData, settings);
   }
-  parseAttributeSettings() {
-    const ignoredFields = this.ignoredFieldsText.split("\n").map((s) => s.trim()).filter((s) => s.length > 0);
-    const fieldAliases = {};
-    for (const line of this.fieldAliasesText.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed)
+  collectImportAttributes() {
+    if (!this.importData)
+      return;
+    const names = new Set();
+    for (const userData of Object.values(this.importData.items)) {
+      if (!userData.customProperties)
         continue;
-      const sep = trimmed.includes("\u2192") ? "\u2192" : "->";
-      const parts = trimmed.split(sep).map((s) => s.trim());
-      if (parts.length === 2 && parts[0] && parts[1]) {
-        fieldAliases[parts[0]] = parts[1];
+      for (const key of Object.keys(userData.customProperties)) {
+        if (!DOUBAN_FIELDS.has(key))
+          names.add(key);
+      }
+    }
+    this.importAttrNames = [...names].sort();
+  }
+  parseAttributeSettings() {
+    const ignoredFields = [];
+    const fieldAliases = {};
+    for (const [fieldName, action] of this.attrActions) {
+      if (action === "ignore") {
+        ignoredFields.push(fieldName);
+      } else if (action !== "keep" && typeof action === "string") {
+        fieldAliases[fieldName] = action;
       }
     }
     return { ignoredFields, fieldAliases };
@@ -27929,9 +27963,6 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
         this.renderResult();
         break;
     }
-  }
-  getSelectedDiffs() {
-    return this.diffs.filter((d) => d.selected);
   }
   renderOverview() {
     const matched = this.diffs.filter((d) => d.localFile !== null);
@@ -28007,6 +28038,9 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     });
   }
   renderAttributeSettingsPanel() {
+    var _a5;
+    if (this.importAttrNames.length === 0)
+      return;
     const panel = this.contentEl.createDiv({ cls: "import-attr-panel" });
     const headerEl = panel.createDiv({ cls: "import-attr-header" });
     const collapseIcon = headerEl.createSpan({ cls: "import-attr-collapse-icon", text: "\u25B8" });
@@ -28018,24 +28052,30 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       bodyEl.hidden = !collapsed;
       collapseIcon.setText(collapsed ? "\u25BE" : "\u25B8");
     });
-    bodyEl.createEl("label", { text: i18nHelper.getMessage("130261") });
-    const ignoredTa = bodyEl.createEl("textarea", {
-      cls: "import-attr-textarea",
-      attr: { rows: "3", placeholder: "fieldA\nfieldB" }
-    });
-    ignoredTa.value = this.ignoredFieldsText;
-    ignoredTa.addEventListener("change", () => {
-      this.ignoredFieldsText = ignoredTa.value;
-    });
-    bodyEl.createEl("label", { text: i18nHelper.getMessage("130262") });
-    const aliasTa = bodyEl.createEl("textarea", {
-      cls: "import-attr-textarea",
-      attr: { rows: "3", placeholder: "\u65E7\u5C5E\u6027\u540D \u2192 \u65B0\u5C5E\u6027\u540D\nfieldA \u2192 fieldB" }
-    });
-    aliasTa.value = this.fieldAliasesText;
-    aliasTa.addEventListener("change", () => {
-      this.fieldAliasesText = aliasTa.value;
-    });
+    const aliasTargetOptions = this.localCustomFieldNames;
+    const tableEl = bodyEl.createEl("table", { cls: "import-attr-table" });
+    const thead = tableEl.createEl("thead");
+    const headerRow = thead.createEl("tr");
+    headerRow.createEl("th", { text: i18nHelper.getMessage("130251") });
+    headerRow.createEl("th", { text: i18nHelper.getMessage("130252") });
+    const tbody = tableEl.createEl("tbody");
+    for (const attrName of this.importAttrNames) {
+      const row = tbody.createEl("tr");
+      row.createEl("td", { text: attrName, cls: "import-attr-name" });
+      const actionCell = row.createEl("td");
+      const currentAction = (_a5 = this.attrActions.get(attrName)) != null ? _a5 : "keep";
+      new import_obsidian43.Setting(actionCell).addDropdown((dropdown) => {
+        dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267"));
+        for (const localName of aliasTargetOptions) {
+          if (localName !== attrName) {
+            dropdown.addOption(localName, `${i18nHelper.getMessage("130268")}: ${localName}`);
+          }
+        }
+        dropdown.setValue(currentAction).onChange((value) => {
+          this.attrActions.set(attrName, value);
+        });
+      });
+    }
   }
   renderDiffs() {
     var _a5, _b;
