@@ -140,6 +140,30 @@ nav_order: 900
 
 状态：已完成（2026-05-06）
 
+## 6. 用户数据导入预览重构
+
+目标：导入前提供可视化预览，支持条目选择、属性管理和逐字段策略控制。
+
+涉及模块：
+- `src/org/wanxp/douban/userdata/ImportPreviewModal.ts` — 三步预览模态框
+- `src/org/wanxp/douban/userdata/UserDataImporter.ts` — 差异构建（buildDiffs）+ 执行导入（applyDiffs）
+- `src/org/wanxp/douban/userdata/types.ts` — ImportAttributeSettings、FieldDiff、EntryDiff 类型
+
+计划：
+- 三步流程：条目总览 → 字段差异对比 → 导入结果
+- 条目勾选框 + 全选/全不选，控制哪些条目进入差异对比
+- 属性管理面板：逐属性设置保持对比/忽略/别名为（自由文本输入）
+- smart_merge 字符串拼接（local / import），数组去重合并
+- 跳过相同值和本地有值但导入为空的字段
+
+验收：
+- 模态框宽度足够阅读密集内容
+- 属性管理可正确忽略字段和映射别名
+- smart_merge 字符串字段正确拼接
+- 勾选框联动正常
+
+状态：已完成（2026-05-10）
+
 ## 后续建议
 
 1. 为 `1.2.0` / `1.4.0` / `1.5.0` 新功能补充文档截图
