@@ -485,7 +485,15 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			}
 		}
 		const { templateKey: tempKey, configKey } = this.getTemplateKeys();
-		const config: TemplateConfig = context.settings[configKey] as TemplateConfig;
+		const rawConfig = context.settings[configKey];
+		let config: TemplateConfig;
+		if (rawConfig && typeof rawConfig === 'object' && 'source' in rawConfig) {
+			config = rawConfig as TemplateConfig;
+		} else if (rawConfig && typeof rawConfig === 'string') {
+			config = { source: 'file', filePath: rawConfig };
+		} else {
+			config = { source: 'builtin' };
+		}
 		const useUserState = context.userComponent.isLogin() &&
 			!!extract.userState &&
 			extract.userState.collectionDate != null;

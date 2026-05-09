@@ -275,6 +275,10 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			case SyncType.game: config = settings.gameTemplateConfig; break;
 			default: return '';
 		}
+		// Auto-repair: handle corrupted config (stored as plain string)
+		if (config && typeof config === 'string') {
+			return config;
+		}
 		if (config && config.source === 'file' && config.filePath) {
 			return config.filePath;
 		}

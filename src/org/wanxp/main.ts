@@ -378,7 +378,15 @@ export default class DoubanPlugin extends Plugin {
 			{ configKey: 'teleplayTemplateConfig' as const, fileKey: 'teleplayTemplateFile' as const },
 		];
 		for (const { configKey, fileKey } of templateKeys) {
-			if (this.settings[configKey]) continue;
+			const existing = this.settings[configKey];
+			// Already a valid TemplateConfig object — skip
+			if (existing && typeof existing === 'object' && 'source' in existing) continue;
+			// Auto-repair: corrupted config stored as plain string (file path)
+			if (existing && typeof existing === 'string') {
+				this.settings[configKey] = { source: 'file', filePath: existing };
+				continue;
+			}
+			// Migrate from legacy templateFile string field
 			const filePath = this.settings[fileKey];
 			if (filePath && typeof filePath === 'string' && filePath.trim()) {
 				this.settings[configKey] = { source: 'file', filePath: filePath.trim() };

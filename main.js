@@ -20138,7 +20138,15 @@ var DoubanAbstractLoadHandler = class {
         }
       }
       const { templateKey: tempKey, configKey } = this.getTemplateKeys();
-      const config = context.settings[configKey];
+      const rawConfig = context.settings[configKey];
+      let config;
+      if (rawConfig && typeof rawConfig === "object" && "source" in rawConfig) {
+        config = rawConfig;
+      } else if (rawConfig && typeof rawConfig === "string") {
+        config = { source: "file", filePath: rawConfig };
+      } else {
+        config = { source: "builtin" };
+      }
       const useUserState = context.userComponent.isLogin() && !!extract3.userState && extract3.userState.collectionDate != null;
       if (!config || config.source === "builtin") {
         return getDefaultTemplateContent(tempKey, useUserState);
@@ -24937,6 +24945,9 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
       default:
         return "";
     }
+    if (config && typeof config === "string") {
+      return config;
+    }
     if (config && config.source === "file" && config.filePath) {
       return config.filePath;
     }
@@ -27888,8 +27899,13 @@ var DoubanPlugin = class extends import_obsidian43.Plugin {
       { configKey: "teleplayTemplateConfig", fileKey: "teleplayTemplateFile" }
     ];
     for (const { configKey, fileKey } of templateKeys) {
-      if (this.settings[configKey])
+      const existing = this.settings[configKey];
+      if (existing && typeof existing === "object" && "source" in existing)
         continue;
+      if (existing && typeof existing === "string") {
+        this.settings[configKey] = { source: "file", filePath: existing };
+        continue;
+      }
       const filePath = this.settings[fileKey];
       if (filePath && typeof filePath === "string" && filePath.trim()) {
         this.settings[configKey] = { source: "file", filePath: filePath.trim() };
