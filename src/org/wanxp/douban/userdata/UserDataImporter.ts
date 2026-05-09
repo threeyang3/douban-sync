@@ -15,6 +15,7 @@ import {
 	FieldDiff,
 	EntryDiff,
 	FieldStrategy,
+	ImportAttributeSettings,
 	DOUBAN_FIELDS,
 } from './types';
 import { scanVaultForDoubanIds, DoubanFileEntry } from '../../utils/VaultUtil';
@@ -57,9 +58,12 @@ export class UserDataImporter {
 	/**
 	 * 仅构建差异列表，不写入
 	 */
-	buildDiffs(importData: UserDataExport): EntryDiff[] {
+	buildDiffs(importData: UserDataExport, attrSettings?: ImportAttributeSettings): EntryDiff[] {
 		this.fileCache = scanVaultForDoubanIds(this.app);
 		const results: EntryDiff[] = [];
+
+		const ignoredSet = new Set(attrSettings?.ignoredFields ?? []);
+		const aliasMap = attrSettings?.fieldAliases ?? {};
 
 		for (const [doubanId, userData] of Object.entries(importData.items)) {
 			const localEntry = this.fileCache.get(doubanId) ?? null;
@@ -73,23 +77,24 @@ export class UserDataImporter {
 					localFile: null,
 					fieldDiffs: [],
 					identical: false,
+					selected: true,
 				});
 				continue;
 			}
 
 			const localFrontmatter = localEntry.frontmatter ?? {};
 			const importCustom = userData.customProperties ?? {};
+			const localFm = localFrontmatter as Record<string, unknown>;
 			const fieldDiffs: FieldDiff[] = [];
 			let identical = true;
 
 			// 收集所有自定义属性名（导入中有 + 本地中非 DOUBAN_FIELDS 的）
 			const allFieldNames = new Set<string>();
 			for (const key of Object.keys(importCustom)) {
-				if (!DOUBAN_FIELDS.has(key)) allFieldNames.add(key);
+				if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key)) allFieldNames.add(key);
 			}
-			const localFm = localFrontmatter as Record<string, unknown>;
 			for (const key of Object.keys(localFm)) {
-				if (!DOUBAN_FIELDS.has(key)) allFieldNames.add(key);
+				if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key)) allFieldNames.add(key);
 			}
 
 			for (const fieldName of allFieldNames) {
@@ -112,6 +117,33 @@ export class UserDataImporter {
 				});
 			}
 
+			// 应用别名映射：导入中存在但本地不存在的字段，尝试用别名映射到本地字段名
+			for (const [importFieldName, localFieldName] of Object.entries(aliasMap)) {
+				if (ignoredSet.has(importFieldName)) continue;
+				if (!Object.prototype.hasOwnProperty.call(importCustom, importFieldName)) continue;
+				if (DOUBAN_FIELDS.has(importFieldName)) continue;
+
+				// 如果已经通过原名匹配过了，跳过
+				if (allFieldNames.has(importFieldName)) continue;
+
+				const importValue = importCustom[importFieldName];
+				const localValue = localFm[localFieldName];
+				const localEmpty = this.isEmptyValue(localValue);
+				const importEmpty = this.isEmptyValue(importValue);
+
+				if (localEmpty && importEmpty) continue;
+				if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue)) continue;
+
+				identical = false;
+				const strategy: FieldStrategy = localEmpty && !importEmpty ? 'overwrite' : 'smart_merge';
+				fieldDiffs.push({
+					fieldName: localFieldName,
+					localValue,
+					importValue,
+					strategy,
+				});
+			}
+
 			results.push({
 				doubanId,
 				title: userData.identifier?.title ?? doubanId,
@@ -119,6 +151,7 @@ export class UserDataImporter {
 				localFile,
 				fieldDiffs,
 				identical,
+				selected: true,
 			});
 		}
 
@@ -137,9 +170,10 @@ export class UserDataImporter {
 			missingFields: [],
 		};
 
-		const total = diffs.length;
-		for (let i = 0; i < diffs.length; i++) {
-			const entry = diffs[i];
+		const selected = diffs.filter(d => d.selected);
+		const total = selected.length;
+		for (let i = 0; i < selected.length; i++) {
+			const entry = selected[i];
 			onProgress?.(i + 1, total);
 
 			if (!entry.localFile) {

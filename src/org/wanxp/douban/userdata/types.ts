@@ -92,6 +92,12 @@ export interface EntryDiff {
 	localFile: TFile | null;
 	fieldDiffs: FieldDiff[];
 	identical: boolean;
+	selected: boolean;
+}
+
+export interface ImportAttributeSettings {
+	ignoredFields: string[];
+	fieldAliases: Record<string, string>;
 }
 
 export interface DataProtectionSettings {

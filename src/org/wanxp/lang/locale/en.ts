@@ -443,6 +443,14 @@ PS: This file could be delete if you want to.
 	'130251': `Import`,
 	'130252': `Strategy`,
 
+	// Import attribute management
+	'130260': `Attribute Settings`,
+	'130261': `Ignored fields (one per line)`,
+	'130262': `Field aliases (format: import → local)`,
+	'130263': `Select All`,
+	'130264': `Deselect All`,
+	'130265': `{0} selected`,
+
 	'140201': `[OB-Douban]: searching '{0}'...`,
 	'140202': `[OB-Douban]: result {0} rows`,
 	'140203': `[OB-Douban]: request '{0}'`,

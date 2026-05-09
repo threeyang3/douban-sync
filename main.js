@@ -2519,6 +2519,12 @@ PS: This file could be delete if you want to.
   "130250": `Local`,
   "130251": `Import`,
   "130252": `Strategy`,
+  "130260": `Attribute Settings`,
+  "130261": `Ignored fields (one per line)`,
+  "130262": `Field aliases (format: import \u2192 local)`,
+  "130263": `Select All`,
+  "130264": `Deselect All`,
+  "130265": `{0} selected`,
   "140201": `[OB-Douban]: searching '{0}'...`,
   "140202": `[OB-Douban]: result {0} rows`,
   "140203": `[OB-Douban]: request '{0}'`,
@@ -3179,6 +3185,12 @@ var zh_cn_default = {
   "130250": `\u672C\u5730\u503C`,
   "130251": `\u5BFC\u5165\u503C`,
   "130252": `\u7B56\u7565`,
+  "130260": `\u5C5E\u6027\u7BA1\u7406`,
+  "130261": `\u5FFD\u7565\u5C5E\u6027\uFF08\u6BCF\u884C\u4E00\u4E2A\uFF09`,
+  "130262": `\u5C5E\u6027\u522B\u540D\uFF08\u683C\u5F0F\uFF1A\u5BFC\u5165\u540D \u2192 \u672C\u5730\u540D\uFF09`,
+  "130263": `\u5168\u9009`,
+  "130264": `\u5168\u4E0D\u9009`,
+  "130265": `\u5DF2\u9009 {0} \u6761`,
   "140201": `[OB-Douban]: \u5F00\u59CB\u641C\u7D22'{0}'...`,
   "140202": `[OB-Douban]: \u641C\u7D22\u6761\u6570{0}\u6761`,
   "140203": `[OB-Douban]: \u8BF7\u6C42\u8C46\u74E3'{0}'...`,
@@ -27503,36 +27515,39 @@ var UserDataImporter = class {
       throw new Error(`Failed to parse import file ${fileName}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  buildDiffs(importData) {
-    var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
+  buildDiffs(importData, attrSettings) {
+    var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
     this.fileCache = scanVaultForDoubanIds(this.app);
     const results = [];
+    const ignoredSet = new Set((_a5 = attrSettings == null ? void 0 : attrSettings.ignoredFields) != null ? _a5 : []);
+    const aliasMap = (_b = attrSettings == null ? void 0 : attrSettings.fieldAliases) != null ? _b : {};
     for (const [doubanId, userData] of Object.entries(importData.items)) {
-      const localEntry = (_a5 = this.fileCache.get(doubanId)) != null ? _a5 : null;
-      const localFile = (_b = localEntry == null ? void 0 : localEntry.file) != null ? _b : null;
+      const localEntry = (_c = this.fileCache.get(doubanId)) != null ? _c : null;
+      const localFile = (_d = localEntry == null ? void 0 : localEntry.file) != null ? _d : null;
       if (!localFile) {
         results.push({
           doubanId,
-          title: (_d = (_c = userData.identifier) == null ? void 0 : _c.title) != null ? _d : doubanId,
-          type: (_f = (_e = userData.identifier) == null ? void 0 : _e.type) != null ? _f : "",
+          title: (_f = (_e = userData.identifier) == null ? void 0 : _e.title) != null ? _f : doubanId,
+          type: (_h = (_g = userData.identifier) == null ? void 0 : _g.type) != null ? _h : "",
           localFile: null,
           fieldDiffs: [],
-          identical: false
+          identical: false,
+          selected: true
         });
         continue;
       }
-      const localFrontmatter = (_g = localEntry.frontmatter) != null ? _g : {};
-      const importCustom = (_h = userData.customProperties) != null ? _h : {};
+      const localFrontmatter = (_i = localEntry.frontmatter) != null ? _i : {};
+      const importCustom = (_j = userData.customProperties) != null ? _j : {};
+      const localFm = localFrontmatter;
       const fieldDiffs = [];
       let identical = true;
       const allFieldNames = new Set();
       for (const key of Object.keys(importCustom)) {
-        if (!DOUBAN_FIELDS.has(key))
+        if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key))
           allFieldNames.add(key);
       }
-      const localFm = localFrontmatter;
       for (const key of Object.keys(localFm)) {
-        if (!DOUBAN_FIELDS.has(key))
+        if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key))
           allFieldNames.add(key);
       }
       for (const fieldName of allFieldNames) {
@@ -27553,13 +27568,40 @@ var UserDataImporter = class {
           strategy
         });
       }
+      for (const [importFieldName, localFieldName] of Object.entries(aliasMap)) {
+        if (ignoredSet.has(importFieldName))
+          continue;
+        if (!Object.prototype.hasOwnProperty.call(importCustom, importFieldName))
+          continue;
+        if (DOUBAN_FIELDS.has(importFieldName))
+          continue;
+        if (allFieldNames.has(importFieldName))
+          continue;
+        const importValue = importCustom[importFieldName];
+        const localValue = localFm[localFieldName];
+        const localEmpty = this.isEmptyValue(localValue);
+        const importEmpty = this.isEmptyValue(importValue);
+        if (localEmpty && importEmpty)
+          continue;
+        if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
+          continue;
+        identical = false;
+        const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
+        fieldDiffs.push({
+          fieldName: localFieldName,
+          localValue,
+          importValue,
+          strategy
+        });
+      }
       results.push({
         doubanId,
-        title: (_j = (_i = userData.identifier) == null ? void 0 : _i.title) != null ? _j : doubanId,
-        type: (_l = (_k = userData.identifier) == null ? void 0 : _k.type) != null ? _l : "",
+        title: (_l = (_k = userData.identifier) == null ? void 0 : _k.title) != null ? _l : doubanId,
+        type: (_n = (_m = userData.identifier) == null ? void 0 : _m.type) != null ? _n : "",
         localFile,
         fieldDiffs,
-        identical
+        identical,
+        selected: true
       });
     }
     this.fileCache = null;
@@ -27573,9 +27615,10 @@ var UserDataImporter = class {
         errors: [],
         missingFields: []
       };
-      const total = diffs.length;
-      for (let i = 0; i < diffs.length; i++) {
-        const entry = diffs[i];
+      const selected = diffs.filter((d) => d.selected);
+      const total = selected.length;
+      for (let i = 0; i < selected.length; i++) {
+        const entry = selected[i];
         onProgress == null ? void 0 : onProgress(i + 1, total);
         if (!entry.localFile) {
           result.skipped++;
@@ -27815,9 +27858,12 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     this.diffs = [];
     this.currentStep = "overview";
     this.importResult = null;
+    this.ignoredFieldsText = "";
+    this.fieldAliasesText = "";
     this.importer = new UserDataImporter(app);
   }
   onOpen() {
+    this.modalEl.addClass("import-preview-modal");
     this.openFilePicker();
   }
   openFilePicker() {
@@ -27840,12 +27886,33 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
         });
         return;
       }
-      this.diffs = this.importer.buildDiffs(this.importData);
+      this.rebuildDiffs();
       this.currentStep = "overview";
       this.contentEl.empty();
       this.renderStep();
     });
     input.click();
+  }
+  rebuildDiffs() {
+    if (!this.importData)
+      return;
+    const settings = this.parseAttributeSettings();
+    this.diffs = this.importer.buildDiffs(this.importData, settings);
+  }
+  parseAttributeSettings() {
+    const ignoredFields = this.ignoredFieldsText.split("\n").map((s) => s.trim()).filter((s) => s.length > 0);
+    const fieldAliases = {};
+    for (const line of this.fieldAliasesText.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed)
+        continue;
+      const sep = trimmed.includes("\u2192") ? "\u2192" : "->";
+      const parts = trimmed.split(sep).map((s) => s.trim());
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        fieldAliases[parts[0]] = parts[1];
+      }
+    }
+    return { ignoredFields, fieldAliases };
   }
   renderStep() {
     this.contentEl.empty();
@@ -27861,17 +27928,49 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
         break;
     }
   }
+  getSelectedDiffs() {
+    return this.diffs.filter((d) => d.selected);
+  }
   renderOverview() {
     const matched = this.diffs.filter((d) => d.localFile !== null);
     const skipped = this.diffs.filter((d) => d.localFile === null);
     this.contentEl.createEl("h3", { text: i18nHelper.getMessage("130240") });
-    this.contentEl.createEl("p", {
-      text: i18nHelper.getMessage("130241", this.diffs.length, matched.length, skipped.length)
+    const statsRow = this.contentEl.createDiv({ cls: "import-stats-row" });
+    statsRow.createEl("p", {
+      text: i18nHelper.getMessage("130241", this.diffs.length, matched.length, skipped.length),
+      cls: "import-stats-text"
     });
+    const selectAllRow = statsRow.createDiv({ cls: "import-select-all-row" });
+    const selectAllCb = selectAllRow.createEl("input", { type: "checkbox" });
+    selectAllCb.checked = this.diffs.every((d) => d.selected);
+    selectAllCb.addEventListener("change", () => {
+      const checked = selectAllCb.checked;
+      for (const diff of this.diffs) {
+        diff.selected = checked;
+      }
+      this.refreshListCheckboxes(checked);
+      updateSelectedCount();
+    });
+    selectAllRow.createEl("label", { text: i18nHelper.getMessage("130263") });
+    const selectedCountEl = this.contentEl.createDiv({ cls: "import-selected-count" });
+    const updateSelectedCount = () => {
+      const count = this.diffs.filter((d) => d.selected).length;
+      selectedCountEl.setText(i18nHelper.getMessage("130265", count));
+      selectAllCb.checked = this.diffs.length > 0 && this.diffs.every((d) => d.selected);
+      const hasDiff = this.diffs.some((d) => d.selected && d.localFile !== null && !d.identical);
+      nextBtn.setDisabled(!hasDiff);
+    };
+    updateSelectedCount();
     const listEl = this.contentEl.createDiv({ cls: "import-preview-list" });
     for (const diff of this.diffs) {
       const itemEl = listEl.createDiv({ cls: "import-preview-item" });
       const hasLocal = diff.localFile !== null;
+      const cb = itemEl.createEl("input", { type: "checkbox" });
+      cb.checked = diff.selected;
+      cb.addEventListener("change", () => {
+        diff.selected = cb.checked;
+        updateSelectedCount();
+      });
       const titleEl = itemEl.createSpan({ cls: "import-preview-title", text: diff.title });
       if (!hasLocal) {
         titleEl.createSpan({ cls: "import-preview-badge skip", text: i18nHelper.getMessage("130222") });
@@ -27880,26 +27979,68 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       } else {
         titleEl.createSpan({ cls: "import-preview-badge diff", text: `${diff.fieldDiffs.length}` });
       }
-      const typeEl = itemEl.createSpan({ cls: "import-preview-type", text: diff.type });
-      const propsCount = diff.fieldDiffs.length;
-      if (hasLocal && !diff.identical) {
-        itemEl.createSpan({ cls: "import-preview-props", text: `${propsCount}` });
-      }
+      itemEl.createSpan({ cls: "import-preview-type", text: diff.type });
     }
+    this.renderAttributeSettingsPanel();
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    const hasDiff = matched.some((d) => !d.identical);
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(!hasDiff).onClick(() => {
+    const nextBtn = new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => {
+      this.rebuildDiffs();
+      for (const diff of this.diffs) {
+        if (diff.localFile === null || diff.identical) {
+          diff.selected = false;
+        }
+      }
       this.currentStep = "diffs";
       this.renderStep();
     }).setClass("obsidian_douban_search_button");
     new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
+  refreshListCheckboxes(checked) {
+    const listEl = this.contentEl.querySelector(".import-preview-list");
+    if (!listEl)
+      return;
+    const cbs = listEl.querySelectorAll('input[type="checkbox"]');
+    cbs.forEach((cb) => {
+      cb.checked = checked;
+    });
+  }
+  renderAttributeSettingsPanel() {
+    const panel = this.contentEl.createDiv({ cls: "import-attr-panel" });
+    const headerEl = panel.createDiv({ cls: "import-attr-header" });
+    const collapseIcon = headerEl.createSpan({ cls: "import-attr-collapse-icon", text: "\u25B8" });
+    headerEl.createEl("span", { text: i18nHelper.getMessage("130260") });
+    const bodyEl = panel.createDiv({ cls: "import-attr-body" });
+    bodyEl.hidden = true;
+    headerEl.addEventListener("click", () => {
+      const collapsed = bodyEl.hidden;
+      bodyEl.hidden = !collapsed;
+      collapseIcon.setText(collapsed ? "\u25BE" : "\u25B8");
+    });
+    bodyEl.createEl("label", { text: i18nHelper.getMessage("130261") });
+    const ignoredTa = bodyEl.createEl("textarea", {
+      cls: "import-attr-textarea",
+      attr: { rows: "3", placeholder: "fieldA\nfieldB" }
+    });
+    ignoredTa.value = this.ignoredFieldsText;
+    ignoredTa.addEventListener("change", () => {
+      this.ignoredFieldsText = ignoredTa.value;
+    });
+    bodyEl.createEl("label", { text: i18nHelper.getMessage("130262") });
+    const aliasTa = bodyEl.createEl("textarea", {
+      cls: "import-attr-textarea",
+      attr: { rows: "3", placeholder: "\u65E7\u5C5E\u6027\u540D \u2192 \u65B0\u5C5E\u6027\u540D\nfieldA \u2192 fieldB" }
+    });
+    aliasTa.value = this.fieldAliasesText;
+    aliasTa.addEventListener("change", () => {
+      this.fieldAliasesText = aliasTa.value;
+    });
+  }
   renderDiffs() {
     var _a5, _b;
     this.contentEl.createEl("h3", { text: i18nHelper.getMessage("130243") });
-    const entriesWithDiffs = this.diffs.filter((d) => d.localFile !== null && !d.identical);
-    const identicalEntries = this.diffs.filter((d) => d.localFile !== null && d.identical);
+    const entriesWithDiffs = this.diffs.filter((d) => d.selected && d.localFile !== null && !d.identical);
+    const identicalEntries = this.diffs.filter((d) => d.selected && d.localFile !== null && d.identical);
     for (const entry of entriesWithDiffs) {
       const entryEl = this.contentEl.createDiv({ cls: "import-diff-entry" });
       const headerEl = entryEl.createDiv({ cls: "import-diff-header" });
