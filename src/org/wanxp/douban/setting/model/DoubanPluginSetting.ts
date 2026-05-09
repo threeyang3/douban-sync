@@ -61,5 +61,6 @@ export interface DoubanPluginSetting {
 	templatePresetPaths?: Record<string, string>,
 	notePathTemplate: string,
 	noteTemplateContent: string,
+	noteDefaultFolder: string,
 	dataProtection: DataProtectionSettings,
 }

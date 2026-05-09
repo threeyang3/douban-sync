@@ -3,6 +3,7 @@ import {ButtonComponent, SearchComponent, Setting, TFile} from "obsidian";
 import SettingsManager from "./SettingsManager";
 import {FileTreeSelectSuggest} from "./model/FileTreeSelectSuggest";
 import {FolderTreeSelectSuggest} from "./model/FolderTreeSelectSuggest";
+import {PathSuggest} from "./model/PathSuggest";
 import {CreateTemplateSelectParams} from "./model/CreateTemplateSelectParams";
 import {showFileExample} from "./OutputSettingsHelper";
 import {TemplateKey} from "../../constant/Constsant";
@@ -29,6 +30,20 @@ export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsM
 	}
 
 	containerEl.createEl('h3', { text: i18nHelper.getMessage('121920') });
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('121924'))
+		.setDesc(i18nHelper.getMessage('121925'))
+		.addText((text) => {
+			text
+				.setPlaceholder('笔记')
+				.setValue(manager.getSettingStr('noteDefaultFolder'))
+				.onChange(async (value) => {
+					await manager.updateSetting('noteDefaultFolder', value);
+				});
+			text.inputEl.style.width = '100%';
+			new PathSuggest(manager.app, text.inputEl, 'folder');
+		});
+
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('121920'))
 		.setDesc(i18nHelper.getMessage('121921'))

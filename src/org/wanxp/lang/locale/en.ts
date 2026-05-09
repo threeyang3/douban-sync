@@ -13,6 +13,7 @@ export default {
 	'110105': 'search music and create ',
 	'110106': 'search game and create ',
 	'110107': 'Create note for current entry',
+	'110108': 'Link existing note to current entry',
 	'110109': 'Export Douban user data',
 	'110110': 'Import Douban user data',
 
@@ -322,6 +323,8 @@ PS: This file could be delete if you want to.
 	'121921': `Path template for linked note files, available variables: {{id}}, {{title}}, {{type}}`,
 	'121922': `Linked note template content`,
 	'121923': `Template content used when creating linked notes, available variables: {{id}}, {{title}}, {{type}}`,
+	'121924': `Default folder for note search`,
+	'121925': `Limit note search scope, leave empty to search entire vault`,
 	'121930': `Template Preview`,
 	'121931': `Edit Template`,
 	'121932': `Available Variables`,
@@ -379,6 +382,10 @@ PS: This file could be delete if you want to.
 	'130131': `Please configure note path template in settings first`,
 	'130132': `Note created: {0}`,
 	'130133': `Note already exists, opened: {0}`,
+	'130140': `Search and select a note...`,
+	'130141': `Select heading (optional, leave empty to skip)`,
+	'130142': `No headings found, type one or leave empty`,
+	'130143': `Note linked: {0}`,
 
 	// Data protection settings
 	'125100': `Data Protection`,

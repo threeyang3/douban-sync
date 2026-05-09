@@ -70,6 +70,7 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	},
 	searchDefaultType: SupportType.all,
 	templatePresetPaths: {},
+	noteDefaultFolder: '',
 	notePathTemplate: '笔记/{{type}}/{{title}}.md',
 	noteTemplateContent: `---
 doubanId: {{id}}

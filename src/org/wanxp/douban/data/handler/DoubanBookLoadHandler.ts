@@ -204,6 +204,16 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 			}
 			valueMap.set(BookKeyValueMap.get(lookupKey), value);
 		})
+		// 副标题：优先从 #info 的 span.pl 获取，其次从页面的 h2.subtitle 提取
+		if (!valueMap.has('subTitle') || !valueMap.get('subTitle')) {
+			const subtitleEl = html('h2.subtitle span[property="v:subtitle"]').first();
+			if (subtitleEl.length > 0) {
+				const sub = subtitleEl.text().trim();
+				if (sub) {
+					valueMap.set('subTitle', sub);
+				}
+			}
+		}
 		let id = StringUtil.analyzeIdByUrl(url);
 		let menuIdDom = html('#dir_' + id + '_full') ? html('#dir_' + id + '_full') : html('#dir_' + id + '_short');
 		let menu: string[] = menuIdDom ? html(menuIdDom.get(0)).text().trim().split('\n').map(row => row.trim()) : [];

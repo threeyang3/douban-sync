@@ -2,6 +2,8 @@ import {App, Notice, TFile, normalizePath} from 'obsidian';
 import DoubanPlugin from '../../main';
 import {i18nHelper} from '../../lang/helper';
 import {getFileFrontmatter} from '../../utils/FrontmatterUtil';
+import {NoteSelectModal} from './NoteSelectModal';
+import {HeadingSelectModal} from './HeadingSelectModal';
 
 interface NoteContext {
 	doubanId: string;
@@ -75,6 +77,49 @@ export class DoubanNoteManager {
 
 		await this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
 		new Notice(i18nHelper.getMessage(existingFile instanceof TFile ? '130133' : '130132', notePath));
+	}
+
+	async linkExistingNoteForCurrentFile(): Promise<void> {
+		const file = this.app.workspace.getActiveFile();
+		if (!(file instanceof TFile)) {
+			new Notice(i18nHelper.getMessage('130130'));
+			return;
+		}
+
+		const context = this.resolveContext(file);
+		if (!context) {
+			new Notice(i18nHelper.getMessage('130130'));
+			return;
+		}
+
+		const selectModal = new NoteSelectModal(this.plugin);
+		selectModal.open();
+		const noteFile = await selectModal.closed;
+
+		if (!noteFile) {
+			return;
+		}
+
+		// Check if file has headings
+		const content = await this.app.vault.read(noteFile);
+		const hasHeadings = /^#{1,6}\s+/m.test(content);
+
+		let heading = '';
+		if (hasHeadings) {
+			const headingModal = new HeadingSelectModal(this.app, noteFile);
+			heading = await headingModal.open();
+		}
+
+		const notePath = stripMd(noteFile.path);
+		const noteName = noteFile.basename;
+		const linkPart = heading ? `${notePath}#${heading}` : notePath;
+		const link = `[[${linkPart}|${noteName}]]`;
+
+		await this.app.fileManager.processFrontMatter(file, (fm) => {
+			fm['笔记'] = link.includes('"') ? link.replaceAll('"', '\\"') : link;
+		});
+
+		new Notice(i18nHelper.getMessage('130143', noteFile.path));
 	}
 
 	private resolveContext(localFile: TFile): NoteContext | null {

@@ -326,6 +326,12 @@ export default class DoubanPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id: "douban-link-existing-note",
+			name: i18nHelper.getMessage("110108"),
+			callback: () => this.doubanNoteManager?.linkExistingNoteForCurrentFile(),
+		});
+
+		this.addCommand({
 			id: "douban-export-user-data",
 			name: i18nHelper.getMessage("110109"),
 			callback: () => new UserDataExportModal(this).open(),

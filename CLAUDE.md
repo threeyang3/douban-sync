@@ -6,9 +6,10 @@ Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记�
 
 - 当前主仓库：`https://github.com/threeyang3/douban-sync`
 - 当前开发分支：`adv`
-- 当前版本基线：`1.9.1`
+- 当前版本基线：`2.0.0`
 - `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
 - 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
+- 所有开发和修改默认在 `adv` 分支进行，**除非用户明确要求，否则绝不合并到 `main` 分支**
 
 ## 技术栈
 
@@ -52,6 +53,7 @@ npm run docs:build     # 文档站构建
 ## 关键约定
 
 - 版本号同步修改 `package.json`、`package-lock.json`、`manifest.json` 和 `versions.json`
+- 发布 GitHub Release 时必须上传 `main.js`、`manifest.json`、`styles.css` 三个文件作为 release assets
 - 各类型数据 handler 继承 `DoubanAbstractLoadHandler`，同步 handler 继承 `DoubanAbstractSyncHandler`
 - 同步列表 handler 通过 `DoubanAbstractListHandler.create(syncType, doType)` 工厂方法创建，不再需要叶子类文件
 - 路径自动补全使用 `PathSuggest`（mode: 'folder' | 'file'），替代原 FolderSuggest/FileSuggest
@@ -67,7 +69,18 @@ npm run docs:build     # 文档站构建
 - 强制同步数据保护在 `main.ts#createFile()` 中集成，通过 `UserDataExtractor` + `UserDataMerger` 保留用户自定义属性和正文分区
 - `douban-info` callout 响应式布局使用 `flex-wrap: wrap`（非 `@media` 查询），原因：Obsidian 内容区有 `max-width`，视口断点不可靠
 - 内置模板的 frontmatter 和表格栏目以 `douban/` 文件夹下各类型模板为设计参照
-- create-note 功能（`DoubanNoteManager`）只设置 frontmatter `笔记` 属性，不修改表格
+- create-note 功能（`DoubanNoteManager`）设置 frontmatter `笔记` 属性（格式为 `[[笔记路径|笔记文件名]]`），不修改表格
+- 封面图片下载通过 `FileHandler.creatAttachmentWithData()`，支持 `overwriteCoverImage` 选项控制是否覆盖已有文件
+- 短评提取通过 `filterCommentText()` 过滤标签文本（`/^标签[:：]/`），防止标签泄漏到短评字段；Movie/Book handler 的 fallback 路径也需经过滤
+- `getGuessType()` 三层类型检测：关键词匹配 → JSON-LD `@type` → `og:type`；`handle()` 中 `parseSubjectFromHtml` 返回 null 且类型不匹配时直接标记 `failByDiffType`
+- 同步结果新增文件数量分析（`SyncHandler.showResult()`），统计实际 .md 文件数并对比同步统计，自动分析差额原因
+- `{{desc}}` 正文输出前会去除全角空格、行首尾空白、过滤纯空白行
+- `{{menu}}` 正文输出使用 Markdown 列表格式（`- ` 前缀），书籍/音乐模板包裹在 callout 中
+- 多行短评在 YAML frontmatter 中使用 `|` 块标量语法保留换行结构
+- 书籍信息提取的默认分支支持文本节点（`nextSibling`），解决 `{{subTitle}}` 等纯文本字段获取失败
+- `TextInputSuggest.close()` 需检查 `this.popper` 是否存在再 destroy，防止未初始化时崩溃
+- `BookKeyValueMap` 的 key 已统一去掉冒号，查询前会 normalize 去掉末尾中英文冒号
+- `TemplateConfig` 数据在 `migrateTemplateSettings()` 加载时自动修复（字符串→合法对象），`getTemplate()`、`getDefaultTemplatePath()`、`getConfig()` 读取时也做了容错，防止旧版本 bug 产生的损坏数据影响同步
 
 ## 下一阶段开发计划
 
