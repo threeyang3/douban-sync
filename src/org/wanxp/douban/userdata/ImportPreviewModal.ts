@@ -35,6 +35,8 @@ export class ImportPreviewModal extends Modal {
 
 	onOpen() {
 		this.modalEl.addClass('import-preview-modal');
+		this.contentEl.createEl('h3', { text: i18nHelper.getMessage('130240') });
+		this.contentEl.createEl('p', { text: i18nHelper.getMessage('130211') });
 		this.openFilePicker();
 	}
 
@@ -129,29 +131,9 @@ export class ImportPreviewModal extends Modal {
 		});
 		const selectAllRow = statsRow.createDiv({ cls: 'import-select-all-row' });
 		const selectAllCb = selectAllRow.createEl('input', { type: 'checkbox' });
-		selectAllCb.checked = this.diffs.every(d => d.selected);
-		selectAllCb.addEventListener('change', () => {
-			const checked = selectAllCb.checked;
-			for (const diff of this.diffs) {
-				diff.selected = checked;
-			}
-			this.refreshListCheckboxes(checked);
-			updateSelectedCount();
-		});
 		selectAllRow.createEl('label', { text: i18nHelper.getMessage('130263') });
 
 		const selectedCountEl = this.contentEl.createDiv({ cls: 'import-selected-count' });
-
-		const updateSelectedCount = () => {
-			const count = this.diffs.filter(d => d.selected).length;
-			selectedCountEl.setText(i18nHelper.getMessage('130265', count));
-			// 更新全选状态
-			selectAllCb.checked = this.diffs.length > 0 && this.diffs.every(d => d.selected);
-			// 有无已选条目中有差异的
-			const hasDiff = this.diffs.some(d => d.selected && d.localFile !== null && !d.identical);
-			nextBtn.setDisabled(!hasDiff);
-		};
-		updateSelectedCount();
 
 		// 条目列表
 		const listEl = this.contentEl.createDiv({ cls: 'import-preview-list' });
@@ -160,7 +142,6 @@ export class ImportPreviewModal extends Modal {
 			const itemEl = listEl.createDiv({ cls: 'import-preview-item' });
 			const hasLocal = diff.localFile !== null;
 
-			// 勾选框
 			const cb = itemEl.createEl('input', { type: 'checkbox' });
 			cb.checked = diff.selected;
 			cb.addEventListener('change', () => {
@@ -183,7 +164,7 @@ export class ImportPreviewModal extends Modal {
 		// 属性管理面板
 		this.renderAttributeSettingsPanel();
 
-		// 按钮
+		// 按钮（必须在 updateSelectedCount 之前创建）
 		const controls = this.contentEl.createDiv('controls');
 		controls.addClass('obsidian_douban_search_controls');
 
@@ -192,9 +173,7 @@ export class ImportPreviewModal extends Modal {
 			.setCta()
 			.setDisabled(true)
 			.onClick(() => {
-				// 重新构建差异（应用属性管理设置）
 				this.rebuildDiffs();
-				// 保持勾选状态
 				for (const diff of this.diffs) {
 					if (diff.localFile === null || diff.identical) {
 						diff.selected = false;
@@ -209,6 +188,26 @@ export class ImportPreviewModal extends Modal {
 			.setButtonText(i18nHelper.getMessage('110005'))
 			.onClick(() => this.close())
 			.setClass('obsidian_douban_cancel_button');
+
+		// 更新状态（nextBtn 已创建，可安全引用）
+		const updateSelectedCount = () => {
+			const count = this.diffs.filter(d => d.selected).length;
+			selectedCountEl.setText(i18nHelper.getMessage('130265', count));
+			selectAllCb.checked = this.diffs.length > 0 && this.diffs.every(d => d.selected);
+			const hasDiff = this.diffs.some(d => d.selected && d.localFile !== null && !d.identical);
+			nextBtn.setDisabled(!hasDiff);
+		};
+
+		selectAllCb.addEventListener('change', () => {
+			const checked = selectAllCb.checked;
+			for (const diff of this.diffs) {
+				diff.selected = checked;
+			}
+			this.refreshListCheckboxes(checked);
+			updateSelectedCount();
+		});
+
+		updateSelectedCount();
 	}
 
 	private refreshListCheckboxes(checked: boolean) {

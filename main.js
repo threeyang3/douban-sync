@@ -27864,6 +27864,8 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
   }
   onOpen() {
     this.modalEl.addClass("import-preview-modal");
+    this.contentEl.createEl("h3", { text: i18nHelper.getMessage("130240") });
+    this.contentEl.createEl("p", { text: i18nHelper.getMessage("130211") });
     this.openFilePicker();
   }
   openFilePicker() {
@@ -27942,25 +27944,8 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     });
     const selectAllRow = statsRow.createDiv({ cls: "import-select-all-row" });
     const selectAllCb = selectAllRow.createEl("input", { type: "checkbox" });
-    selectAllCb.checked = this.diffs.every((d) => d.selected);
-    selectAllCb.addEventListener("change", () => {
-      const checked = selectAllCb.checked;
-      for (const diff of this.diffs) {
-        diff.selected = checked;
-      }
-      this.refreshListCheckboxes(checked);
-      updateSelectedCount();
-    });
     selectAllRow.createEl("label", { text: i18nHelper.getMessage("130263") });
     const selectedCountEl = this.contentEl.createDiv({ cls: "import-selected-count" });
-    const updateSelectedCount = () => {
-      const count = this.diffs.filter((d) => d.selected).length;
-      selectedCountEl.setText(i18nHelper.getMessage("130265", count));
-      selectAllCb.checked = this.diffs.length > 0 && this.diffs.every((d) => d.selected);
-      const hasDiff = this.diffs.some((d) => d.selected && d.localFile !== null && !d.identical);
-      nextBtn.setDisabled(!hasDiff);
-    };
-    updateSelectedCount();
     const listEl = this.contentEl.createDiv({ cls: "import-preview-list" });
     for (const diff of this.diffs) {
       const itemEl = listEl.createDiv({ cls: "import-preview-item" });
@@ -27995,6 +27980,22 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       this.renderStep();
     }).setClass("obsidian_douban_search_button");
     new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    const updateSelectedCount = () => {
+      const count = this.diffs.filter((d) => d.selected).length;
+      selectedCountEl.setText(i18nHelper.getMessage("130265", count));
+      selectAllCb.checked = this.diffs.length > 0 && this.diffs.every((d) => d.selected);
+      const hasDiff = this.diffs.some((d) => d.selected && d.localFile !== null && !d.identical);
+      nextBtn.setDisabled(!hasDiff);
+    };
+    selectAllCb.addEventListener("change", () => {
+      const checked = selectAllCb.checked;
+      for (const diff of this.diffs) {
+        diff.selected = checked;
+      }
+      this.refreshListCheckboxes(checked);
+      updateSelectedCount();
+    });
+    updateSelectedCount();
   }
   refreshListCheckboxes(checked) {
     const listEl = this.contentEl.querySelector(".import-preview-list");
