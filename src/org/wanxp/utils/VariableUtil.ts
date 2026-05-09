@@ -102,6 +102,9 @@ export class VariableUtil {
 		if (!value) {
 			return content.replaceAll(variableStr, "");
 		}
+		// 当变量被 [[ ]] 包裹时（wiki link），使用内联格式，不添加 YAML 引号
+		const wikiLinkPattern = `[[${variableStr}]]`;
+		const isWikiLink = content.includes(wikiLinkPattern);
 		let arraySettings = this.getArraySetting(outTypeName, settingManager);
 		if (!arraySettings) {
 			log.warn(i18nHelper.getMessage(`130107`, variable.variable, outTypeName));
@@ -142,14 +145,18 @@ export class VariableUtil {
 			}
 		})
 			.filter(v => v)
-			.map(v => this.handleText(v, targetType))
+			.map(v => isWikiLink ? v : this.handleText(v, targetType))
 		;
 		let arrayValue = StringUtil.handleArray(strValues, arraySettings);
 		// menu 在 callout 中需要为每行添加 > 前缀
 		if (targetType === 'text' && variable.key === 'menu' && arrayValue) {
 			arrayValue = arrayValue.replace(/\n/g, '\n> ');
 		}
-		content = content.replaceAll(variableStr, arrayValue);
+		if (isWikiLink) {
+			content = content.replaceAll(wikiLinkPattern, `[[${arrayValue}]]`);
+		} else {
+			content = content.replaceAll(variableStr, arrayValue);
+		}
 		return content;
 	}
 
@@ -162,6 +169,11 @@ export class VariableUtil {
 			return content;
 		}
 		let strValue = value?  value.toString() : "";
+		// 当变量被 [[ ]] 包裹时（wiki link），不添加 YAML 引号，Obsidian frontmatter 能直接识别
+		const wikiLinkPattern = `[[${variable.variable}]]`;
+		if (content.includes(wikiLinkPattern)) {
+			return content.replaceAll(wikiLinkPattern, `[[${strValue}]]`);
+		}
 		return content.replaceAll(variable.variable, this.handleText(strValue, targetType, valueField));
 	}
 
