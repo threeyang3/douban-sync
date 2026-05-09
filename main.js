@@ -20249,6 +20249,16 @@ var DoubanAbstractLoadHandler = class {
       fileName = this.parsePartPath(fileName, extract3, context, variableMap);
       fileName = fileName + fileNameSuffix;
       const overwriteCoverImage = syncConfig ? (_a5 = syncConfig.overwriteCoverImage) != null ? _a5 : false : context.settings.overwriteCoverImage;
+      if (!overwriteCoverImage) {
+        const existingPath = folder.replace(/\\/g, "/") + "/" + fileName;
+        const existing = context.plugin.app.vault.getAbstractFileByPath(existingPath);
+        if (existing instanceof import_obsidian9.TFile) {
+          extract3.image = existingPath;
+          extract3.imageUrl = image;
+          this.initImageVariableMap(extract3, context, variableMap);
+          return;
+        }
+      }
       const imageReferer = (extract3.id ? this.getSubjectUrl(extract3.id) : "") || extract3.url;
       const referHeaders = HttpUtil.buildImageRequestHeaders(context.plugin.settingsManager.getHeaders(), imageReferer);
       if ((syncConfig ? syncConfig.cacheHighQuantityImage : context.settings.cacheHighQuantityImage) && context.userComponent.isLogin()) {

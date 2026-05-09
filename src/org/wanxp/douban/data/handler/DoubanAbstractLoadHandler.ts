@@ -592,6 +592,17 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		fileName = this.parsePartPath(fileName, extract, context, variableMap)
 		fileName = fileName + fileNameSuffix;
 		const overwriteCoverImage = syncConfig ? (syncConfig.overwriteCoverImage ?? false) : context.settings.overwriteCoverImage;
+		// 封面已存在且未勾选覆盖时跳过下载，加速替换同步
+		if (!overwriteCoverImage) {
+			const existingPath = folder.replace(/\\/g, '/') + '/' + fileName;
+			const existing = context.plugin.app.vault.getAbstractFileByPath(existingPath);
+			if (existing instanceof TFile) {
+				extract.image = existingPath;
+				extract.imageUrl = image;
+				this.initImageVariableMap(extract, context, variableMap);
+				return;
+			}
+		}
 		const imageReferer = (extract.id ? this.getSubjectUrl(extract.id) : '') || extract.url;
 		const referHeaders = HttpUtil.buildImageRequestHeaders(
 			context.plugin.settingsManager.getHeaders() as Record<string, any>,

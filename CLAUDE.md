@@ -6,7 +6,7 @@ Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记�
 
 - 当前主仓库：`https://github.com/threeyang3/douban-sync`
 - 当前开发分支：`adv`
-- 当前版本基线：`2.0.0`
+- 当前版本基线：`2.0.1`
 - `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
 - 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
 - 所有开发和修改默认在 `adv` 分支进行，**除非用户明确要求，否则绝不合并到 `main` 分支**
@@ -53,6 +53,7 @@ npm run docs:build     # 文档站构建
 ## 关键约定
 
 - 版本号同步修改 `package.json`、`package-lock.json`、`manifest.json` 和 `versions.json`
+- 发布 GitHub Release 时标签不带 `v` 前缀，仅数字（如 `2.0.0`）
 - 发布 GitHub Release 时必须上传 `main.js`、`manifest.json`、`styles.css` 三个文件作为 release assets
 - 各类型数据 handler 继承 `DoubanAbstractLoadHandler`，同步 handler 继承 `DoubanAbstractSyncHandler`
 - 同步列表 handler 通过 `DoubanAbstractListHandler.create(syncType, doType)` 工厂方法创建，不再需要叶子类文件
