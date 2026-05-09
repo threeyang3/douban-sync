@@ -75,6 +75,8 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		} else {
 			result = this.parsePartText(template, extract, context, variableMap);
 		}
+		// 检测未解析的模板变量并警告
+		this.warnUnresolvedVariables(result, template);
 		let filePath = '';
 		if (SearchHandleMode.FOR_CREATE == context.mode) {
 			filePath = this.parsePartPath(this.getFilePath(context), extract, context, variableMap);
@@ -84,6 +86,22 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			fileName = this.parsePartPath(this.getFileName(context), extract, context, variableMap);
 		}
 		return {content: result,filePath: filePath, fileName: fileName, subject:extract};
+	}
+
+	/**
+	 * 检测处理后内容中未解析的模板变量并输出警告
+	 */
+	private warnUnresolvedVariables(result: string, originalTemplate: string): void {
+		// 检测 {{doubleBrace}} 格式的未解析变量（标准格式）
+		const unresolvedDouble = result.match(/\{\{[a-zA-Z0-9_]+\}\}/g);
+		if (unresolvedDouble && unresolvedDouble.length > 0) {
+			log.warn(`模板变量未解析: ${unresolvedDouble.join(', ')}，请检查模板语法是否正确（应使用 {{变量名}} 格式）`);
+		}
+		// 检测 { singleBrace } 格式的变量（常见错误格式）
+		const unresolvedSingle = result.match(/\{\s*[a-zA-Z0-9_]+\s*\}/g);
+		if (unresolvedSingle && unresolvedSingle.length > 0) {
+			log.warn(`检测到可能的模板语法错误: ${unresolvedSingle.join(', ')}，模板变量应使用 {{双花括号}} 格式，而非 { 单花括号 }`);
+		}
 	}
 
 	private getFileName(context: HandleContext): string {
