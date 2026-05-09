@@ -26834,7 +26834,8 @@ title: ${context.title}
         yield this.app.vault.create(notePath, content);
       }
       yield this.app.fileManager.processFrontMatter(localFile, (fm) => {
-        fm["\u7B14\u8BB0"] = `[[${stripMd(notePath)}|${context.title}]]`;
+        const noteName = notePath.substring(notePath.lastIndexOf("/") + 1).replace(/\.md$/i, "");
+        fm["\u7B14\u8BB0"] = `[[${stripMd(notePath)}|${noteName}]]`;
       });
       yield this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
       new import_obsidian38.Notice(i18nHelper.getMessage(existingFile instanceof import_obsidian38.TFile ? "130133" : "130132", notePath));
