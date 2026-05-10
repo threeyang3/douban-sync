@@ -6,7 +6,7 @@ Obsidian 插件，从豆瓣导入电影、书籍、音乐、电视剧、日记�
 
 - 当前主仓库：`https://github.com/threeyang3/douban-sync`
 - 当前开发分支：`adv`
-- 当前版本基线：`2.1.5`
+- 当前版本基线：`2.1.7`
 - `origin` 指向 `douban-sync`；旧远端保留为 `obsidian-douban`
 - 对外 README 和 `doc/` 已移除原项目个人化内容，只保留插件本身介绍与使用说明
 - 所有开发和修改默认在 `adv` 分支进行，**除非用户明确要求，否则绝不合并到 `main` 分支**
@@ -87,6 +87,7 @@ npm run docs:build     # 文档站构建
 - `BookKeyValueMap` 的 key 已统一去掉冒号，查询前会 normalize 去掉末尾中英文冒号
 - `TemplateConfig` 数据在 `migrateTemplateSettings()` 加载时自动修复（字符串→合法对象），`getTemplate()`、`getDefaultTemplatePath()`、`getConfig()` 读取时也做了容错，防止旧版本 bug 产生的损坏数据影响同步
 - `getPersonNameByMode` 的 CH_NAME / EN_NAME 正则字符类中**不能包含 `\s` 或 ASCII 空格**；豆瓣 JSON-LD `name` 格式为 `"中文名 原名"`（空格分隔），空格会导致匹配越过标题分隔符拼入原名首字符
+- 书籍 JSON-LD 解析正则**不能使用 `\s`**（如 `/[\r\n\t\s+]/g`），否则书名中空格会被吞掉；正确写法是 `/[\r\n\t]+/g`
 - Game handler 通过 `getTitleNameByMode` 提取标题（与其他 handler 一致），但 i18n 名称支持尚未实现（`handleI18nName` 已注释，TODO）
 - Music handler 的 `parseVariable()` 为空实现（音乐字段简单，暂无自定义变量）
 - CSS 自定义颜色使用 `var(--background-secondary)` 和 `var(--background-modifier-border)`，不再引用不存在的 HSL 组件变量
