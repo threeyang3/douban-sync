@@ -3,9 +3,8 @@
 	--obsidian-primary-color: var(--text-normal);
 	--obsidian-secondary-color: var(--background-primary);
 
-	/* 定义新的颜色，稍微调整亮度或饱和度 */
-	--plugin-primary-color: hsl(var(--obsidian-primary-color-h), var(--obsidian-primary-color-s), calc(var(--obsidian-primary-color-l) + 10%));
-	--plugin-secondary-color: hsl(var(--obsidian-secondary-color-h), var(--obsidian-secondary-color-s), calc(var(--obsidian-secondary-color-l) - 10%));
+	--plugin-primary-color: var(--background-secondary);
+	--plugin-secondary-color: var(--background-modifier-border);
 }
 
 
@@ -315,12 +314,12 @@
 }
 
 .import-preview-badge.skip {
-	background: var(--background-modifier-error);
+	background: var(--text-error);
 	color: var(--text-on-accent);
 }
 
 .import-preview-badge.identical {
-	background: var(--background-modifier-success);
+	background: var(--text-success);
 	color: var(--text-on-accent);
 }
 

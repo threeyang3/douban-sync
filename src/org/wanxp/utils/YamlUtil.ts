@@ -8,10 +8,6 @@ export default class YamlUtil {
 	}
 
 
-	public static handleSpecialChar(text: string): string {
-		return '"' + text + '"';
-	}
-
 	public static handleText(text: string, dataField: DataField = null): string {
 		if (!YamlUtil.hasSpecialChar(text)) {
 			return text;

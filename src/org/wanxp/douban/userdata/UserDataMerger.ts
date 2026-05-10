@@ -14,7 +14,7 @@ interface FrontmatterParts {
 }
 
 function parseFrontmatter(content: string): FrontmatterParts | null {
-	const match = content.match(/^(---\n)([\s\S]*?)(\n---)([\s\S]*)$/);
+	const match = content.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)([\s\S]*)$/);
 	if (!match) return null;
 	return { prefix: match[1], body: match[2], suffix: match[3], rest: match[4] };
 }

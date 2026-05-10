@@ -19522,9 +19522,6 @@ var YamlUtil = class {
   static hasSpecialChar(str) {
     return SPECIAL_CHAR_REG.test(str);
   }
-  static handleSpecialChar(text3) {
-    return '"' + text3 + '"';
-  }
   static handleText(text3, dataField = null) {
     if (!YamlUtil.hasSpecialChar(text3)) {
       return text3;
@@ -19701,13 +19698,13 @@ var VariableUtil = class {
     return content.replaceAll(variable.variable, this.handleText(strValue, targetType, valueField));
   }
   static getAllVariables(content, settingManager) {
-    const reg = /\{\{[a-zA-Z-0-9_.]+([(a-zA-Z-0-9)]+)?}}/g;
+    const reg = /\{\{[a-zA-Z0-9_.\-]+([(a-zA-Z0-9)]+)?}}/g;
     const result = content.match(reg);
     if (!result) {
       return [];
     }
     return result.map((v) => {
-      const reg2 = new RegExp(`[a-zA-Z-0-9_.]+`, "g");
+      const reg2 = new RegExp(`[a-zA-Z0-9_.\\-]+`, "g");
       const result2 = v.match(reg2);
       if (!result2) {
         return null;
@@ -20092,7 +20089,7 @@ var DoubanAbstractLoadHandler = class {
         resultName = regValue ? regValue[0] : name;
         break;
       case PersonNameMode.EN_NAME:
-        regValue = /[0-9a-zA-Z.\s-:]{2,}/g.exec(name);
+        regValue = /[0-9a-zA-Z.\-:]{2,}/g.exec(name);
         resultName = regValue ? regValue[0] : name;
         break;
       default:
@@ -20559,7 +20556,7 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
     const image = html3(html3("head > meta[property= 'og:image']").get(0)).attr("content");
     let item = html3(html3("head > script[type='application/ld+json']").get(0)).text();
     item = super.html_decode(item);
-    const obj = JSON.parse(item.replace(/[\r\n\t\s+]/g, ""));
+    const obj = JSON.parse(item.replace(/[\r\n\t]+/g, ""));
     const title = obj.name;
     const url = obj.url;
     const author = obj.author.map((a) => a.name);
@@ -21246,7 +21243,7 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   parseSubjectFromHtml(html3, context) {
     let title = html3(html3("#content > h1").get(0)).text();
-    title = this.getPersonNameByMode(title, PersonNameMode.CH_NAME);
+    title = this.getTitleNameByMode(title, PersonNameMode.CH_NAME, context);
     let idContent = html3(html3("head > meta[name= 'mobile-agent']").get(0)).attr("content");
     let idPattern = /(\d){5,10}/g;
     let idP = idPattern.exec(idContent);
@@ -25801,7 +25798,7 @@ var NetFileHandler = class {
         return buffer.byteLength;
       }).then((size) => {
         if (size == 0) {
-          return { success: false, size, error: "\u6587\u4EF6\u552F\u6050", filepath: null };
+          return { success: false, size, error: "\u6587\u4EF6\u4E3A\u7A7A", filepath: null };
         }
         return { success: true, size, error: "", filepath: filePath };
       }).catch((e) => {
@@ -27271,7 +27268,7 @@ function extractSection(content, sectionName) {
 
 // src/org/wanxp/douban/userdata/UserDataMerger.ts
 function parseFrontmatter(content) {
-  const match = content.match(/^(---\n)([\s\S]*?)(\n---)([\s\S]*)$/);
+  const match = content.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)([\s\S]*)$/);
   if (!match)
     return null;
   return { prefix: match[1], body: match[2], suffix: match[3], rest: match[4] };

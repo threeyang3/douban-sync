@@ -86,6 +86,10 @@ npm run docs:build     # 文档站构建
 - `TextInputSuggest.close()` 需检查 `this.popper` 是否存在再 destroy，防止未初始化时崩溃
 - `BookKeyValueMap` 的 key 已统一去掉冒号，查询前会 normalize 去掉末尾中英文冒号
 - `TemplateConfig` 数据在 `migrateTemplateSettings()` 加载时自动修复（字符串→合法对象），`getTemplate()`、`getDefaultTemplatePath()`、`getConfig()` 读取时也做了容错，防止旧版本 bug 产生的损坏数据影响同步
+- `getPersonNameByMode` 的 CH_NAME / EN_NAME 正则字符类中**不能包含 `\s` 或 ASCII 空格**；豆瓣 JSON-LD `name` 格式为 `"中文名 原名"`（空格分隔），空格会导致匹配越过标题分隔符拼入原名首字符
+- Game handler 通过 `getTitleNameByMode` 提取标题（与其他 handler 一致），但 i18n 名称支持尚未实现（`handleI18nName` 已注释，TODO）
+- Music handler 的 `parseVariable()` 为空实现（音乐字段简单，暂无自定义变量）
+- CSS 自定义颜色使用 `var(--background-secondary)` 和 `var(--background-modifier-border)`，不再引用不存在的 HSL 组件变量
 
 ## 下一阶段开发计划
 

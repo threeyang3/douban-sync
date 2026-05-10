@@ -184,13 +184,13 @@ export class VariableUtil {
 	 * @param settingManager
 	 */
 	private static getAllVariables(content: string, settingManager:SettingsManager): FieldVariable[] {
-		const reg =/\{\{[a-zA-Z-0-9_.]+([(a-zA-Z-0-9)]+)?}}/g
+		const reg =/\{\{[a-zA-Z0-9_.\-]+([(a-zA-Z0-9)]+)?}}/g
 		const result = content.match(reg);
 		if (!result) {
 			return [];
 		}
 		return result.map((v) => {
-			const reg2 = new RegExp(`[a-zA-Z-0-9_.]+`, 'g');
+			const reg2 = new RegExp(`[a-zA-Z0-9_.\\-]+`, 'g');
 			const result2 = v.match(reg2);
 			if (!result2) {
 				return null;

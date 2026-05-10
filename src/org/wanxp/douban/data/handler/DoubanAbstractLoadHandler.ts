@@ -306,7 +306,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 				resultName = regValue ? regValue[0] : name;
 				break;
 			case PersonNameMode.EN_NAME:
-				regValue = /[0-9a-zA-Z.\s-:]{2,}/g.exec(name);
+				regValue = /[0-9a-zA-Z.\-:]{2,}/g.exec(name);
 				resultName = regValue ? regValue[0] : name;
 				break;
 			default:
