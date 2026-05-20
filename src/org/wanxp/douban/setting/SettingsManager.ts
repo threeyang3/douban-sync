@@ -18,6 +18,7 @@ import {
 	DEFAULT_SETTINGS_ARRAY_NAME
 } from "./model/ArraySetting";
 import {i18nHelper} from "../../lang/helper";
+import { buildSettingsExportData, sanitizeImportedSettings } from "./SettingsIO";
 
 export default class SettingsManager {
 	app: App;
@@ -226,10 +227,14 @@ export default class SettingsManager {
 		this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
 		this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
 		this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
+		this.settings.syncBackupBeforeReplace = DEFAULT_SETTINGS.syncBackupBeforeReplace;
+		this.settings.syncBackupFolder = DEFAULT_SETTINGS.syncBackupFolder;
+		this.settings.includeSensitiveInSettingExport = DEFAULT_SETTINGS.includeSensitiveInSettingExport;
+		this.settings.dataProtection = DEFAULT_SETTINGS.dataProtection;
 	}
 
 	clearLoginInfo() {
-		this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginHeadersContent;
+		this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginCookiesContent;
 		this.settings.loginHeadersContent = DEFAULT_SETTINGS.loginHeadersContent;
 	}
 
@@ -239,8 +244,8 @@ export default class SettingsManager {
 
 	async loadAndSaveSettings(config: object) {
 		this.validateSettings(config);
-		// @ts-ignore
-		this.settings = Object.assign({}, config);
+		this.settings = sanitizeImportedSettings(config);
+		this.plugin.settings = this.settings;
 		await this.plugin.saveSettings();
 	}
 
@@ -252,5 +257,9 @@ export default class SettingsManager {
 
 	getSettings() {
 		return this.settings;
+	}
+
+	getSettingsExportData(includeSensitive = false) {
+		return buildSettingsExportData(this.settings, includeSensitive);
 	}
 }

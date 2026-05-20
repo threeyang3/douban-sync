@@ -129,6 +129,20 @@ export default class SyncHandler {
 			}
 
 		}
+		const reportTime = moment(new Date()).format('YYYYMMDDHHmmss');
+		const reportPath = `${this.plugin.fileHandler.getTmpPath()}/sync-report-${reportTime}.json`;
+		await this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
+			generatedAt: new Date().toISOString(),
+			condition: {
+				type: syncStatus.getTypeName(),
+				scope: syncStatus.getScopeName(),
+				syncCondition: syncStatus.getSyncConditionName(),
+				incrementalUpdate: syncConfig.incrementalUpdate,
+				force: syncConfig.force,
+			},
+			summary: Object.fromEntries(statusHandleMap.entries()),
+			results: Array.from(syncResultMap.values()),
+		}, null, 2));
 		// 同步结束后分析本地文件数量与同步统计的差异
 		let analysis = '';
 		try {
@@ -166,7 +180,7 @@ export default class SyncHandler {
 				}
 			}
 		} catch (_) { /* ignore count errors */ }
-		const result = i18nHelper.getMessage('110037', condition, summary, details + analysis);
+		const result = i18nHelper.getMessage('110037', condition, summary, `${details + analysis}\n\n### 调试报告\n\n- JSON: \`${reportPath}\`\n`);
 		const resultFileName = `${i18nHelper.getMessage('110038')}_${moment(new Date()).format('YYYYMMDDHHmmss')}`
 		await this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
 	}

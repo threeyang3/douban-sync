@@ -44,8 +44,8 @@ actor: {{actor}}
 author: {{author}}
 tags: {{type}}, 我看过的电影, {{myTags}}
 state: {{myState}}
-url: {{url}}
-coverUrl: {{imageData.url}}
+url: \{\{url\}\}
+coverUrl: \{\{imageData.url\}\}
 createTime: {{currentDate}} {{currentTime}}
 collectionDate: {{myCollectionDate}}
 desc: {{desc}}

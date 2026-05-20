@@ -208,6 +208,55 @@ export default class FileHandler {
 		}
 	}
 
+	async writeTextFile(filePath: string, data: string, overwrite = true): Promise<void> {
+		const {vault} = this._app;
+		const {adapter} = vault;
+		const prependDirInput = FileUtil.join("", filePath);
+		const {dir, name, extension} = FileUtil.parse(prependDirInput);
+		const normalizedPath = FileUtil.join(dir, `${name}${extension ? `.${extension}` : ''}`);
+
+		if (dir !== '') {
+			await this.createDirectory(dir);
+		}
+
+		const exists = await adapter.exists(normalizedPath);
+		if (exists) {
+			if (!overwrite) {
+				throw new Error(i18nHelper.getMessage('110201').replace('{0}', normalizedPath ?? ''));
+			}
+			await adapter.write(normalizedPath, data);
+			return;
+		}
+
+		await vault.create(normalizedPath, data);
+	}
+
+	async backupMarkdownFile(sourcePath: string, backupDir: string): Promise<string> {
+		const {vault} = this._app;
+		const sourceFile = vault.getAbstractFileByPath(sourcePath);
+		if (!(sourceFile instanceof TFile)) {
+			throw new Error(`Source file not found: ${sourcePath}`);
+		}
+
+		const content = await vault.read(sourceFile);
+		const parsed = FileUtil.parse(sourcePath);
+		const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+		const backupName = `${parsed.name}.${timestamp}.bak.md`;
+		const backupPath = FileUtil.join(backupDir, backupName);
+		await this.writeTextFile(backupPath, content, false);
+		return backupPath;
+	}
+
+	async restoreMarkdownFile(targetPath: string, backupPath: string): Promise<void> {
+		const {vault} = this._app;
+		const backupFile = vault.getAbstractFileByPath(backupPath);
+		if (!(backupFile instanceof TFile)) {
+			throw new Error(`Backup file not found: ${backupPath}`);
+		}
+		const backupContent = await vault.read(backupFile);
+		await this.writeTextFile(targetPath, backupContent, true);
+	}
+
 
 
 	getRootPath(): string {

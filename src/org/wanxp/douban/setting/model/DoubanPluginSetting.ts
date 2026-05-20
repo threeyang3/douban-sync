@@ -63,4 +63,7 @@ export interface DoubanPluginSetting {
 	noteTemplateContent: string,
 	noteDefaultFolder: string,
 	dataProtection: DataProtectionSettings,
+	syncBackupBeforeReplace: boolean,
+	syncBackupFolder: string,
+	includeSensitiveInSettingExport: boolean,
 }

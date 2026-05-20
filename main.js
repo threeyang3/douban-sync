@@ -2220,6 +2220,7 @@ PS: This file could be delete if you want to.
   "replace": `[replace]`,
   "create": `[create]`,
   "fail": `[fail]`,
+  "manualReview": `[manual review]`,
   "failByDiffType": `[fail by diff type]`,
   "syncall": `[summary]`,
   "notsync": `[notsync]`,
@@ -2228,6 +2229,7 @@ PS: This file could be delete if you want to.
   "replace_desc": `replace`,
   "create_desc": `create`,
   "fail_desc": `fail`,
+  "manualReview_desc": `Sync partly completed, but duplicated or old files still need manual cleanup`,
   "failByDiffType_desc": `fail because of different type`,
   "notsync_desc": `notsync`,
   "syncall_desc": `syncall`,
@@ -2483,6 +2485,32 @@ PS: This file could be delete if you want to.
   "125105": `Keep the ## Record section content during force sync`,
   "125106": `Preserve "Thoughts" section`,
   "125107": `Keep the ## Thoughts section content during force sync`,
+  "125108": `Backup before forced replace`,
+  "125109": `When enabled, force sync backs up the old note before overwrite/delete. If backup fails, the destructive step is aborted`,
+  "125110": `Backup folder`,
+  "125111": `Where old note backups are stored. Default: .tmp/obsidian-douban/backups`,
+  "125112": `Include login credentials in settings export`,
+  "125113": `Disabled by default. When enabled, exported JSON includes cookies and request headers. Store it carefully`,
+  "125114": `Export current plugin settings to JSON. Login credentials are excluded by default`,
+  "125115": `Import applies only supported settings fields and ignores unknown keys. Export a backup first if needed`,
+  "121943": `Save As File`,
+  "121944": `Enter a template file path. After saving, it can be used directly as a template file`,
+  "121945": `Template content saved as a file`,
+  "121946": `Restore Default Template`,
+  "121947": `Restored to the built-in default template for this type`,
+  "121948": `Please enter a template file path`,
+  "130300": `Sync Preview`,
+  "130301": `Will affect {0} / {1} items`,
+  "130302": `Will create: {0}`,
+  "130303": `Will replace: {0}`,
+  "130304": `Will skip (already exists): {0}`,
+  "130305": `Will skip (already handled by incremental sync): {0}`,
+  "130306": `Automatic backup before replace is enabled. Old notes will be backed up before replacement`,
+  "130307": `If force sync runs, it will preserve: {0}`,
+  "130308": `Preview Details`,
+  "130309": `Showing the first {0} entries out of {1}`,
+  "130310": `Confirm And Start Sync`,
+  "130311": `Failed to generate sync preview. Please try again`,
   "130200": `Export Douban User Data`,
   "130201": `Will extract user data from folder [{0}] and export as JSON files`,
   "130202": `Start Export`,
@@ -2891,6 +2919,7 @@ var zh_cn_default = {
   "replace": `[\u5DF2\u66FF\u6362]`,
   "create": `[\u5DF2\u521B\u5EFA]`,
   "fail": `[\u5DF2\u5931\u8D25]`,
+  "manualReview": `[\u5F85\u4EBA\u5DE5\u5904\u7406]`,
   "failByDiffType": `[\u7C7B\u578B\u4E0D\u5339\u914D]`,
   "syncall": `[\u603B\u6570]`,
   "notsync": `[\u672A\u8FDB\u884C]`,
@@ -2899,6 +2928,7 @@ var zh_cn_default = {
   "replace_desc": `\u5DF2\u7ECF\u5B58\u5728\u7684\u540C\u540D\u6587\u6863,\u8FD9\u6B21\u5DF2\u88AB\u66FF\u6362`,
   "create_desc": `\u4E4B\u524D\u4E0D\u5B58\u5728\u7684\u6587\u6863,\u8FD9\u6B21\u76F4\u63A5\u65B0\u589E`,
   "fail_desc": `\u5904\u7406\u8FC7\u7A0B\u949F\u51FA\u73B0\u9519\u8BEF,\u672A\u80FD\u6210\u529F`,
+  "manualReview_desc": `\u540C\u6B65\u5DF2\u90E8\u5206\u5B8C\u6210\uFF0C\u4F46\u4ECD\u6709\u65E7\u6587\u4EF6\u6216\u91CD\u590D\u6587\u4EF6\u9700\u8981\u4EBA\u5DE5\u68C0\u67E5\u5904\u7406`,
   "failByDiffType_desc": `\u5931\u8D25,\u7C7B\u578B\u4E0D\u5339\u914D,\u6BD4\u5982\u60F3\u8981\u540C\u6B65\u7684\u662F\u7535\u5F71,\u4F46\u662F\u5B9E\u9645\u83B7\u53D6\u5230\u7684\u662F\u7535\u89C6\u5267`,
   "notsync_desc": `\u56E0\u5F02\u5E38\u4E2D\u65AD\u6216\u63D0\u524D\u7EC8\u6B62\u5BFC\u81F4\u8FD8\u672A\u5904\u7406`,
   "syncall_desc": `\u60A8\u6B64\u6B21\u540C\u6B65\u6761\u4EF6\u5728\u8C46\u74E3\u4E2D\u7684\u6761\u76EE\u603B\u6570`,
@@ -3153,6 +3183,32 @@ var zh_cn_default = {
   "125105": `\u5F3A\u5236\u540C\u6B65\u65F6\u4FDD\u7559\u6B63\u6587\u4E2D ## \u8BB0\u5F55 \u5206\u533A\u7684\u5185\u5BB9`,
   "125106": `\u4FDD\u7559\u300C\u611F\u60F3\u300D\u5206\u533A`,
   "125107": `\u5F3A\u5236\u540C\u6B65\u65F6\u4FDD\u7559\u6B63\u6587\u4E2D ## \u611F\u60F3 \u5206\u533A\u7684\u5185\u5BB9`,
+  "125108": `\u5F3A\u5236\u66FF\u6362\u524D\u81EA\u52A8\u5907\u4EFD`,
+  "125109": `\u5F00\u542F\u540E\uFF0C\u5F3A\u5236\u66FF\u6362\u540C\u6B65\u4F1A\u5148\u5907\u4EFD\u65E7\u7B14\u8BB0\uFF1B\u5907\u4EFD\u5931\u8D25\u65F6\u5C06\u4E2D\u6B62\u9AD8\u98CE\u9669\u66FF\u6362`,
+  "125110": `\u5907\u4EFD\u76EE\u5F55`,
+  "125111": `\u65E7\u7B14\u8BB0\u5907\u4EFD\u7684\u4FDD\u5B58\u76EE\u5F55\uFF0C\u9ED8\u8BA4\u4F7F\u7528 .tmp/obsidian-douban/backups`,
+  "125112": `\u5BFC\u51FA\u914D\u7F6E\u65F6\u5305\u542B\u767B\u5F55\u51ED\u636E`,
+  "125113": `\u9ED8\u8BA4\u5173\u95ED\u3002\u5F00\u542F\u540E\u5BFC\u51FA\u7684 JSON \u4F1A\u5305\u542B Cookie \u548C\u8BF7\u6C42\u5934\uFF0C\u8BF7\u81EA\u884C\u59A5\u5584\u4FDD\u7BA1`,
+  "125114": `\u5BFC\u51FA\u5F53\u524D\u63D2\u4EF6\u914D\u7F6E\u5230\u672C\u5730 JSON\u3002\u9ED8\u8BA4\u4E0D\u4F1A\u5305\u542B\u767B\u5F55\u51ED\u636E\uFF0C\u964D\u4F4E\u6CC4\u6F0F\u98CE\u9669`,
+  "125115": `\u5BFC\u5165\u8BBE\u7F6E\u65F6\u4EC5\u4F1A\u5E94\u7528\u63D2\u4EF6\u652F\u6301\u7684\u5B57\u6BB5\uFF0C\u672A\u77E5\u5B57\u6BB5\u4F1A\u88AB\u5FFD\u7565\uFF1B\u5EFA\u8BAE\u5BFC\u5165\u524D\u5148\u5907\u4EFD\u5F53\u524D\u914D\u7F6E`,
+  "121943": `\u53E6\u5B58\u4E3A\u6587\u4EF6`,
+  "121944": `\u8F93\u5165\u6A21\u677F\u6587\u4EF6\u8DEF\u5F84\uFF0C\u4FDD\u5B58\u6210\u529F\u540E\u53EF\u76F4\u63A5\u4F5C\u4E3A\u6A21\u677F\u6587\u4EF6\u4F7F\u7528`,
+  "121945": `\u6A21\u677F\u5DF2\u53E6\u5B58\u4E3A\u6587\u4EF6\u5E76\u53EF\u76F4\u63A5\u590D\u7528`,
+  "121946": `\u6062\u590D\u9ED8\u8BA4\u6A21\u677F`,
+  "121947": `\u5DF2\u6062\u590D\u4E3A\u5F53\u524D\u7C7B\u578B\u7684\u5185\u7F6E\u9ED8\u8BA4\u6A21\u677F`,
+  "121948": `\u8BF7\u5148\u8F93\u5165\u6A21\u677F\u6587\u4EF6\u8DEF\u5F84`,
+  "130300": `\u540C\u6B65\u9884\u89C8`,
+  "130301": `\u9884\u8BA1\u5F71\u54CD {0} / {1} \u4E2A\u6761\u76EE`,
+  "130302": `\u5C06\u521B\u5EFA\uFF1A{0}`,
+  "130303": `\u5C06\u66FF\u6362\uFF1A{0}`,
+  "130304": `\u5C06\u8DF3\u8FC7\uFF08\u5DF2\u5B58\u5728\uFF09\uFF1A{0}`,
+  "130305": `\u5C06\u8DF3\u8FC7\uFF08\u589E\u91CF\u5DF2\u5904\u7406\uFF09\uFF1A{0}`,
+  "130306": `\u5DF2\u5F00\u542F\u66FF\u6362\u524D\u81EA\u52A8\u5907\u4EFD\uFF0C\u9884\u89C8\u4E2D\u7684\u66FF\u6362\u6761\u76EE\u4F1A\u5148\u5907\u4EFD\u65E7\u7B14\u8BB0`,
+  "130307": `\u82E5\u6267\u884C\u5F3A\u5236\u66FF\u6362\uFF0C\u5C06\u7EE7\u627F\uFF1A{0}`,
+  "130308": `\u9884\u89C8\u660E\u7EC6`,
+  "130309": `\u5F53\u524D\u4EC5\u5C55\u793A\u524D {0} \u6761\uFF0C\u5171 {1} \u6761`,
+  "130310": `\u786E\u8BA4\u5E76\u5F00\u59CB\u540C\u6B65`,
+  "130311": `\u751F\u6210\u540C\u6B65\u9884\u89C8\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5`,
   "130200": `\u5BFC\u51FA\u8C46\u74E3\u7528\u6237\u6570\u636E`,
   "130201": `\u5C06\u4ECE\u6587\u4EF6\u5939 [{0}] \u4E2D\u63D0\u53D6\u7528\u6237\u81EA\u5B9A\u4E49\u6570\u636E\u5E76\u5BFC\u51FA\u4E3A JSON \u6587\u4EF6`,
   "130202": `\u5F00\u59CB\u5BFC\u51FA`,
@@ -3480,7 +3536,7 @@ function getObsidianLocale() {
     lang2 = momentLocale;
     console.log("[Obsidian-Douban] Detected language from moment.locale():", lang2);
   }
-  if (lang2 === "en") {
+  if (lang2 === "en" && typeof window !== "undefined" && window.localStorage) {
     const localStorageLang = window.localStorage.getItem("language");
     if (localStorageLang) {
       lang2 = localStorageLang;
@@ -3813,6 +3869,7 @@ var SyncItemStatus;
   SyncItemStatus2["replace"] = "replace";
   SyncItemStatus2["create"] = "create";
   SyncItemStatus2["fail"] = "fail";
+  SyncItemStatus2["manualReview"] = "manualReview";
   SyncItemStatus2["failByDiffType"] = "failByDiffType";
   SyncItemStatus2["unHandle"] = "unHandle";
 })(SyncItemStatus || (SyncItemStatus = {}));
@@ -4028,7 +4085,7 @@ var DoubanSearchResultSubject_TIP_EMPTY = {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian45 = __toModule(require("obsidian"));
+var import_obsidian47 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/types.ts
 var DOUBAN_FIELDS = new Set([
@@ -4172,7 +4229,10 @@ title: {{title}}
 
 ## \u611F\u60F3
 `,
-  dataProtection: DEFAULT_DATA_PROTECTION_SETTINGS
+  dataProtection: DEFAULT_DATA_PROTECTION_SETTINGS,
+  syncBackupBeforeReplace: true,
+  syncBackupFolder: ".tmp/obsidian-douban/backups",
+  includeSensitiveInSettingExport: false
 };
 
 // src/org/wanxp/douban/data/search/DoubanSearchFuzzySuggestModal.ts
@@ -21549,13 +21609,13 @@ var DoubanSearchModal = class extends import_obsidian16.Modal {
 };
 
 // src/org/wanxp/douban/setting/DoubanSettingTab.ts
-var import_obsidian32 = __toModule(require("obsidian"));
+var import_obsidian34 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/OutputSettingsHelper.ts
-var import_obsidian24 = __toModule(require("obsidian"));
+var import_obsidian26 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/TemplateSettingHelper.ts
-var import_obsidian22 = __toModule(require("obsidian"));
+var import_obsidian24 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/model/FileTreeSelectSuggest.ts
 var import_obsidian18 = __toModule(require("obsidian"));
@@ -23297,17 +23357,58 @@ var PathSuggest = class extends TextInputSuggest {
 };
 
 // src/org/wanxp/douban/setting/TemplateSettingHelper.ts
-var import_obsidian23 = __toModule(require("obsidian"));
+var import_obsidian25 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/TemplateEditorModal.ts
+var import_obsidian22 = __toModule(require("obsidian"));
+
+// src/org/wanxp/douban/component/TemplateSaveAsModal.ts
 var import_obsidian21 = __toModule(require("obsidian"));
-var TemplateEditorModal = class extends import_obsidian21.Modal {
-  constructor(app, templateKey, content, readOnly = false, onSave) {
+var TemplateSaveAsModal = class extends import_obsidian21.Modal {
+  constructor(app, onSaveAs) {
+    super(app);
+    this.onSaveAs = onSaveAs;
+    this.targetPath = "";
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h3", { text: i18nHelper.getMessage("121943") });
+    contentEl.createEl("p", { text: i18nHelper.getMessage("121944") });
+    const input = new import_obsidian21.TextComponent(contentEl);
+    input.setPlaceholder("Templates/douban-template.md");
+    input.setValue(this.targetPath);
+    input.onChange((value) => {
+      this.targetPath = value.trim();
+    });
+    input.inputEl.style.width = "100%";
+    new PathSuggest(this.app, input.inputEl, "file");
+    const buttonRow = contentEl.createDiv();
+    buttonRow.style.display = "flex";
+    buttonRow.style.justifyContent = "flex-end";
+    buttonRow.style.gap = "8px";
+    buttonRow.style.marginTop = "12px";
+    new import_obsidian21.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
+      if (!this.targetPath) {
+        new import_obsidian21.Notice(i18nHelper.getMessage("121948"));
+        return;
+      }
+      yield this.onSaveAs(this.targetPath);
+      this.close();
+    }));
+    new import_obsidian21.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
+  }
+};
+
+// src/org/wanxp/douban/component/TemplateEditorModal.ts
+var TemplateEditorModal = class extends import_obsidian22.Modal {
+  constructor(app, templateKey, content, options = {}) {
     super(app);
     this.templateKey = templateKey;
     this.content = content;
-    this.readOnly = readOnly;
-    this.onSave = onSave;
+    this.readOnly = !!options.readOnly;
+    this.onSave = options.onSave;
+    this.onSaveAs = options.onSaveAs;
+    this.onRestoreDefault = options.onRestoreDefault;
   }
   onOpen() {
     const { contentEl } = this;
@@ -23343,15 +23444,221 @@ var TemplateEditorModal = class extends import_obsidian21.Modal {
     buttonRow.style.gap = "8px";
     buttonRow.style.marginTop = "12px";
     if (!this.readOnly) {
-      new import_obsidian21.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
+      new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
         var _a5;
         yield (_a5 = this.onSave) == null ? void 0 : _a5.call(this, this.content);
         this.close();
       }));
+      if (this.onRestoreDefault) {
+        new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("121946")).onClick(() => __async(this, null, function* () {
+          var _a5;
+          this.content = yield (_a5 = this.onRestoreDefault) == null ? void 0 : _a5.call(this);
+          textarea.value = this.content;
+        }));
+      }
     }
-    new import_obsidian21.ButtonComponent(buttonRow).setButtonText(this.readOnly ? i18nHelper.getMessage("110005") : i18nHelper.getMessage("110005")).onClick(() => {
+    if (this.onSaveAs) {
+      new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("121943")).onClick(() => {
+        new TemplateSaveAsModal(this.app, (targetPath) => __async(this, null, function* () {
+          var _a5;
+          yield (_a5 = this.onSaveAs) == null ? void 0 : _a5.call(this, targetPath, this.content);
+        })).open();
+      });
+    }
+    new import_obsidian22.ButtonComponent(buttonRow).setButtonText(this.readOnly ? i18nHelper.getMessage("110005") : i18nHelper.getMessage("110005")).onClick(() => {
       this.close();
     });
+  }
+};
+
+// src/org/wanxp/file/FileHandler.ts
+var import_obsidian23 = __toModule(require("obsidian"));
+var FileHandler = class {
+  constructor(app) {
+    this._app = app;
+  }
+  createDirectory(dir) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const { adapter: adapter2 } = vault;
+      const root2 = vault.getRoot().path;
+      const directoryPath = FileUtil.join(dir);
+      const directoryExists = yield adapter2.exists(directoryPath);
+      if (!import_obsidian23.Platform.isIosApp) {
+        if (!directoryExists) {
+          return adapter2.mkdir((0, import_obsidian23.normalizePath)(directoryPath));
+        }
+      }
+      const subPaths = (0, import_obsidian23.normalizePath)(directoryPath).split("/").filter((part) => part.trim() !== "").map((_, index2, arr) => arr.slice(0, index2 + 1).join("/"));
+      for (const subPath of subPaths) {
+        const directoryExists2 = yield adapter2.exists(FileUtil.join(root2, subPath));
+        if (!directoryExists2) {
+          yield adapter2.mkdir(FileUtil.join(root2, subPath));
+        }
+      }
+    });
+  }
+  creatAttachmentWithData(originalFilePath, data2, overwrite = false) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const { adapter: adapter2 } = vault;
+      const prependDirInput = FileUtil.join("", originalFilePath);
+      const { dir, name } = FileUtil.parse(prependDirInput);
+      const filePath = FileUtil.join(dir, `${name}`);
+      try {
+        const fileExists = yield adapter2.exists(filePath);
+        if (fileExists) {
+          if (overwrite) {
+            yield adapter2.remove(filePath);
+          } else {
+            return;
+          }
+        }
+        if (dir !== "") {
+          yield this.createDirectory(dir);
+        }
+        yield vault.createBinary(filePath, data2);
+      } catch (error) {
+        log.error(error.toString(), error);
+      }
+    });
+  }
+  createNewNote(originalFilePath) {
+    return __async(this, null, function* () {
+      this.createNewNoteWithData(originalFilePath, "");
+    });
+  }
+  createNewNoteWithData(originalFilePath, data2, showAfterCreate = false, showExistsError = true) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const { adapter: adapter2 } = vault;
+      const prependDirInput = FileUtil.join("", originalFilePath);
+      const { dir, name } = FileUtil.parse(prependDirInput);
+      const filePath = FileUtil.join(dir, `${name}.md`);
+      const fileExists = yield adapter2.exists(filePath);
+      if (fileExists) {
+        if (!showExistsError) {
+          return false;
+        }
+        throw new Error(i18nHelper.getMessage("110201").replace("{0}", filePath != null ? filePath : ""));
+      }
+      if (dir !== "") {
+        yield this.createDirectory(dir);
+      }
+      const File = yield vault.create(filePath, data2);
+      if (showAfterCreate) {
+        const leaf = this._app.workspace.getLeaf(true);
+        yield leaf.openFile(File);
+      }
+      return true;
+    });
+  }
+  createOrReplaceNewNoteWithData(originalFilePath, data2, showAfterSuccess = false) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const { adapter: adapter2 } = vault;
+      const prependDirInput = FileUtil.join("", originalFilePath);
+      const { dir, name } = FileUtil.parse(prependDirInput);
+      const filePath = FileUtil.join(dir, `${name}.md`);
+      const fileExists = yield adapter2.exists(filePath);
+      let File = null;
+      if (fileExists) {
+        File = vault.getMarkdownFiles().find((f) => f.path == filePath);
+        yield vault.modify(File, data2);
+      } else {
+        if (dir !== "") {
+          yield this.createDirectory(dir);
+        }
+        File = yield vault.create(filePath, data2);
+      }
+      if (showAfterSuccess) {
+        const leaf = this._app.workspace.getRightLeaf(true);
+        yield leaf.openFile(File);
+      }
+      return fileExists;
+    });
+  }
+  getFileContent(filePath) {
+    return __async(this, null, function* () {
+      const { metadataCache, vault } = this._app;
+      const normalizedTemplatePath = (0, import_obsidian23.normalizePath)(filePath != null ? filePath : "");
+      if (filePath === "/") {
+        return Promise.resolve("");
+      }
+      try {
+        const file = metadataCache.getFirstLinkpathDest(normalizedTemplatePath, "");
+        return file ? vault.cachedRead(file) : "";
+      } catch (err) {
+        console.error(`Failed to read the daily note template '${normalizedTemplatePath}'`, err);
+        log.error(i18nHelper.getMessage("110202").replace("{0}", normalizedTemplatePath != null ? normalizedTemplatePath : ""), err);
+        return "";
+      }
+    });
+  }
+  deleteFile(filePath) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const { adapter: adapter2 } = vault;
+      const fileExists = yield adapter2.exists(filePath);
+      if (fileExists) {
+        yield adapter2.remove(filePath);
+      }
+    });
+  }
+  writeTextFile(filePath, data2, overwrite = true) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const { adapter: adapter2 } = vault;
+      const prependDirInput = FileUtil.join("", filePath);
+      const { dir, name, extension } = FileUtil.parse(prependDirInput);
+      const normalizedPath = FileUtil.join(dir, `${name}${extension ? `.${extension}` : ""}`);
+      if (dir !== "") {
+        yield this.createDirectory(dir);
+      }
+      const exists = yield adapter2.exists(normalizedPath);
+      if (exists) {
+        if (!overwrite) {
+          throw new Error(i18nHelper.getMessage("110201").replace("{0}", normalizedPath != null ? normalizedPath : ""));
+        }
+        yield adapter2.write(normalizedPath, data2);
+        return;
+      }
+      yield vault.create(normalizedPath, data2);
+    });
+  }
+  backupMarkdownFile(sourcePath, backupDir) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const sourceFile = vault.getAbstractFileByPath(sourcePath);
+      if (!(sourceFile instanceof import_obsidian23.TFile)) {
+        throw new Error(`Source file not found: ${sourcePath}`);
+      }
+      const content = yield vault.read(sourceFile);
+      const parsed = FileUtil.parse(sourcePath);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const backupName = `${parsed.name}.${timestamp}.bak.md`;
+      const backupPath = FileUtil.join(backupDir, backupName);
+      yield this.writeTextFile(backupPath, content, false);
+      return backupPath;
+    });
+  }
+  restoreMarkdownFile(targetPath, backupPath) {
+    return __async(this, null, function* () {
+      const { vault } = this._app;
+      const backupFile = vault.getAbstractFileByPath(backupPath);
+      if (!(backupFile instanceof import_obsidian23.TFile)) {
+        throw new Error(`Backup file not found: ${backupPath}`);
+      }
+      const backupContent = yield vault.read(backupFile);
+      yield this.writeTextFile(targetPath, backupContent, true);
+    });
+  }
+  getRootPath() {
+    const { vault } = this._app;
+    return vault.getRoot().path;
+  }
+  getTmpPath() {
+    return FileUtil.join(".tmp", "obsidian-douban");
   }
 };
 
@@ -23366,25 +23673,25 @@ var TEMPLATE_TYPES = [
 ];
 function constructTemplateUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("1204") });
-  new import_obsidian22.Setting(containerEl).setDesc(i18nHelper.getMessage("1205"));
+  new import_obsidian24.Setting(containerEl).setDesc(i18nHelper.getMessage("1205"));
   for (const { nameKey, configKey, templateKey } of TEMPLATE_TYPES) {
     createTemplateSourceSetting(containerEl, manager, nameKey, configKey, templateKey);
   }
   containerEl.createEl("h3", { text: i18nHelper.getMessage("121920") });
-  new import_obsidian22.Setting(containerEl).setName(i18nHelper.getMessage("121924")).setDesc(i18nHelper.getMessage("121925")).addText((text3) => {
+  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121924")).setDesc(i18nHelper.getMessage("121925")).addText((text3) => {
     text3.setPlaceholder("\u7B14\u8BB0").setValue(manager.getSettingStr("noteDefaultFolder")).onChange((value) => __async(this, null, function* () {
       yield manager.updateSetting("noteDefaultFolder", value);
     }));
     text3.inputEl.style.width = "100%";
     new PathSuggest(manager.app, text3.inputEl, "folder");
   });
-  new import_obsidian22.Setting(containerEl).setName(i18nHelper.getMessage("121920")).setDesc(i18nHelper.getMessage("121921")).addText((text3) => {
+  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121920")).setDesc(i18nHelper.getMessage("121921")).addText((text3) => {
     text3.setPlaceholder("\u7B14\u8BB0/{{type}}/{{title}}.md").setValue(manager.getSettingStr("notePathTemplate")).onChange((value) => __async(this, null, function* () {
       yield manager.updateSetting("notePathTemplate", value);
     }));
     text3.inputEl.style.width = "100%";
   });
-  new import_obsidian22.Setting(containerEl).setName(i18nHelper.getMessage("121922")).setDesc(i18nHelper.getMessage("121923")).addTextArea((text3) => {
+  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121922")).setDesc(i18nHelper.getMessage("121923")).addTextArea((text3) => {
     text3.setPlaceholder("---\ndoubanId: {{id}}\ntitle: {{title}}\n---\n\n# {{title}}\n\n## \u8BB0\u5F55\n\n## \u611F\u60F3").setValue(manager.getSettingStr("noteTemplateContent")).onChange((value) => __async(this, null, function* () {
       yield manager.updateSetting("noteTemplateContent", value);
     }));
@@ -23403,7 +23710,7 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
     }
     return { source: "builtin" };
   };
-  const setting = new import_obsidian22.Setting(containerEl);
+  const setting = new import_obsidian24.Setting(containerEl);
   setting.setName(i18nHelper.getMessage(nameKey));
   setting.controlEl.addClass("obsidian_douban_template_file_select");
   setting.addDropdown((dropdown) => {
@@ -23424,9 +23731,17 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
     const config = getConfig();
     switch (config.source) {
       case "builtin": {
-        new import_obsidian22.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => {
+        new import_obsidian24.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => {
           const content = getDefaultBuiltinContent(templateKey);
-          new TemplateEditorModal(manager.app, templateKey, content, true).open();
+          new TemplateEditorModal(manager.app, templateKey, content, {
+            readOnly: true,
+            onSaveAs: (targetPath, latestContent) => __async(this, null, function* () {
+              yield saveTemplateContentAsFile(manager, targetPath, latestContent);
+              yield manager.updateSetting(configKey, { source: "file", filePath: targetPath });
+              refreshActionArea();
+              new import_obsidian25.Notice(i18nHelper.getMessage("121945"));
+            })
+          }).open();
         });
         break;
       }
@@ -23442,15 +23757,39 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
           cfg.filePath = fileInput.value;
           yield manager.updateSetting(configKey, cfg);
         }));
+        new import_obsidian24.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => __async(this, null, function* () {
+          const content = yield resolveTemplateContent(manager, templateKey, configKey);
+          new TemplateEditorModal(manager.app, templateKey, content, {
+            readOnly: true,
+            onSaveAs: (targetPath, latestContent) => __async(this, null, function* () {
+              yield saveTemplateContentAsFile(manager, targetPath, latestContent);
+              new import_obsidian25.Notice(i18nHelper.getMessage("121945"));
+            })
+          }).open();
+        }));
         break;
       }
       case "custom": {
-        new import_obsidian22.ButtonComponent(actionContainer).setIcon("pencil").setTooltip(i18nHelper.getMessage("121931")).onClick(() => {
+        new import_obsidian24.ButtonComponent(actionContainer).setIcon("pencil").setTooltip(i18nHelper.getMessage("121931")).onClick(() => {
           const cfg = getConfig();
-          new TemplateEditorModal(manager.app, templateKey, cfg.customContent || getDefaultBuiltinContent(templateKey), false, (newContent) => __async(this, null, function* () {
-            cfg.customContent = newContent;
-            yield manager.updateSetting(configKey, cfg);
-          })).open();
+          new TemplateEditorModal(manager.app, templateKey, cfg.customContent || getDefaultBuiltinContent(templateKey), {
+            onSave: (newContent) => __async(this, null, function* () {
+              cfg.customContent = newContent;
+              yield manager.updateSetting(configKey, cfg);
+            }),
+            onSaveAs: (targetPath, latestContent) => __async(this, null, function* () {
+              yield saveTemplateContentAsFile(manager, targetPath, latestContent);
+              yield manager.updateSetting(configKey, { source: "file", filePath: targetPath });
+              refreshActionArea();
+              new import_obsidian25.Notice(i18nHelper.getMessage("121945"));
+            }),
+            onRestoreDefault: () => __async(this, null, function* () {
+              const defaultContent = getDefaultBuiltinContent(templateKey);
+              cfg.customContent = defaultContent;
+              yield manager.updateSetting(configKey, cfg);
+              return defaultContent;
+            })
+          }).open();
         });
         break;
       }
@@ -23460,10 +23799,28 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
     button.setIcon("copy").setTooltip(i18nHelper.getMessage("121903")).onClick(() => __async(this, null, function* () {
       const content = yield resolveTemplateContent(manager, templateKey, configKey);
       navigator.clipboard.writeText(content);
-      new import_obsidian23.Notice(i18nHelper.getMessage("121907"));
+      new import_obsidian25.Notice(i18nHelper.getMessage("121907"));
+    }));
+  });
+  setting.addExtraButton((button) => {
+    button.setIcon("reset").setTooltip(i18nHelper.getMessage("121946")).onClick(() => __async(this, null, function* () {
+      yield manager.updateSetting(configKey, { source: "builtin" });
+      refreshActionArea();
+      new import_obsidian25.Notice(i18nHelper.getMessage("121947"));
     }));
   });
   refreshActionArea();
+}
+function saveTemplateContentAsFile(manager, targetPath, content) {
+  return __async(this, null, function* () {
+    try {
+      const fileHandler = new FileHandler(manager.app);
+      yield fileHandler.writeTextFile(targetPath, content, false);
+    } catch (error) {
+      log.error("Failed to save template content as file", error);
+      throw error;
+    }
+  });
 }
 function resolveTemplateContent(manager, templateKey, configKey) {
   return __async(this, null, function* () {
@@ -23544,21 +23901,21 @@ function showStarExample(containerEl, manager) {
   containerEl.empty();
   const document2 = new DocumentFragment();
   document2.createDiv("score-show-title").innerHTML = `score: ${NumberUtil.getRateStar(EXAMPLE_RATE, EXAMPLE_RATE_MAX, { scoreSetting: manager.plugin.settings.scoreSetting })}`;
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
+  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
 }
 function showFileExample(containerEl, manager) {
   containerEl.empty();
   const document2 = new DocumentFragment();
   document2.createDiv("file-path-example").innerHTML = `${i18nHelper.getMessage("121604")}<a href="https://book.douban.com/subject/2253379/">\u300A\u7B80\u7231\u300B</a>: ${VariableUtil.replaceSubject(EXAMPLE_SUBJECT_MAP, FileUtil.join(manager.plugin.settings.dataFilePath, manager.plugin.settings.dataFileNamePath + ".md"), SupportType.book, manager, "path")}`;
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
+  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
 }
 function scoreSettingDisplay(containerEl, manager) {
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("1243")).setDesc(i18nHelper.getMessage("124310", EXAMPLE_RATE, EXAMPLE_RATE_MAX));
+  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("1243")).setDesc(i18nHelper.getMessage("124310", EXAMPLE_RATE, EXAMPLE_RATE_MAX));
   const scoreSettingsUI = containerEl.createDiv("score-settings");
   const scoreShowUI = containerEl.createDiv("score-show");
   const scoreSetting = manager.getSetting("scoreSetting");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124120") });
-  const starFullUI = new import_obsidian24.TextComponent(scoreSettingsUI);
+  const starFullUI = new import_obsidian26.TextComponent(scoreSettingsUI);
   starFullUI.setPlaceholder(DEFAULT_SETTINGS.scoreSetting.starFull).setValue(scoreSetting.starFull).onChange((value) => __async(this, null, function* () {
     scoreSetting.starFull = value;
     yield manager.plugin.saveSettings();
@@ -23569,7 +23926,7 @@ function scoreSettingDisplay(containerEl, manager) {
   starFullEl.addClass("obsidian_douban_settings_input");
   scoreSettingsUI.appendChild(starFullEl).appendText("  ");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124121") });
-  const starEmptyUI = new import_obsidian24.TextComponent(scoreSettingsUI);
+  const starEmptyUI = new import_obsidian26.TextComponent(scoreSettingsUI);
   starEmptyUI.setPlaceholder(DEFAULT_SETTINGS.scoreSetting.starEmpty).setValue(scoreSetting.starEmpty).onChange((value) => __async(this, null, function* () {
     scoreSetting.starEmpty = value;
     yield manager.plugin.saveSettings();
@@ -23580,7 +23937,7 @@ function scoreSettingDisplay(containerEl, manager) {
   starEmptyEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   scoreSettingsUI.appendChild(starEmptyEl).appendText("  ");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124311") });
-  const maxStarUI = new import_obsidian24.TextComponent(scoreSettingsUI);
+  const maxStarUI = new import_obsidian26.TextComponent(scoreSettingsUI);
   maxStarUI.setPlaceholder(i18nHelper.getMessage("124312") + DEFAULT_SETTINGS.scoreSetting.maxStar).setValue(scoreSetting.maxStar + "").onChange((value) => __async(this, null, function* () {
     if (!NumberUtil.isInt(value) || NumberUtil.value(value) > MAX_STAR_NUMBER || NumberUtil.value(value) < 1) {
       return;
@@ -23594,7 +23951,7 @@ function scoreSettingDisplay(containerEl, manager) {
   maxStarEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   scoreSettingsUI.appendChild(maxStarEl).appendText("  ");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124122") });
-  const displayEmptyStarUI = new import_obsidian24.ToggleComponent(scoreSettingsUI);
+  const displayEmptyStarUI = new import_obsidian26.ToggleComponent(scoreSettingsUI);
   displayEmptyStarUI.setValue(scoreSetting.displayStarEmpty).onChange((value) => __async(this, null, function* () {
     scoreSetting.displayStarEmpty = value;
     yield manager.plugin.saveSettings();
@@ -23606,17 +23963,17 @@ function scoreSettingDisplay(containerEl, manager) {
   showStarExample(scoreShowUI, manager);
 }
 function constructOutUI(containerEl, manager) {
-  new import_obsidian24.Setting(containerEl);
+  new import_obsidian26.Setting(containerEl);
   const attachmentFileSetting = containerEl.createDiv({ cls: "settings-item-attachment" });
   constructAttachmentFileSettingsUI(attachmentFileSetting, manager);
-  const folder = new import_obsidian24.Setting(containerEl);
-  const folderInput = new import_obsidian24.Setting(containerEl);
+  const folder = new import_obsidian26.Setting(containerEl);
+  const folderInput = new import_obsidian26.Setting(containerEl);
   const outFolder = containerEl.createDiv({ cls: "settings-item" });
   const filePathDisplayExample = containerEl.createDiv("filePath-display-example");
   folder.then(createFolderSelectionSetting({ containerEl, name: "121501", desc: "121502", placeholder: null, key: null, manager }, filePathDisplayExample));
   folderInput.then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121503", key: "dataFilePath", manager }, filePathDisplayExample));
   constructOutputFileNameUI(outFolder, filePathDisplayExample, manager);
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121201")).then((setting) => {
+  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121201")).then((setting) => {
     setting.addDropdown((dropdwon) => {
       setting.descEl.appendChild(createFragment((frag) => {
         frag.appendText(i18nHelper.getMessage("121202"));
@@ -23641,7 +23998,7 @@ function constructOutUI(containerEl, manager) {
 }
 function constructOutputFileNameUI(containerEl, filePathDisplayExample, manager) {
   containerEl.empty();
-  const dataFilePathSetting = new import_obsidian24.Setting(containerEl);
+  const dataFilePathSetting = new import_obsidian26.Setting(containerEl);
   dataFilePathSetting.setName(i18nHelper.getMessage("121601")).setDesc(i18nHelper.getMessage("121602")).addText((textField) => {
     textField.setPlaceholder(DEFAULT_SETTINGS.dataFileNamePath).setValue(manager.plugin.settings.dataFileNamePath).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.dataFileNamePath = value;
@@ -23660,7 +24017,7 @@ function constructOutputFileNameUI(containerEl, filePathDisplayExample, manager)
 }
 function constructAttachmentFileSettingsUI(containerEl, manager) {
   containerEl.empty();
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
+  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
     toggleComponent.setValue(manager.plugin.settings.cacheImage).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.cacheImage = value;
       yield manager.plugin.saveSettings();
@@ -23668,7 +24025,7 @@ function constructAttachmentFileSettingsUI(containerEl, manager) {
     }));
   });
   if (manager.plugin.settings.cacheImage) {
-    new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121440")).setDesc(i18nHelper.getMessage("121441")).addToggle((toggleComponent) => {
+    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121440")).setDesc(i18nHelper.getMessage("121441")).addToggle((toggleComponent) => {
       toggleComponent.setValue(manager.plugin.settings.pictureBedFlag).onChange((value) => __async(this, null, function* () {
         manager.plugin.settings.pictureBedFlag = value;
         yield manager.plugin.saveSettings();
@@ -23678,20 +24035,20 @@ function constructAttachmentFileSettingsUI(containerEl, manager) {
     if (manager.plugin.settings.pictureBedFlag) {
       constructAttachmentFilePictureBedSettingsUI(containerEl, manager);
     } else {
-      new import_obsidian24.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121432", desc: "121433", placeholder: null, key: null, manager }));
-      new import_obsidian24.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121434", key: "attachmentPath", manager }));
-      new import_obsidian24.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121452", desc: "121453", placeholder: null, key: null, manager }));
-      new import_obsidian24.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121454", key: "attachmentFileName", manager }));
+      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121432", desc: "121433", placeholder: null, key: null, manager }));
+      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121434", key: "attachmentPath", manager }));
+      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121452", desc: "121453", placeholder: null, key: null, manager }));
+      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121454", key: "attachmentFileName", manager }));
       ;
     }
-    new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121436")).addToggle((toggleComponent) => {
+    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121436")).addToggle((toggleComponent) => {
       toggleComponent.setTooltip(i18nHelper.getMessage("121437")).setValue(manager.plugin.settings.cacheHighQuantityImage).onChange((value) => __async(this, null, function* () {
         manager.plugin.settings.cacheHighQuantityImage = value;
         yield manager.plugin.saveSettings();
         constructAttachmentFileSettingsUI(containerEl, manager);
       }));
     });
-    new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
+    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
       toggleComponent.setValue(manager.plugin.settings.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
         manager.plugin.settings.overwriteCoverImage = value;
         yield manager.plugin.saveSettings();
@@ -23708,8 +24065,8 @@ function constructAttachmentFilePictureBedSettingsUI(containerEl, manager) {
       pictureBedSetting = PictureBedSetting_PicGo;
     }
   }
-  var pictureBedTypeSettingsUI = new import_obsidian24.Setting(containerEl);
-  var pictureBedPropertySettingsUI = new import_obsidian24.Setting(containerEl).settingEl;
+  var pictureBedTypeSettingsUI = new import_obsidian26.Setting(containerEl);
+  var pictureBedPropertySettingsUI = new import_obsidian26.Setting(containerEl).settingEl;
   pictureBedTypeSettingsUI.setName(i18nHelper.getMessage("121451")).then((setting) => {
     setting.addDropdown((dropdwon) => {
       dropdwon.addOptions(PictureBedTypeRecords);
@@ -23727,7 +24084,7 @@ function constructAttachmentFilePictureBedPropertySettingsUI(containerEl, manage
   const pictureBedSetting = manager.plugin.settings.pictureBedSetting;
   const pictureBedType = manager.plugin.settings.pictureBedType;
   if (pictureBedType == PictureBedType.PicGo) {
-    new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121461")).addText((textField) => {
+    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121461")).addText((textField) => {
       textField.setPlaceholder(PictureBedSetting_PicGo.url).setValue(pictureBedSetting.url).onChange((value) => __async(this, null, function* () {
         pictureBedSetting.url = value;
         yield manager.plugin.saveSettings();
@@ -23738,9 +24095,9 @@ function constructAttachmentFilePictureBedPropertySettingsUI(containerEl, manage
 }
 
 // src/org/wanxp/douban/setting/BasicSettingsHelper.ts
-var import_obsidian25 = __toModule(require("obsidian"));
+var import_obsidian27 = __toModule(require("obsidian"));
 function constructBasicUI(containerEl, manager) {
-  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("120501")).then((setting) => {
+  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("120501")).then((setting) => {
     setting.addMomentFormat((mf) => {
       setting.descEl.appendChild(createFragment((frag) => {
         frag.appendText(i18nHelper.getMessage("120503"));
@@ -23765,7 +24122,7 @@ function constructBasicUI(containerEl, manager) {
       }));
     });
   });
-  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("120502")).then((setting) => {
+  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("120502")).then((setting) => {
     setting.addMomentFormat((mf) => {
       setting.descEl.appendChild(createFragment((frag) => {
         frag.appendText(i18nHelper.getMessage("120504"));
@@ -23790,13 +24147,13 @@ function constructBasicUI(containerEl, manager) {
       }));
     });
   });
-  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("121401")).setDesc(i18nHelper.getMessage("121402")).addToggle((toggleComponent) => {
+  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("121401")).setDesc(i18nHelper.getMessage("121402")).addToggle((toggleComponent) => {
     toggleComponent.setValue(manager.plugin.settings.statusBar).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.statusBar = value;
       yield manager.plugin.saveSettings();
     }));
   });
-  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("121410")).setDesc(i18nHelper.getMessage("121411")).addDropdown((dropdown) => {
+  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("121410")).setDesc(i18nHelper.getMessage("121411")).addDropdown((dropdown) => {
     dropdown.addOptions(SearchTypeRecords).setValue(manager.plugin.settings.searchDefaultType).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.searchDefaultType = SupportTypeMap[value];
       yield manager.plugin.saveSettings();
@@ -23805,7 +24162,7 @@ function constructBasicUI(containerEl, manager) {
 }
 
 // src/org/wanxp/douban/setting/TemplateVariableSettingsHelper.ts
-var import_obsidian26 = __toModule(require("obsidian"));
+var import_obsidian28 = __toModule(require("obsidian"));
 function constructTemplateVariablesUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("122003") });
   const basicVariablesTable = new DocumentFragment();
@@ -23978,7 +24335,7 @@ ${i18nHelper.getMessage("122004")}
 		<td>${i18nHelper.getMessage("330102")}</td>
 	</tr>
 </table>`;
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("122001")).setDesc(basicVariablesTable);
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("122001")).setDesc(basicVariablesTable);
   const extraVariablesTable = new DocumentFragment();
   extraVariablesTable.createDiv().innerHTML = `
 ${i18nHelper.getMessage("122004")}
@@ -24108,7 +24465,7 @@ ${i18nHelper.getMessage("122004")}
 		<td>${i18nHelper.getMessage("310722")}</th>
 	</tr>
 </table>`;
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("122002")).setDesc(extraVariablesTable);
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("122002")).setDesc(extraVariablesTable);
   const userInfoVariables = new DocumentFragment();
   userInfoVariables.createDiv().innerHTML = `
 ${i18nHelper.getMessage("160225")}
@@ -24122,11 +24479,11 @@ ${i18nHelper.getMessage("160225")}
 
 
 `;
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("122010")).setDesc(userInfoVariables);
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("122010")).setDesc(userInfoVariables);
 }
 
 // src/org/wanxp/douban/setting/CustomPropertySettingsHelper.ts
-var import_obsidian27 = __toModule(require("obsidian"));
+var import_obsidian29 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/CustomPropertyIO.ts
 var CUSTOM_PROPERTY_EXPORT_VERSION = "1.0";
@@ -24218,7 +24575,7 @@ function constructCustomPropertySettingsUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("1242") });
   const customProperties = manager.plugin.settings.customProperties;
   const list = containerEl.createDiv("custom-property-list");
-  new import_obsidian27.Setting(containerEl).setDesc(i18nHelper.getMessage("1241")).addButton((button) => {
+  new import_obsidian29.Setting(containerEl).setDesc(i18nHelper.getMessage("1241")).addButton((button) => {
     button.setButtonText(i18nHelper.getMessage("124101"));
     button.setTooltip(i18nHelper.getMessage("124101"));
     button.setIcon("plus");
@@ -24256,7 +24613,7 @@ function constructCustomPropertyUI(containerEl, customProperties, manager) {
 function addFilterInput(data2, el, customProperties, manager, idx) {
   const item = el.createEl("li");
   item.createEl("span", { text: i18nHelper.getMessage("124102") });
-  const nameField = new import_obsidian27.TextComponent(el);
+  const nameField = new import_obsidian29.TextComponent(el);
   nameField.setPlaceholder(i18nHelper.getMessage("124103")).setValue(data2.name).onChange((value) => __async(this, null, function* () {
     customProperties[idx].name = value;
     yield manager.plugin.saveSettings();
@@ -24265,7 +24622,7 @@ function addFilterInput(data2, el, customProperties, manager, idx) {
   nameEl.addClass("obsidian_douban_settings_input");
   item.appendChild(nameEl);
   item.createEl("span", { text: i18nHelper.getMessage("124104") });
-  const valueField = new import_obsidian27.TextComponent(el);
+  const valueField = new import_obsidian29.TextComponent(el);
   valueField.setPlaceholder(i18nHelper.getMessage("124105")).setValue(data2.value).onChange((value) => __async(this, null, function* () {
     customProperties[idx].value = value;
     yield manager.plugin.saveSettings();
@@ -24273,7 +24630,7 @@ function addFilterInput(data2, el, customProperties, manager, idx) {
   const valueEl = valueField.inputEl;
   valueEl.addClass("obsidian_douban_settings_input");
   item.appendChild(valueEl);
-  const fieldsDropdown = new import_obsidian27.DropdownComponent(el);
+  const fieldsDropdown = new import_obsidian29.DropdownComponent(el);
   for (const fieldSelect in SupportType) {
     fieldsDropdown.addOption(fieldSelect, i18nHelper.getMessage(fieldSelect));
   }
@@ -24289,7 +24646,7 @@ function addFilterInput(data2, el, customProperties, manager, idx) {
   const fieldSelectEl = fieldsDropdown.selectEl;
   fieldSelectEl.addClass("obsidian_douban_settings_input");
   item.appendChild(fieldSelectEl);
-  const extractButton = new import_obsidian27.ButtonComponent(el);
+  const extractButton = new import_obsidian29.ButtonComponent(el);
   extractButton.setIcon("minus-with-circle");
   extractButton.setTooltip(i18nHelper.getMessage("124107"));
   extractButton.onClick(() => __async(this, null, function* () {
@@ -24311,7 +24668,7 @@ function exportCustomProperties(plugin, customProperties) {
     link.download = `obsidian-douban-custom-properties-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    new import_obsidian27.Notice(i18nHelper.getMessage("124207"));
+    new import_obsidian29.Notice(i18nHelper.getMessage("124207"));
   });
 }
 function importCustomPropertiesFromFile(manager, list, mode) {
@@ -24332,9 +24689,9 @@ function importCustomPropertiesFromFile(manager, list, mode) {
         manager.plugin.settings.customProperties = importCustomProperties(manager.plugin.settings.customProperties || [], importData, mode);
         yield manager.plugin.saveSettings();
         constructCustomPropertyUI(list, manager.plugin.settings.customProperties, manager);
-        new import_obsidian27.Notice(i18nHelper.getMessage(mode === "merge" ? "124208" : "124209"));
+        new import_obsidian29.Notice(i18nHelper.getMessage(mode === "merge" ? "124208" : "124209"));
       } catch (e) {
-        new import_obsidian27.Notice(i18nHelper.getMessage("124210"));
+        new import_obsidian29.Notice(i18nHelper.getMessage("124210"));
       }
     });
     input.click();
@@ -24342,11 +24699,191 @@ function importCustomPropertiesFromFile(manager, list, mode) {
 }
 
 // src/org/wanxp/douban/setting/AdvancedSettingsHelper.ts
-var import_obsidian29 = __toModule(require("obsidian"));
+var import_obsidian31 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/ConfirmDialogModal.ts
-var import_obsidian28 = __toModule(require("obsidian"));
-var ConfirmDialogModal = class extends import_obsidian28.Modal {
+var import_obsidian30 = __toModule(require("obsidian"));
+
+// src/org/wanxp/douban/setting/SettingsIO.ts
+var SETTINGS_EXPORT_VERSION = "1.0";
+var SENSITIVE_SETTING_KEYS = [
+  "loginCookiesContent",
+  "loginHeadersContent"
+];
+function cloneDefaultSettings() {
+  return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+}
+function isRecord(value) {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+function normalizeTemplateConfig(value, legacyFilePath) {
+  if (isRecord(value) && typeof value.source === "string") {
+    const source = value.source;
+    if (source === "builtin") {
+      return { source: "builtin" };
+    }
+    if (source === "file") {
+      return {
+        source: "file",
+        filePath: typeof value.filePath === "string" ? value.filePath.trim() : ""
+      };
+    }
+    if (source === "custom") {
+      return {
+        source: "custom",
+        customContent: typeof value.customContent === "string" ? value.customContent : ""
+      };
+    }
+  }
+  if (typeof value === "string" && value.trim()) {
+    return { source: "file", filePath: value.trim() };
+  }
+  if (typeof legacyFilePath === "string" && legacyFilePath.trim()) {
+    return { source: "file", filePath: legacyFilePath.trim() };
+  }
+  return { source: "builtin" };
+}
+function normalizeBoolean(value, fallback) {
+  return typeof value === "boolean" ? value : fallback;
+}
+function normalizeString(value, fallback) {
+  return typeof value === "string" ? value : fallback;
+}
+function normalizeArray(value, fallback) {
+  return Array.isArray(value) ? value : fallback;
+}
+function extractSettingsPayload(config) {
+  if (config == null) {
+    return {};
+  }
+  if (!isRecord(config)) {
+    throw new Error("invalid_settings_payload");
+  }
+  if (isRecord(config.settings)) {
+    return config.settings;
+  }
+  return config;
+}
+function sanitizeImportedSettings(config) {
+  const payload = extractSettingsPayload(config);
+  const sanitized = cloneDefaultSettings();
+  const mutableSanitized = sanitized;
+  Object.keys(DEFAULT_SETTINGS).forEach((key) => {
+    if (!(key in payload)) {
+      return;
+    }
+    const value = payload[key];
+    switch (key) {
+      case "movieTemplateConfig":
+        sanitized.movieTemplateConfig = normalizeTemplateConfig(value, payload.movieTemplateFile);
+        return;
+      case "bookTemplateConfig":
+        sanitized.bookTemplateConfig = normalizeTemplateConfig(value, payload.bookTemplateFile);
+        return;
+      case "musicTemplateConfig":
+        sanitized.musicTemplateConfig = normalizeTemplateConfig(value, payload.musicTemplateFile);
+        return;
+      case "noteTemplateConfig":
+        sanitized.noteTemplateConfig = normalizeTemplateConfig(value, payload.noteTemplateFile);
+        return;
+      case "gameTemplateConfig":
+        sanitized.gameTemplateConfig = normalizeTemplateConfig(value, payload.gameTemplateFile);
+        return;
+      case "teleplayTemplateConfig":
+        sanitized.teleplayTemplateConfig = normalizeTemplateConfig(value, payload.teleplayTemplateFile);
+        return;
+      case "dataProtection":
+        if (isRecord(value)) {
+          sanitized.dataProtection = {
+            preserveCustomProperties: normalizeBoolean(value.preserveCustomProperties, DEFAULT_DATA_PROTECTION_SETTINGS.preserveCustomProperties),
+            preserveRecord: normalizeBoolean(value.preserveRecord, DEFAULT_DATA_PROTECTION_SETTINGS.preserveRecord),
+            preserveThoughts: normalizeBoolean(value.preserveThoughts, DEFAULT_DATA_PROTECTION_SETTINGS.preserveThoughts)
+          };
+        }
+        return;
+      case "statusBar":
+      case "debugMode":
+      case "cacheImage":
+      case "cacheHighQuantityImage":
+      case "overwriteCoverImage":
+      case "pictureBedFlag":
+      case "syncBackupBeforeReplace":
+      case "includeSensitiveInSettingExport":
+        sanitized[key] = normalizeBoolean(value, sanitized[key]);
+        return;
+      case "customProperties":
+      case "syncHandledDataArray":
+      case "arraySettings":
+        sanitized[key] = normalizeArray(value, sanitized[key]);
+        return;
+      case "scoreSetting":
+      case "pictureBedSetting":
+      case "templatePresetPaths":
+        if (isRecord(value)) {
+          sanitized[key] = value;
+        }
+        return;
+      case "searchDefaultType":
+      case "personNameMode":
+      case "onlineSettingsFileName":
+      case "onlineSettingsGistId":
+      case "movieTemplateFile":
+      case "bookTemplateFile":
+      case "musicTemplateFile":
+      case "noteTemplateFile":
+      case "gameTemplateFile":
+      case "teleplayTemplateFile":
+      case "dateFormat":
+      case "timeFormat":
+      case "searchUrl":
+      case "arrayStart":
+      case "arrayElementStart":
+      case "arraySpiltV2":
+      case "arrayElementEnd":
+      case "arrayEnd":
+      case "dataFilePath":
+      case "dataFileNamePath":
+      case "loginCookiesContent":
+      case "loginHeadersContent":
+      case "attachmentPath":
+      case "attachmentFileName":
+      case "pictureBedType":
+      case "notePathTemplate":
+      case "noteTemplateContent":
+      case "noteDefaultFolder":
+      case "syncBackupFolder":
+        mutableSanitized[key] = normalizeString(value, sanitized[key]);
+        return;
+      default:
+        mutableSanitized[key] = value;
+    }
+  });
+  sanitized.movieTemplateConfig = normalizeTemplateConfig(sanitized.movieTemplateConfig, sanitized.movieTemplateFile);
+  sanitized.bookTemplateConfig = normalizeTemplateConfig(sanitized.bookTemplateConfig, sanitized.bookTemplateFile);
+  sanitized.musicTemplateConfig = normalizeTemplateConfig(sanitized.musicTemplateConfig, sanitized.musicTemplateFile);
+  sanitized.noteTemplateConfig = normalizeTemplateConfig(sanitized.noteTemplateConfig, sanitized.noteTemplateFile);
+  sanitized.gameTemplateConfig = normalizeTemplateConfig(sanitized.gameTemplateConfig, sanitized.gameTemplateFile);
+  sanitized.teleplayTemplateConfig = normalizeTemplateConfig(sanitized.teleplayTemplateConfig, sanitized.teleplayTemplateFile);
+  return sanitized;
+}
+function buildSettingsExportData(settings, includeSensitive = false) {
+  const exportedSettings = sanitizeImportedSettings(settings);
+  const mutableExportedSettings = exportedSettings;
+  if (!includeSensitive) {
+    for (const key of SENSITIVE_SETTING_KEYS) {
+      mutableExportedSettings[key] = DEFAULT_SETTINGS[key];
+    }
+  }
+  return {
+    version: SETTINGS_EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    includeSensitive,
+    settings: exportedSettings
+  };
+}
+
+// src/org/wanxp/douban/component/ConfirmDialogModal.ts
+var ConfirmDialogModal = class extends import_obsidian30.Modal {
   constructor(doubanPlugin, message, promise) {
     super(doubanPlugin.app);
     this.doubanPlugin = doubanPlugin;
@@ -24360,7 +24897,7 @@ var ConfirmDialogModal = class extends import_obsidian28.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("125033") });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian28.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian30.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
       if (this.message == i18nHelper.getMessage("125046")) {
         createFileSelectModal(this.doubanPlugin);
       } else {
@@ -24368,7 +24905,7 @@ var ConfirmDialogModal = class extends import_obsidian28.Modal {
       }
       this.close();
     })).setClass("obsidian_douban_search_button");
-    new import_obsidian28.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+    new import_obsidian30.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
       this.close();
     }).setClass("obsidian_douban_cancel_button");
   }
@@ -24382,8 +24919,8 @@ function createFileSelectModal(doubanPlugin) {
     const file = input.files[0];
     const reader = new FileReader();
     reader.onload = () => __async(this, null, function* () {
-      const settings = JSON.parse(reader.result);
       try {
+        const settings = sanitizeImportedSettings(JSON.parse(reader.result));
         yield doubanPlugin.settingsManager.loadAndSaveSettings(settings);
       } catch (e) {
         log.error(i18nHelper.getMessage("125043"), e);
@@ -24408,21 +24945,36 @@ function showAdvancedSettings(containerEl, manager) {
   });
   containerEl.createEl("h4", { text: i18nHelper.getMessage("125100") });
   containerEl.createEl("p", { text: i18nHelper.getMessage("125101") });
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125102")).setDesc(i18nHelper.getMessage("125103")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveCustomProperties).onChange((value) => __async(this, null, function* () {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125102")).setDesc(i18nHelper.getMessage("125103")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveCustomProperties).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.dataProtection.preserveCustomProperties = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125104")).setDesc(i18nHelper.getMessage("125105")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveRecord).onChange((value) => __async(this, null, function* () {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125104")).setDesc(i18nHelper.getMessage("125105")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveRecord).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.dataProtection.preserveRecord = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125106")).setDesc(i18nHelper.getMessage("125107")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveThoughts).onChange((value) => __async(this, null, function* () {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125106")).setDesc(i18nHelper.getMessage("125107")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveThoughts).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.dataProtection.preserveThoughts = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125034")).setDesc(i18nHelper.getMessage("125035")).addButton((buttonComponent) => {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125108")).setDesc(i18nHelper.getMessage("125109")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.syncBackupBeforeReplace).onChange((value) => __async(this, null, function* () {
+    manager.plugin.settings.syncBackupBeforeReplace = value;
+    yield manager.plugin.saveSettings();
+  })));
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125110")).setDesc(i18nHelper.getMessage("125111")).addSearch((search) => {
+    new PathSuggest(manager.app, search.inputEl, "folder");
+    search.setValue(manager.plugin.settings.syncBackupFolder || DEFAULT_SETTINGS.syncBackupFolder).setPlaceholder(DEFAULT_SETTINGS.syncBackupFolder).onChange((value) => __async(this, null, function* () {
+      manager.plugin.settings.syncBackupFolder = value || DEFAULT_SETTINGS.syncBackupFolder;
+      yield manager.plugin.saveSettings();
+    }));
+  });
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125112")).setDesc(i18nHelper.getMessage("125113")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.includeSensitiveInSettingExport).onChange((value) => __async(this, null, function* () {
+    manager.plugin.settings.includeSensitiveInSettingExport = value;
+    yield manager.plugin.saveSettings();
+  })));
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125034")).setDesc(i18nHelper.getMessage("125114")).addButton((buttonComponent) => {
     buttonComponent.setIcon("folder").setButtonText(i18nHelper.getMessage("125047")).onClick((value) => __async(this, null, function* () {
-      const settings = manager.getSettings();
+      const settings = manager.getSettingsExportData(manager.plugin.settings.includeSensitiveInSettingExport);
       const settingsString = JSON.stringify(settings, null, 2);
       const blob = new Blob([settingsString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -24433,13 +24985,13 @@ function showAdvancedSettings(containerEl, manager) {
       URL.revokeObjectURL(url);
     }));
   });
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125036")).setDesc(i18nHelper.getMessage("125037")).addButton((buttonComponent) => {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125036")).setDesc(i18nHelper.getMessage("125115")).addButton((buttonComponent) => {
     buttonComponent.setIcon("document").setButtonText(i18nHelper.getMessage("125039")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125046"), promise.then(() => {
       }), manager);
     }));
   });
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125001")).setDesc(i18nHelper.getMessage("125002")).addToggle((toggleComponent) => {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125001")).setDesc(i18nHelper.getMessage("125002")).addToggle((toggleComponent) => {
     toggleComponent.setValue(manager.plugin.settings.debugMode).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.debugMode = value;
       if (value) {
@@ -24450,14 +25002,14 @@ function showAdvancedSettings(containerEl, manager) {
       yield manager.plugin.saveSettings();
     }));
   });
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125011")).setDesc(i18nHelper.getMessage("125012")).addButton((buttonComponent) => {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125011")).setDesc(i18nHelper.getMessage("125012")).addButton((buttonComponent) => {
     buttonComponent.setIcon("reset").setTooltip(i18nHelper.getMessage("125013")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125012"), promise.then(() => {
         manager.resetSetting();
       }), manager);
     }));
   });
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125021")).setDesc(i18nHelper.getMessage("125022")).addButton((buttonComponent) => {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125021")).setDesc(i18nHelper.getMessage("125022")).addButton((buttonComponent) => {
     buttonComponent.setIcon("reset").setTooltip(i18nHelper.getMessage("125022")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125022"), promise.then(() => {
         manager.clearLoginInfo();
@@ -24465,7 +25017,7 @@ function showAdvancedSettings(containerEl, manager) {
       }), manager);
     }));
   });
-  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("125031")).setDesc(i18nHelper.getMessage("125032")).addButton((buttonComponent) => {
+  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125031")).setDesc(i18nHelper.getMessage("125032")).addButton((buttonComponent) => {
     buttonComponent.setIcon("reset").setTooltip(i18nHelper.getMessage("125032")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125032"), promise.then(() => {
         manager.clearSyncCache();
@@ -24482,19 +25034,19 @@ function showConfirmDialog(message, promise, manager) {
 }
 
 // src/org/wanxp/douban/setting/ArrayDisplayTypeSettingsHelper.ts
-var import_obsidian30 = __toModule(require("obsidian"));
+var import_obsidian32 = __toModule(require("obsidian"));
 function arraySettingDisplayUI(containerEl, manager) {
   arraySettingDisplay(containerEl.createDiv("array-settings"), manager, true);
 }
 function arraySettingDisplay(containerEl, manager, displayExtraListTypeFlag = true) {
   containerEl.empty();
-  const arraySet = new import_obsidian30.Setting(containerEl).setName(i18nHelper.getMessage("120601")).setDesc(i18nHelper.getMessage("120602")).addButton((button) => {
+  const arraySet = new import_obsidian32.Setting(containerEl).setName(i18nHelper.getMessage("120601")).setDesc(i18nHelper.getMessage("120602")).addButton((button) => {
     button.setIcon("plus").setTooltip(i18nHelper.getMessage("120607")).onClick(() => __async(this, null, function* () {
       yield manager.addArraySetting();
       arraySettingDisplay(containerEl, manager, true);
     }));
   });
-  new import_obsidian30.Setting(containerEl);
+  new import_obsidian32.Setting(containerEl);
   arraySettingDisplayItem(containerEl, manager, manager.getArraySetting(DEFAULT_SETTINGS_ARRAY_NAME));
   displayExtraListType(manager, containerEl);
 }
@@ -24502,7 +25054,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   const arrSettingsUI = containerEl.createDiv("array-settings");
   const arrShow = containerEl.createDiv("array-show");
   const typeName = arraySetting.arrayName;
-  const arraySettingItems = new import_obsidian30.Setting(arrSettingsUI).setName(i18nHelper.getMessage("120604") + typeName).setDesc(i18nHelper.getMessage(`120605`) + (typeName == DEFAULT_SETTINGS_ARRAY_NAME ? "" : `(${typeName})`) + `}}`);
+  const arraySettingItems = new import_obsidian32.Setting(arrSettingsUI).setName(i18nHelper.getMessage("120604") + typeName).setDesc(i18nHelper.getMessage(`120605`) + (typeName == DEFAULT_SETTINGS_ARRAY_NAME ? "" : `(${typeName})`) + `}}`);
   if (typeName != DEFAULT_SETTINGS_ARRAY_NAME) {
     arraySettingItems.addButton((button) => {
       button.setIcon("trash").setTooltip(i18nHelper.getMessage("120606")).onClick(() => __async(this, null, function* () {
@@ -24512,7 +25064,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
     });
   }
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124109") });
-  const arrayStart = new import_obsidian30.TextComponent(arrSettingsUI);
+  const arrayStart = new import_obsidian32.TextComponent(arrSettingsUI);
   arrayStart.setPlaceholder(DEFAULT_SETTINGS.arrayStart).setValue(arraySetting.arrayStart).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayStart = value;
     yield manager.updateArraySetting(arraySetting);
@@ -24523,7 +25075,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arrayStartEl.addClass("obsidian_douban_settings_input");
   arrSettingsUI.appendChild(arrayStartEl).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124110") });
-  const arrayElementStart = new import_obsidian30.TextComponent(arrSettingsUI);
+  const arrayElementStart = new import_obsidian32.TextComponent(arrSettingsUI);
   arrayElementStart.setPlaceholder(DEFAULT_SETTINGS.arrayElementStart).setValue(arraySetting.arrayElementStart).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayElementStart = value;
     yield manager.updateArraySetting(arraySetting);
@@ -24534,7 +25086,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arrayElementStartEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   arrSettingsUI.appendChild(arrayElementStartEl).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124111") });
-  const arraySpiltV2 = new import_obsidian30.TextComponent(arrSettingsUI);
+  const arraySpiltV2 = new import_obsidian32.TextComponent(arrSettingsUI);
   arraySpiltV2.setPlaceholder(DEFAULT_SETTINGS.arraySpiltV2).setValue(arraySetting.arraySpiltV2).onChange((value) => __async(this, null, function* () {
     arraySetting.arraySpiltV2 = value;
     yield manager.updateArraySetting(arraySetting);
@@ -24545,7 +25097,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arraySpiltV2El.size = 2;
   arrSettingsUI.appendChild(arraySpiltV2El).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124112") });
-  const arrayElementEnd = new import_obsidian30.TextComponent(arrSettingsUI);
+  const arrayElementEnd = new import_obsidian32.TextComponent(arrSettingsUI);
   arrayElementEnd.setPlaceholder(DEFAULT_SETTINGS.arrayElementEnd).setValue(arraySetting.arrayElementEnd).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayElementEnd = value;
     yield manager.updateArraySetting(arraySetting);
@@ -24556,7 +25108,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arrayElementEndEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   arrSettingsUI.appendChild(arrayElementEndEl).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124113") });
-  const arrayEnd = new import_obsidian30.TextComponent(arrSettingsUI);
+  const arrayEnd = new import_obsidian32.TextComponent(arrSettingsUI);
   arrayEnd.setPlaceholder(DEFAULT_SETTINGS.arrayEnd).setValue(arraySetting.arrayEnd).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayEnd = value;
     yield manager.updateArraySetting(arraySetting);
@@ -24570,7 +25122,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
 }
 function displayExtraListType(manager, containerEl) {
   manager.settings.arraySettings.forEach((arraySetting) => {
-    new import_obsidian30.Setting(containerEl);
+    new import_obsidian32.Setting(containerEl);
     arraySettingDisplayItem(containerEl, manager, arraySetting);
   });
 }
@@ -24578,11 +25130,11 @@ function showArrayExample(arrShow, manager, arraySetting) {
   arrShow.empty();
   const document2 = new DocumentFragment();
   document2.createDiv("array-show-title").innerHTML = `propertyName:${manager.handleArray(["value1", "value2", "value3"], arraySetting)}`;
-  new import_obsidian30.Setting(arrShow).setName(i18nHelper.getMessage("120603")).setDesc(document2);
+  new import_obsidian32.Setting(arrShow).setName(i18nHelper.getMessage("120603")).setDesc(document2);
 }
 
 // src/org/wanxp/douban/setting/LoginSettingsHelper.ts
-var import_obsidian31 = __toModule(require("obsidian"));
+var import_obsidian33 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/DoubanLoginModel.ts
 var DoubanLoginModel = class {
@@ -24692,7 +25244,7 @@ function constructDoubanTokenSettingsUI(containerEl, manager) {
   containerEl.empty();
   let login = manager.plugin.userComponent.isLogin();
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u5C55\u793A\u8C46\u74E3\u72B6\u6001:${login ? "\u5DF2\u767B\u5F55" : "\u672A\u767B\u5F55"}`);
-  if (import_obsidian31.Platform.isDesktopApp) {
+  if (import_obsidian33.Platform.isDesktopApp) {
     if (login) {
       constructHasLoginSettingsUI(containerEl, manager);
     } else {
@@ -24710,7 +25262,7 @@ function constructLoginSettingsUI(containerEl, manager) {
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u672A\u767B\u5F55-\u5C55\u793A\u767B\u5F55\u6309\u94AE`);
   let loginSetting = containerEl.createDiv("login-button");
   let loginCookie = containerEl.createDiv("login-button-cookie");
-  new import_obsidian31.Setting(loginSetting).setName(i18nHelper.getMessage("100131")).addButton((button) => {
+  new import_obsidian33.Setting(loginSetting).setName(i18nHelper.getMessage("100131")).addButton((button) => {
     return button.setButtonText(i18nHelper.getMessage("100130")).onClick(() => __async(this, null, function* () {
       button.setDisabled(true);
       manager.debug(`\u914D\u7F6E\u754C\u9762:\u70B9\u51FB\u767B\u5F55\u6309\u94AE`);
@@ -24718,7 +25270,7 @@ function constructLoginSettingsUI(containerEl, manager) {
       yield loginModel.doLogin();
     }));
   });
-  const loginCookieSetting = new import_obsidian31.Setting(loginSetting).setName(i18nHelper.getMessage("100133"));
+  const loginCookieSetting = new import_obsidian33.Setting(loginSetting).setName(i18nHelper.getMessage("100133"));
   loginCookieSetting.addButton((button) => {
     loginCookieSetting.descEl.appendChild(createFragment((frag) => {
       frag.appendText(i18nHelper.getMessage("100134"));
@@ -24739,7 +25291,7 @@ function constructLoginSettingsUI(containerEl, manager) {
 }
 function constructLoginCookieSettingsUI(containerEl, parentContainerEl, manager) {
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u767B\u5F55\u5F02\u5E38\u5904\u7406\u6309\u94AE-\u5C55\u793ACookie\u8F93\u5165\u6846`);
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("100136")).setClass("obsidian_douban_settings_cookie_login").addTextArea((text3) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100136")).setClass("obsidian_douban_settings_cookie_login").addTextArea((text3) => {
     text3.onChange((value) => manager.updateCookieTemp(value));
     return text3;
   }).addExtraButton((button) => {
@@ -24768,7 +25320,7 @@ ${i18nHelper.getMessage("100123")}: <a href="https://www.douban.com/people/${use
 		${i18nHelper.getMessage("100124")}: ${user.name}<br>
 ${i18nHelper.getMessage("100125")}`;
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u5C55\u793A\u8C46\u74E3\u767B\u5F55\u4FE1\u606F:id:${StringUtil.confuse(user.id)}, \u7528\u6237\u540D:${StringUtil.confuse(user.name)}`);
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
     return button.setButtonText(i18nHelper.getMessage("100128")).setCta().onClick(() => __async(this, null, function* () {
       button.setDisabled(true);
       manager.debug(`\u914D\u7F6E\u754C\u9762:\u70B9\u51FB\u9000\u51FA\u767B\u5F55\u6309\u94AE\uFF0C\u51C6\u5907\u9000\u51FA\u767B\u5F55`);
@@ -24779,7 +25331,7 @@ ${i18nHelper.getMessage("100125")}`;
   });
 }
 function showMobileLogin(containerEl, manager) {
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(i18nHelper.getMessage("100129"));
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(i18nHelper.getMessage("100129"));
 }
 function showMobileLogout(containerEl, manager) {
   const user = manager.plugin.userComponent.getUser();
@@ -24788,7 +25340,7 @@ function showMobileLogout(containerEl, manager) {
 ${i18nHelper.getMessage("100123")}: <a href="https://www.douban.com/people/${user.id}/">${user.id}</a><br>
 		${i18nHelper.getMessage("100124")}: ${user.name}<br>
 ${i18nHelper.getMessage("100125")}`;
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
     return button.setButtonText(i18nHelper.getMessage("100128")).setCta().onClick(() => __async(this, null, function* () {
       button.setDisabled(true);
       manager.updateSetting("loginCookiesContent", "");
@@ -24799,7 +25351,7 @@ ${i18nHelper.getMessage("100125")}`;
 }
 
 // src/org/wanxp/douban/setting/DoubanSettingTab.ts
-var DoubanSettingTab = class extends import_obsidian32.PluginSettingTab {
+var DoubanSettingTab = class extends import_obsidian34.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -24845,575 +25397,42 @@ var DoubanSettingTab = class extends import_obsidian32.PluginSettingTab {
 };
 
 // src/org/wanxp/douban/component/DoubanSyncModal.ts
-var import_obsidian33 = __toModule(require("obsidian"));
+var import_obsidian37 = __toModule(require("obsidian"));
 var import_timers = __toModule(require("timers"));
-var DoubanSyncModal = class extends import_obsidian33.Modal {
-  constructor(app, plugin, context) {
-    super(app);
-    this.plugin = plugin;
-    this.context = context;
-  }
-  onOpen() {
-    let { contentEl } = this;
-    this.show(contentEl);
-  }
-  show(contentEl) {
-    contentEl.empty();
-    if (this.plugin.statusHolder.syncing()) {
-      this.showSyncStatus(contentEl);
-    } else {
-      this.showSyncConfig(contentEl);
-    }
-  }
-  showSyncStatus(contentEl) {
-    const { syncStatus } = this.plugin.statusHolder;
-    const { syncConfig } = syncStatus;
-    contentEl.createEl("h3", { text: i18nHelper.getMessage("500002") });
-    this.showConfigPan(contentEl.createDiv("config"), syncConfig, true);
-    const sliderDiv = contentEl.createEl("div");
-    sliderDiv.addClass("obsidian_douban_sync_slider");
-    const controls = contentEl.createDiv("controls");
-    const stopButton = new import_obsidian33.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110009")).onClick(() => __async(this, null, function* () {
-      this.close();
-      yield this.plugin.statusHolder.stopSync();
-    }));
-    const backgroundButton = new import_obsidian33.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110010")).onClick(() => {
-      this.close();
-    });
-    this.showProgress(sliderDiv, backgroundButton, stopButton);
-    this.timer = setInterval(() => {
-      this.showProgress(sliderDiv, backgroundButton, stopButton);
-    }, 1e3);
-    backgroundButton.setClass("obsidian_douban_status_button");
-    stopButton.setClass("obsidian_douban_status_button");
-  }
-  showProgress(sliderDiv, backgroundButton, stopButton) {
-    sliderDiv.empty();
-    new import_obsidian33.Setting(sliderDiv);
-    let progress = sliderDiv.createDiv("progress");
-    const { syncStatus } = this.plugin.statusHolder;
-    if (!this.plugin.statusHolder.syncStarted) {
-      progress.innerHTML = `<p>
-    <label for="file">${i18nHelper.getMessage("110033")}</label>
-    <progress class="obsidian_douban_sync_slider" max="${syncStatus.getTotal() == 0 ? 1 : syncStatus.getTotal()}" value="${syncStatus.getHasHandle()}"> </progress> <span> ${syncStatus.getHasHandle()}/${syncStatus.getTotal()}:${i18nHelper.getMessage("110036")}  </span>
-</p>
-<p>
-<label for="file">${i18nHelper.getMessage("110092")}</label>
-<span>${i18nHelper.getMessage("110090", syncStatus.getTypeName(), syncStatus.getScopeName(), syncStatus.getAllTotal(), syncStatus.getTotal())}</span>
-</p>
-<p>
-<label for="file">${i18nHelper.getMessage("110091")}</label>
-<span>${syncStatus.getMessage()}</span>
-</p>
-`;
-      backgroundButton.setDisabled(true);
-      stopButton.setButtonText(i18nHelper.getMessage("110036"));
-      return;
-    }
-    progress.innerHTML = `<p>
-    <label for="file">${i18nHelper.getMessage("110033")}</label>
-    <progress class="obsidian_douban_sync_slider" max="${syncStatus.getTotal() == 0 ? 1 : syncStatus.getTotal()}" value="${syncStatus.getHasHandle()}"> </progress> <span> ${syncStatus.getTotal() == 0 ? i18nHelper.getMessage("110043") : syncStatus.getHasHandle() + "/" + syncStatus.getTotal()}
-${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + TimeUtil.estimateTimeMsg(syncStatus.getNeedHandled() - syncStatus.getHandle(), syncStatus.getOverSize())} </span>
-</p>
-<p>
-<label for="file">${i18nHelper.getMessage("110092")}</label>
-<span>${i18nHelper.getMessage("110090", syncStatus.getTypeName(), syncStatus.getScopeName(), syncStatus.getAllTotal(), syncStatus.getTotal())}</span>
-</p>
-<p>
-<label for="file">${i18nHelper.getMessage("110091")}</label>
-<span>${syncStatus.getMessage()}</span>
-</p>
-`;
-  }
-  showSyncConfig(contentEl) {
-    if (this.timer != null) {
-      (0, import_timers.clearInterval)(this.timer);
-    }
-    contentEl.createEl("h3", { text: i18nHelper.getMessage("500001") });
-    const { settings } = this.plugin;
-    let syncConfig = {
-      syncType: SyncType.movie,
-      scope: ALL,
-      force: false,
-      dataFilePath: settings.dataFilePath == "" || settings.dataFilePath == null ? DEFAULT_SETTINGS.dataFilePath : settings.dataFilePath,
-      dataFileNamePath: settings.dataFileNamePath == "" || settings.dataFileNamePath == null ? DEFAULT_SETTINGS.dataFileNamePath : settings.dataFileNamePath,
-      cacheImage: settings.cacheImage == null ? DEFAULT_SETTINGS.cacheImage : settings.cacheImage,
-      cacheHighQuantityImage: settings.cacheHighQuantityImage == null ? DEFAULT_SETTINGS.cacheHighQuantityImage : settings.cacheHighQuantityImage,
-      overwriteCoverImage: settings.overwriteCoverImage == null ? DEFAULT_SETTINGS.overwriteCoverImage : settings.overwriteCoverImage,
-      attachmentPath: settings.attachmentPath == "" || settings.attachmentPath == null ? DEFAULT_SETTINGS.attachmentPath : settings.attachmentPath,
-      attachmentFileName: settings.attachmentFileName == "" || settings.attachmentFileName == null ? DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
-      templateFile: this.getDefaultTemplatePath(SyncType.movie),
-      incrementalUpdate: true,
-      inheritOldFields: false,
-      syncConditionType: SyncConditionType.ALL,
-      syncConditionDateFromValue: TimeUtil.getLastMonth(),
-      syncConditionDateToValue: new Date(),
-      syncConditionCountFromValue: 1,
-      syncConditionCountToValue: 30
-    };
-    this.showConfigPan(contentEl.createDiv("config"), syncConfig, false);
-    const controls = contentEl.createDiv("controls");
-    const cancelButton = new import_obsidian33.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
-      this.close();
-    });
-    const syncButton = new import_obsidian33.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110007")).onClick(() => __async(this, null, function* () {
-      if (!(yield this.plugin.checkLogin(this.context))) {
-        return;
-      }
-      syncButton.setDisabled(true);
-      if (!this.plugin.statusHolder.startSync(syncConfig)) {
-        return;
-      }
-      this.updateContextByConfig(syncConfig);
-      this.show(contentEl);
-      yield this.plugin.sync(this.context);
-    }));
-    syncButton.setClass("obsidian_douban_search_button");
-    cancelButton.setClass("obsidian_douban_search_button");
-  }
-  updateContextByConfig(syncConfig) {
-    const { context } = this;
-    context.syncConfig = syncConfig;
-    context.syncActive = true;
-  }
-  showConfigPan(contentEl, config, disable) {
-    new import_obsidian33.Setting(contentEl);
-    this.showTypeDropdown(contentEl, config, disable);
-    this.showCondition(contentEl, config, disable);
-    this.showUpdateAllConfig(contentEl, config, disable);
-    const forceConfigContainer = contentEl.createDiv("sync-force-config");
-    this.renderForceRelatedConfigs(forceConfigContainer, config, disable);
-  }
-  renderForceRelatedConfigs(containerEl, config, disable) {
-    containerEl.empty();
-    this.showForceUpdateConfig(containerEl, config, disable, () => {
-      this.renderForceRelatedConfigs(containerEl, config, disable);
-    });
-    this.showInheritOldFieldsConfig(containerEl, config, disable, () => {
-      this.renderForceRelatedConfigs(containerEl, config, disable);
-    });
-  }
-  onClose() {
-    return __async(this, null, function* () {
-      let { contentEl } = this;
-      contentEl.empty();
-      if (this.timer != null) {
-        (0, import_timers.clearInterval)(this.timer);
-      }
-    });
-  }
-  openScopeDropdown(contentEl, config, disable) {
-    switch (config.syncType) {
-      case SyncType.movie:
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_MOVIE_SYNC, config, disable);
-        break;
-      case SyncType.book:
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_BOOK_SYNC, config, disable);
-        break;
-      case SyncType.broadcast:
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_BROADCAST_SYNC, config, disable);
-        break;
-      case SyncType.note:
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_NOTE_SYNC, config, disable);
-        break;
-      case SyncType.music:
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_MUSIC_SYNC, config, disable);
-        break;
-      case SyncType.teleplay:
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_TELEPLAY_SYNC, config, disable);
-        break;
-      case SyncType.game:
-        config.scope = DoubanSubjectState.collect;
-        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_GAME_SYNC, config, disable);
-        break;
-    }
-  }
-  showTypeDropdown(containerEl, config, disable) {
-    const settings = new import_obsidian33.Setting(containerEl);
-    const scopeSelections = containerEl.createDiv("scope-selection");
-    settings.setName(i18nHelper.getMessage("110030")).addDropdown((dropdown) => {
-      dropdown.addOptions(SyncTypeRecords).setValue(config.syncType).onChange((value) => {
-        config.syncType = value;
-        config.templateFile = this.getDefaultTemplatePath(value);
-        this.openScopeDropdown(scopeSelections, config, disable);
-      });
-    }).setDisabled(disable);
-    this.openScopeDropdown(scopeSelections, config, disable);
-  }
-  getDefaultTemplatePath(value) {
-    const { settings } = this.plugin;
-    const raw = value === SyncType.movie ? settings.movieTemplateConfig : value === SyncType.book ? settings.bookTemplateConfig : value === SyncType.music ? settings.musicTemplateConfig : value === SyncType.teleplay ? settings.teleplayTemplateConfig : value === SyncType.game ? settings.gameTemplateConfig : void 0;
-    if (!raw)
-      return "";
-    if (typeof raw === "string")
-      return raw;
-    if (raw.source === "file" && raw.filePath)
-      return raw.filePath;
-    return "";
-  }
-  showScopeDropdown(containerEl, scopeSelections, config, disable) {
-    containerEl.empty();
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("110032")).addDropdown((dropdown) => {
-      dropdown.addOptions(scopeSelections);
-      dropdown.setValue(config.scope).onChange((value) => __async(this, null, function* () {
-        config.scope = value;
-      }));
-    }).setDisabled(disable);
-  }
-  showOutiFleName(containerEl, config, disable) {
-    const dataFilePathSetting = new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121601")).setDesc(i18nHelper.getMessage("121602")).addText((textField) => {
-      textField.setPlaceholder(i18nHelper.getMessage("121602")).setValue(config.dataFileNamePath).onChange((value) => __async(this, null, function* () {
-        config.dataFileNamePath = value;
-      }));
-    }).setDisabled(disable);
-  }
-  showOutputFolderSelections(containerEl, config, disable) {
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121501")).setDesc(i18nHelper.getMessage("121502")).addSearch((search) => __async(this, null, function* () {
-      new PathSuggest(this.app, search.inputEl, "folder");
-      search.setValue(config.dataFilePath).setPlaceholder(i18nHelper.getMessage("121503")).onChange((value) => __async(this, null, function* () {
-        config.dataFilePath = value;
-      }));
-    })).setDisabled(disable);
-  }
-  showTemplateFileSelectionSetting(containerEl, config, disable) {
-    containerEl.empty();
-    const key = this.getKey(config.syncType);
-    let setting = new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121101")).setDesc(i18nHelper.getMessage("121102")).addSearch((search) => __async(this, null, function* () {
-      new PathSuggest(this.app, search.inputEl, "file");
-      search.setValue(config.templateFile).onChange((value) => __async(this, null, function* () {
-        config.templateFile = value;
-      }));
-    })).setDisabled(disable);
-    setting.addExtraButton((button) => {
-      button.setIcon("copy").setTooltip(i18nHelper.getMessage("121903")).onClick(() => __async(this, null, function* () {
-        navigator.clipboard.writeText(getDefaultTemplateContent(key));
-      }));
-    });
-    setting.addExtraButton((button) => {
-      button.setIcon("document").setTooltip(i18nHelper.getMessage("121901")).onClick(() => __async(this, null, function* () {
-        navigator.clipboard.writeText(getDefaultTemplateContent(key, false));
-      }));
-    });
-  }
-  getKey(supportType) {
-    return supportType + "TemplateFile";
-  }
-  showForceUpdateConfig(containerEl, config, disable, onToggle) {
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("110031")).setDesc(i18nHelper.getMessage("500110")).addToggle((toggleComponent) => {
-      toggleComponent.setValue(config.force).onChange((value) => __async(this, null, function* () {
-        config.force = value;
-        onToggle && onToggle();
-      }));
-    }).setDisabled(disable);
-  }
-  showInheritOldFieldsConfig(containerEl, config, disable, onToggle) {
-    const setting = new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("110097")).setDesc(i18nHelper.getMessage("110098")).setDisabled(disable || !config.force);
-    setting.addToggle((toggleComponent) => {
-      toggleComponent.setValue(!!config.inheritOldFields).onChange((value) => __async(this, null, function* () {
-        config.inheritOldFields = value;
-        onToggle && onToggle();
-      }));
-    });
-  }
-  showAttachmentsFileConfig(containerEl, config, disable) {
-    const settings = new import_obsidian33.Setting(containerEl);
-    let attachmentFileEl = containerEl.createDiv("attachment-file-path-selection");
-    settings.setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
-      toggleComponent.setValue(config.cacheImage).onChange((value) => __async(this, null, function* () {
-        config.cacheImage = value;
-        this.showAttachmentPathSelections(value, attachmentFileEl, config, disable);
-      }));
-    }).setDisabled(disable);
-    this.showAttachmentPathSelections(config.cacheImage, attachmentFileEl, config, disable);
-  }
-  showAttachmentPathSelections(show, containerEl, config, disable) {
-    containerEl.empty();
-    if (!show) {
-      return;
-    }
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121432")).setDesc(i18nHelper.getMessage("121433")).addSearch((search) => __async(this, null, function* () {
-      new PathSuggest(this.plugin.app, search.inputEl, "folder");
-      search.setValue(config.attachmentPath).setPlaceholder(i18nHelper.getMessage("121434")).onChange((value) => __async(this, null, function* () {
-        config.attachmentPath = value;
-      }));
-    })).setDisabled(disable);
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121452")).setDesc(i18nHelper.getMessage("121453")).addSearch((search) => __async(this, null, function* () {
-      new PathSuggest(this.plugin.app, search.inputEl, "folder");
-      search.setValue(config.attachmentFileName).setPlaceholder(i18nHelper.getMessage("121454")).onChange((value) => __async(this, null, function* () {
-        config.attachmentFileName = value;
-      }));
-    })).setDisabled(disable);
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121438")).addToggle((toggleComponent) => {
-      toggleComponent.setValue(config.cacheHighQuantityImage).onChange((value) => __async(this, null, function* () {
-        config.cacheHighQuantityImage = value;
-      }));
-    }).setDisabled(disable);
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
-      toggleComponent.setValue(config.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
-        config.overwriteCoverImage = value;
-      }));
-    }).setDisabled(disable);
-  }
-  showUpdateAllConfig(containerEl, config, disable) {
-    new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("110039")).setDesc(i18nHelper.getMessage("110040")).addToggle((toggleComponent) => {
-      toggleComponent.setTooltip(i18nHelper.getMessage("110040")).setValue(config.incrementalUpdate).onChange((value) => __async(this, null, function* () {
-        config.incrementalUpdate = value;
-      }));
-    }).setDisabled(disable);
-  }
-  showCondition(contentEl, config, disable) {
-    showConditionItem(contentEl.createDiv("sync-douban-condition"), this.plugin.settingsManager, config, disable);
-  }
-};
-function showConditionItem(containerEl, manager, config, disable) {
-  containerEl.empty();
-  const condition = new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("110070"));
-  const conditionDesc = condition.descEl.createDiv("sync-douban-condition-desc");
-  new import_obsidian33.DropdownComponent(conditionDesc).addOptions(SyncConditionTypeRecords).setValue(config.syncConditionType).onChange((value) => {
-    config.syncConditionType = value;
-    showConditionItem(containerEl, manager, config, disable);
-  }).setDisabled(disable);
-  showConditionItemInput(conditionDesc, config, disable);
-}
-function showConditionItemInput(containerEl, config, disable) {
-  if (config.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
-    showCustomInputCount(containerEl, config, disable);
-  } else if (config.syncConditionType == SyncConditionType.CUSTOM_TIME) {
-    showCustomInputTime(containerEl, config, disable);
-  }
-}
-function showCustomInputCount(containerEl, config, disable) {
-  containerEl.createEl("span", { text: "   " });
-  containerEl.createEl("span", { text: i18nHelper.getMessage("110077") });
-  containerEl.createEl("span", { text: i18nHelper.getMessage("110078") });
-  const fromField = new import_obsidian33.TextComponent(containerEl);
-  fromField.setPlaceholder(i18nHelper.getMessage("110080")).setValue(config.syncConditionCountFromValue + "").onChange((value) => __async(this, null, function* () {
-    if (!value) {
-      config.syncConditionCountFromValue = 1;
-      return;
-    }
-    try {
-      config.syncConditionCountFromValue = parseInt(value);
-    } catch (e) {
-      log.notice(i18nHelper.getMessage("112080"));
-    }
-  })).setDisabled(disable);
-  let fromEl = fromField.inputEl;
-  fromEl.addClass("obsidian_douban_settings_input");
-  fromEl.style.width = "20%";
-  containerEl.appendChild(fromEl);
-  const lang2 = window.localStorage.getItem("language") || "en";
-  if (lang2 === "zh" || lang2 === "zh-CN" || lang2 === "zh-TW") {
-    containerEl.createEl("span", { text: i18nHelper.getMessage("110073") });
-  }
-  containerEl.createEl("span", { text: i18nHelper.getMessage("110079") });
-  containerEl.createEl("span", { text: i18nHelper.getMessage("110078") });
-  const toField = new import_obsidian33.TextComponent(containerEl);
-  toField.setPlaceholder(i18nHelper.getMessage("110080")).setValue(config.syncConditionCountToValue + "").onChange((value) => __async(this, null, function* () {
-    if (!value) {
-      config.syncConditionCountToValue = 30;
-      return;
-    }
-    try {
-      config.syncConditionCountToValue = parseInt(value);
-    } catch (e) {
-      log.notice(i18nHelper.getMessage("112080"));
-    }
-  })).setDisabled(disable);
-  let toEl = toField.inputEl;
-  toEl.addClass("obsidian_douban_settings_input");
-  toEl.style.width = "20%";
-  containerEl.appendChild(toEl);
-  if (lang2 === "zh" || lang2 === "zh-CN" || lang2 === "zh-TW") {
-    containerEl.createEl("span", { text: i18nHelper.getMessage("110073") });
-  }
-  containerEl.createEl("span", { text: "  " });
-  const buttopn = new import_obsidian33.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
-  containerEl.appendChild(buttopn.buttonEl);
-}
-function showCustomInputTime(containerEl, config, disable) {
-  containerEl.createEl("span", { text: i18nHelper.getMessage("110077") });
-  const fromDateField = new import_obsidian33.TextComponent(containerEl);
-  const fromDateEl = fromDateField.inputEl;
-  fromDateEl.type = "date";
-  fromDateEl.value = config.syncConditionDateFromValue ? config.syncConditionDateFromValue.toISOString().substring(0, 10) : TimeUtil.getLastMonth().toISOString().substring(0, 10);
-  fromDateField.setPlaceholder(i18nHelper.getMessage("110075")).setValue(config.syncConditionDateFromValue ? config.syncConditionDateFromValue.toISOString().substring(0, 10) : TimeUtil.getLastMonth().toISOString().substring(0, 10)).onChange((value) => __async(this, null, function* () {
-    if (!value) {
-      return;
-    }
-    try {
-      config.syncConditionDateFromValue = new Date(value);
-    } catch (e) {
-      log.notice(i18nHelper.getMessage("110082"));
-    }
-  })).setDisabled(disable);
-  fromDateEl.addClass("obsidian_douban_settings_input");
-  containerEl.appendChild(fromDateEl);
-  containerEl.createEl("span", { text: i18nHelper.getMessage("110079") });
-  const toDateField = new import_obsidian33.TextComponent(containerEl);
-  let toDateEl = toDateField.inputEl;
-  toDateEl.type = "date";
-  toDateEl.value = config.syncConditionDateToValue ? config.syncConditionDateToValue.toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  toDateField.setPlaceholder(i18nHelper.getMessage("110075")).setValue(config.syncConditionDateToValue ? config.syncConditionDateToValue.toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10)).onChange((value) => __async(this, null, function* () {
-    if (!value) {
-      return;
-    }
-    try {
-      config.syncConditionDateToValue = new Date(value);
-    } catch (e) {
-      log.notice(i18nHelper.getMessage("110082"));
-    }
-  })).setDisabled(disable);
-  toDateEl.addClass("obsidian_douban_settings_input");
-  containerEl.appendChild(toDateEl);
-  new import_obsidian33.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
-}
 
-// src/org/wanxp/file/FileHandler.ts
-var import_obsidian34 = __toModule(require("obsidian"));
-var FileHandler = class {
-  constructor(app) {
-    this._app = app;
-  }
-  createDirectory(dir) {
-    return __async(this, null, function* () {
-      const { vault } = this._app;
-      const { adapter: adapter2 } = vault;
-      const root2 = vault.getRoot().path;
-      const directoryPath = FileUtil.join(dir);
-      const directoryExists = yield adapter2.exists(directoryPath);
-      if (!import_obsidian34.Platform.isIosApp) {
-        if (!directoryExists) {
-          return adapter2.mkdir((0, import_obsidian34.normalizePath)(directoryPath));
-        }
-      }
-      const subPaths = (0, import_obsidian34.normalizePath)(directoryPath).split("/").filter((part) => part.trim() !== "").map((_, index2, arr) => arr.slice(0, index2 + 1).join("/"));
-      for (const subPath of subPaths) {
-        const directoryExists2 = yield adapter2.exists(FileUtil.join(root2, subPath));
-        if (!directoryExists2) {
-          yield adapter2.mkdir(FileUtil.join(root2, subPath));
-        }
-      }
-    });
-  }
-  creatAttachmentWithData(originalFilePath, data2, overwrite = false) {
-    return __async(this, null, function* () {
-      const { vault } = this._app;
-      const { adapter: adapter2 } = vault;
-      const prependDirInput = FileUtil.join("", originalFilePath);
-      const { dir, name } = FileUtil.parse(prependDirInput);
-      const filePath = FileUtil.join(dir, `${name}`);
-      try {
-        const fileExists = yield adapter2.exists(filePath);
-        if (fileExists) {
-          if (overwrite) {
-            yield adapter2.remove(filePath);
-          } else {
-            return;
-          }
-        }
-        if (dir !== "") {
-          yield this.createDirectory(dir);
-        }
-        yield vault.createBinary(filePath, data2);
-      } catch (error) {
-        log.error(error.toString(), error);
-      }
-    });
-  }
-  createNewNote(originalFilePath) {
-    return __async(this, null, function* () {
-      this.createNewNoteWithData(originalFilePath, "");
-    });
-  }
-  createNewNoteWithData(originalFilePath, data2, showAfterCreate = false, showExistsError = true) {
-    return __async(this, null, function* () {
-      const { vault } = this._app;
-      const { adapter: adapter2 } = vault;
-      const prependDirInput = FileUtil.join("", originalFilePath);
-      const { dir, name } = FileUtil.parse(prependDirInput);
-      const filePath = FileUtil.join(dir, `${name}.md`);
-      const fileExists = yield adapter2.exists(filePath);
-      if (fileExists) {
-        if (!showExistsError) {
-          return false;
-        }
-        throw new Error(i18nHelper.getMessage("110201").replace("{0}", filePath != null ? filePath : ""));
-      }
-      if (dir !== "") {
-        yield this.createDirectory(dir);
-      }
-      const File = yield vault.create(filePath, data2);
-      if (showAfterCreate) {
-        const leaf = this._app.workspace.getLeaf(true);
-        yield leaf.openFile(File);
-      }
-      return true;
-    });
-  }
-  createOrReplaceNewNoteWithData(originalFilePath, data2, showAfterSuccess = false) {
-    return __async(this, null, function* () {
-      const { vault } = this._app;
-      const { adapter: adapter2 } = vault;
-      const prependDirInput = FileUtil.join("", originalFilePath);
-      const { dir, name } = FileUtil.parse(prependDirInput);
-      const filePath = FileUtil.join(dir, `${name}.md`);
-      const fileExists = yield adapter2.exists(filePath);
-      let File = null;
-      if (fileExists) {
-        File = vault.getMarkdownFiles().find((f) => f.path == filePath);
-        yield vault.modify(File, data2);
-      } else {
-        if (dir !== "") {
-          yield this.createDirectory(dir);
-        }
-        File = yield vault.create(filePath, data2);
-      }
-      if (showAfterSuccess) {
-        const leaf = this._app.workspace.getRightLeaf(true);
-        yield leaf.openFile(File);
-      }
-      return fileExists;
-    });
-  }
-  getFileContent(filePath) {
-    return __async(this, null, function* () {
-      const { metadataCache, vault } = this._app;
-      const normalizedTemplatePath = (0, import_obsidian34.normalizePath)(filePath != null ? filePath : "");
-      if (filePath === "/") {
-        return Promise.resolve("");
-      }
-      try {
-        const file = metadataCache.getFirstLinkpathDest(normalizedTemplatePath, "");
-        return file ? vault.cachedRead(file) : "";
-      } catch (err) {
-        console.error(`Failed to read the daily note template '${normalizedTemplatePath}'`, err);
-        log.error(i18nHelper.getMessage("110202").replace("{0}", normalizedTemplatePath != null ? normalizedTemplatePath : ""), err);
-        return "";
-      }
-    });
-  }
-  deleteFile(filePath) {
-    return __async(this, null, function* () {
-      const { vault } = this._app;
-      const { adapter: adapter2 } = vault;
-      const fileExists = yield adapter2.exists(filePath);
-      if (fileExists) {
-        yield adapter2.remove(filePath);
-      }
-    });
-  }
-  getRootPath() {
-    const { vault } = this._app;
-    return vault.getRoot().path;
-  }
-  getTmpPath() {
-    return FileUtil.join(".tmp", "obsidian-douban");
-  }
-};
-
-// src/org/wanxp/douban/model/GlobalStatusHolder.ts
+// src/org/wanxp/utils/VaultUtil.ts
 var import_obsidian35 = __toModule(require("obsidian"));
+function scanVaultForDoubanIds(app, folderPath) {
+  const result = new Map();
+  const allFiles = app.vault.getMarkdownFiles();
+  const normalizedPath = folderPath ? (0, import_obsidian35.normalizePath)(folderPath) : "";
+  const targetFiles = normalizedPath ? allFiles.filter((file) => file.path.startsWith(normalizedPath)) : allFiles;
+  for (const file of targetFiles) {
+    try {
+      const cache = app.metadataCache.getFileCache(file);
+      const frontmatter = cache == null ? void 0 : cache.frontmatter;
+      if (!frontmatter)
+        continue;
+      const doubanId = extractDoubanId(frontmatter);
+      if (doubanId) {
+        result.set(doubanId, { file, frontmatter });
+      }
+    } catch (e) {
+    }
+  }
+  return result;
+}
+function extractDoubanId(frontmatter) {
+  const candidateKeys = ["doubanId", "douban_id", "id", "ID"];
+  for (const key of candidateKeys) {
+    const id = frontmatter[key];
+    if (typeof id === "string" && id.trim())
+      return id.trim();
+    if (typeof id === "number")
+      return String(id);
+  }
+  return null;
+}
 
 // src/org/wanxp/douban/sync/model/SyncStatusHolder.ts
 var SyncStatusHolder = class {
@@ -25424,6 +25443,7 @@ var SyncStatusHolder = class {
       [SyncItemStatus.replace, 0],
       [SyncItemStatus.create, 0],
       [SyncItemStatus.fail, 0],
+      [SyncItemStatus.manualReview, 0],
       [SyncItemStatus.failByDiffType, 0],
       [SyncItemStatus.unHandle, 0]
     ]);
@@ -25484,11 +25504,14 @@ var SyncStatusHolder = class {
       this.addToExistingCache(id, fileName);
     }
   }
-  fail(id, title) {
-    this.updateResult(id, title, SyncItemStatus.fail);
+  fail(id, title, detailMsg, fileName) {
+    this.updateResult(id, title, SyncItemStatus.fail, fileName, detailMsg);
   }
   failByDiffType(id, title, detailMsg) {
     this.updateResult(id, title, SyncItemStatus.failByDiffType, void 0, detailMsg);
+  }
+  manualReview(id, title, fileName, detailMsg) {
+    this.updateResult(id, title, SyncItemStatus.manualReview, fileName, detailMsg);
   }
   updateResult(id, title, status, fileName, detailMsg) {
     this.syncResultMap.set(id, { id, title, status, fileName, detailMsg });
@@ -25513,7 +25536,6 @@ var SyncStatusHolder = class {
   }
   buildExistingFilesCache(dataFilePath) {
     return __async(this, null, function* () {
-      var _a5;
       if (!this.app) {
         return;
       }
@@ -25526,11 +25548,13 @@ var SyncStatusHolder = class {
         }
         try {
           const cache = this.app.metadataCache.getFileCache(file);
-          if ((_a5 = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _a5.doubanId) {
-            const doubanId = String(cache.frontmatter.doubanId).trim();
-            if (doubanId) {
-              this.existingDoubanIdsCache.set(doubanId, file.path);
-            }
+          const frontmatter = cache == null ? void 0 : cache.frontmatter;
+          if (!frontmatter) {
+            continue;
+          }
+          const doubanId = extractDoubanId(frontmatter);
+          if (doubanId) {
+            this.existingDoubanIdsCache.set(doubanId, file.path);
           }
         } catch (e) {
         }
@@ -25646,7 +25670,1138 @@ var SyncStatusHolder = class {
   }
 };
 
+// src/org/wanxp/douban/sync/handler/DoubanAbstractSyncHandler.ts
+function toDateList(dataList) {
+  const dateList = dataList.map((item) => item.updateDate).sort((a, b) => {
+    try {
+      return a.getTime() - b.getTime();
+    } catch (e) {
+    }
+    return 0;
+  });
+  return dateList;
+}
+function isPreviewMode(context) {
+  return !!context.syncPreviewMode;
+}
+var DoubanAbstractSyncHandler = class {
+  constructor(plugin, doubanSubjectLoadHandler, doubanListHandlers) {
+    this.plugin = plugin;
+    this.doubanSubjectLoadHandler = doubanSubjectLoadHandler;
+    this.doubanListHandlers = doubanListHandlers;
+  }
+  support(t) {
+    return this.getSyncType() == t;
+  }
+  preview(syncConfig, context) {
+    return __async(this, null, function* () {
+      const previewContext = __spreadProps(__spreadValues({}, context), {
+        syncConfig,
+        syncPreviewMode: true
+      });
+      const items = yield this.collectItems(syncConfig, previewContext);
+      const previewStatus = new SyncStatusHolder(syncConfig, this.plugin.app);
+      previewStatus.initSyncHandledData(this.plugin.settings.syncHandledDataArray);
+      yield previewStatus.buildExistingFilesCache((syncConfig == null ? void 0 : syncConfig.dataFilePath) || "");
+      const entries = [];
+      let createCount = 0;
+      let replaceCount = 0;
+      let existsCount = 0;
+      let unHandleCount = 0;
+      for (const item of items) {
+        if (!previewStatus.shouldSync(item.id)) {
+          unHandleCount++;
+          entries.push({ id: item.id, title: item.title, action: "unHandle" });
+          continue;
+        }
+        const existingFilePath = previewStatus.getExistingFilePath(item.id);
+        if (existingFilePath) {
+          if (syncConfig.force) {
+            replaceCount++;
+            entries.push({ id: item.id, title: item.title, action: "replace", existingFilePath });
+          } else {
+            existsCount++;
+            entries.push({ id: item.id, title: item.title, action: "exists", existingFilePath });
+          }
+        } else {
+          createCount++;
+          entries.push({ id: item.id, title: item.title, action: "create" });
+        }
+      }
+      const inheritSummary = [];
+      if (syncConfig.force && syncConfig.inheritOldFields) {
+        if (this.plugin.settings.dataProtection.preserveCustomProperties) {
+          inheritSummary.push("frontmatter \u81EA\u5B9A\u4E49\u5C5E\u6027");
+        }
+        if (this.plugin.settings.dataProtection.preserveRecord) {
+          inheritSummary.push("## \u8BB0\u5F55");
+        }
+        if (this.plugin.settings.dataProtection.preserveThoughts) {
+          inheritSummary.push("## \u611F\u60F3");
+        }
+      }
+      return {
+        total: items.length,
+        createCount,
+        replaceCount,
+        existsCount,
+        unHandleCount,
+        affectedCount: createCount + replaceCount,
+        inheritSummary,
+        backupEnabled: !!this.plugin.settings.syncBackupBeforeReplace,
+        entries
+      };
+    });
+  }
+  sync(syncConfig, context) {
+    return __async(this, null, function* () {
+      if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
+        yield this.syncByTimeLimit(syncConfig, context);
+      } else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
+        yield this.syncByCountLimit(syncConfig, context);
+      } else if (syncConfig.syncConditionType == SyncConditionType.ALL) {
+        yield this.syncAll(syncConfig, context);
+      } else if (syncConfig.syncConditionType == SyncConditionType.LAST_THIRTY) {
+        yield this.syncLastThirty(syncConfig, context);
+      } else {
+        log.warn(i18nHelper.getMessage("110083"));
+      }
+    });
+  }
+  getByTimeLimit(syncConfig, context) {
+    return __async(this, null, function* () {
+      const startDate = syncConfig.syncConditionDateFromValue ? new Date(syncConfig.syncConditionDateFromValue) : null;
+      const endDate = syncConfig.syncConditionDateToValue ? new Date(syncConfig.syncConditionDateToValue) : null;
+      if (!startDate && !endDate) {
+        log.warn(i18nHelper.getMessage("110081"));
+        return [];
+      }
+      const cacheList = new Map();
+      const searchPage = yield this.getItems(syncConfig, context);
+      if (!searchPage) {
+        return [];
+      }
+      const total = searchPage.total;
+      const lastPage = total / PAGE_SIZE + 1;
+      if (lastPage == 1) {
+        return searchPage.list;
+      }
+      let leftPage = 1;
+      let startPage = 1;
+      let rightPage = lastPage;
+      let endPage = lastPage;
+      let currentPage = 1;
+      cacheList.set(currentPage, searchPage);
+      if (startDate != null) {
+        do {
+          if (this.isStopped(context)) {
+            break;
+          }
+          let page = cacheList.get(currentPage);
+          if (!page) {
+            page = yield this.getItems(syncConfig, context);
+            if (!page) {
+              break;
+            }
+            cacheList.set(currentPage, page);
+          }
+          const pageItems = page.list;
+          const pageDateList = toDateList(pageItems);
+          if (pageDateList[pageDateList.length - 1] >= startDate) {
+            leftPage = currentPage;
+            endPage = currentPage;
+            currentPage = Math.ceil((leftPage + rightPage) / 2);
+          } else {
+            rightPage = currentPage;
+            endPage = currentPage;
+            currentPage = Math.floor((leftPage + rightPage) / 2);
+          }
+          if (currentPage == leftPage || currentPage == rightPage) {
+            break;
+          }
+        } while (currentPage < lastPage);
+      }
+      leftPage = 1;
+      rightPage = lastPage;
+      currentPage = 1;
+      if (endDate != null) {
+        do {
+          if (this.isStopped(context)) {
+            break;
+          }
+          let page = cacheList.get(currentPage);
+          if (!page) {
+            page = yield this.getItems(syncConfig, context);
+            if (!page) {
+              break;
+            }
+            cacheList.set(currentPage, page);
+          }
+          const pageItems = page.list;
+          const pageDateList = toDateList(pageItems);
+          if (pageDateList[0] <= endDate) {
+            rightPage = currentPage;
+            startPage = currentPage;
+            currentPage = Math.ceil((leftPage + rightPage) / 2);
+          } else {
+            leftPage = currentPage;
+            startPage = currentPage;
+            currentPage = Math.floor((leftPage + rightPage) / 2);
+          }
+          if (currentPage == leftPage || currentPage == rightPage) {
+            break;
+          }
+        } while (currentPage < lastPage);
+      }
+      let needHandleItems = [];
+      for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+        if (this.isStopped(context)) {
+          break;
+        }
+        let page = cacheList.get(pageNum);
+        if (!page) {
+          page = yield this.getItems(syncConfig, context);
+          if (!page) {
+            break;
+          }
+          cacheList.set(pageNum, page);
+        }
+        const pageItems = page.list;
+        needHandleItems = needHandleItems.concat(pageItems.filter((item) => {
+          const itemDate = item.updateDate;
+          return (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
+        }));
+      }
+      return needHandleItems;
+    });
+  }
+  syncByTimeLimit(syncConfig, context) {
+    return __async(this, null, function* () {
+      const items = yield this.getByTimeLimit(syncConfig, context);
+      if (!items || items.length == 0) {
+        return;
+      }
+      const subjectListItems = yield this.removeExists(items, syncConfig, context);
+      const searchPage = new SearchPageTypeOf(subjectListItems.length, 1, subjectListItems.length, null, subjectListItems);
+      yield this.handleItems(searchPage, subjectListItems, context);
+    });
+  }
+  collectItems(syncConfig, context) {
+    return __async(this, null, function* () {
+      if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
+        return yield this.getByTimeLimit(syncConfig, context);
+      }
+      if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
+        return yield this.collectByCountLimit(syncConfig, context);
+      }
+      if (syncConfig.syncConditionType == SyncConditionType.ALL) {
+        return yield this.collectAll(syncConfig, context);
+      }
+      if (syncConfig.syncConditionType == SyncConditionType.LAST_THIRTY) {
+        return yield this.collectLastThirty(syncConfig, context);
+      }
+      return [];
+    });
+  }
+  getItems(syncConfig, context) {
+    return __async(this, null, function* () {
+      const supportHandlers = this.doubanListHandlers.filter((h) => h.support(syncConfig));
+      const handler = supportHandlers[0];
+      if (this.isStopped(context)) {
+        return SearchPage.emptyWithNoType();
+      }
+      const item = yield handler.getPageData(context);
+      if (this.isStopped(context)) {
+        return SearchPage.emptyWithNoType();
+      }
+      return item;
+    });
+  }
+  removeExists(items, syncConfig, context) {
+    return __async(this, null, function* () {
+      if (this.isStopped(context)) {
+        return [];
+      }
+      return items;
+    });
+  }
+  handleItems(searchPage, items, context) {
+    return __async(this, null, function* () {
+      if (!items || items.length == 0) {
+        return;
+      }
+      const { syncStatus } = context.syncStatusHolder;
+      const { syncConfig } = context;
+      syncStatus.totalNum(searchPage.total);
+      const needHandled = syncStatus.getTotal() - syncStatus.getHasHandle();
+      syncStatus.setNeedHandled(needHandled);
+      const dataFilePath = (syncConfig == null ? void 0 : syncConfig.dataFilePath) || "";
+      yield syncStatus.buildExistingFilesCache(dataFilePath);
+      for (const item of items) {
+        if (this.isStopped(context)) {
+          return;
+        }
+        try {
+          if (syncStatus.shouldSync(item.id)) {
+            const localExists = syncStatus.checkLocalExists(item.id);
+            if (localExists && !syncConfig.force) {
+              syncStatus.exists(item.id, item.title, syncStatus.getExistingFilePath(item.id));
+            } else {
+              yield this.doubanSubjectLoadHandler.handle(item.id, context);
+              yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
+            }
+          } else {
+            syncStatus.unHandle(item.id, item.title);
+          }
+        } catch (e) {
+          log.error(`Failed to sync item ${item.id}: ${e}`, e);
+          log.notice(i18nHelper.getMessage("130120"));
+          syncStatus.fail(item.id, item.title);
+        }
+      }
+    });
+  }
+  isStopped(context) {
+    if (isPreviewMode(context)) {
+      return false;
+    }
+    return !context.plugin.statusHolder.syncing();
+  }
+  syncByCountLimit(syncConfig, context) {
+    return __async(this, null, function* () {
+      const items = yield this.collectByCountLimit(syncConfig, context);
+      if (!items.length) {
+        return;
+      }
+      const page = new SearchPageTypeOf(items.length, 1, items.length, null, items);
+      yield this.handleItems(page, items, context);
+    });
+  }
+  collectByCountLimit(syncConfig, context) {
+    return __async(this, null, function* () {
+      const { syncConditionCountFromValue, syncConditionCountToValue } = syncConfig;
+      const startOffset = Math.floor((syncConditionCountFromValue - 1) / PAGE_SIZE) * PAGE_SIZE;
+      context.syncOffset = startOffset;
+      let endOffsetNumberForCustom = 0;
+      let needHandleTotalCustomItem = 0;
+      let isFirstStep = true;
+      let handleCount = 0;
+      const result = [];
+      do {
+        const searchPage = yield this.getItems(syncConfig, context);
+        if (this.isStopped(context)) {
+          break;
+        }
+        const { list, total } = searchPage;
+        if (!searchPage || !list || list.length == 0) {
+          break;
+        }
+        if (syncConditionCountFromValue > total) {
+          if (!isPreviewMode(context)) {
+            context.syncStatusHolder.syncStatus.setMessage(i18nHelper.getMessage("130121", total));
+          }
+          break;
+        }
+        if (endOffsetNumberForCustom == 0) {
+          endOffsetNumberForCustom = Math.min(syncConditionCountToValue ? syncConditionCountToValue : searchPage.total, searchPage.total);
+          needHandleTotalCustomItem = endOffsetNumberForCustom - syncConditionCountFromValue + 1;
+        }
+        let subjectListItems = [];
+        if (Math.floor((syncConditionCountFromValue - 1) / PAGE_SIZE) == Math.floor((endOffsetNumberForCustom - 1) / PAGE_SIZE)) {
+          const startIndex = Math.floor((syncConditionCountFromValue - 1) % PAGE_SIZE);
+          const endIndex = Math.floor((endOffsetNumberForCustom - 1) % PAGE_SIZE);
+          subjectListItems = yield this.removeExists(list.slice(startIndex, endIndex + 1), syncConfig, context);
+          handleCount += endIndex - startIndex + 1;
+        } else if (isFirstStep) {
+          const startIndex = (syncConditionCountFromValue - 1) % PAGE_SIZE;
+          handleCount += list.length - startIndex;
+          subjectListItems = yield this.removeExists(list.slice(startIndex), syncConfig, context);
+          isFirstStep = false;
+        } else if (needHandleTotalCustomItem - handleCount <= PAGE_SIZE) {
+          const endIndex = needHandleTotalCustomItem - handleCount;
+          subjectListItems = yield this.removeExists(list.slice(0, endIndex), syncConfig, context);
+          handleCount += endIndex;
+        } else {
+          subjectListItems = yield this.removeExists(list, syncConfig, context);
+          handleCount += PAGE_SIZE;
+        }
+        result.push(...subjectListItems);
+        context.syncOffset = context.syncOffset + PAGE_SIZE;
+        if (!isPreviewMode(context)) {
+          yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
+        }
+      } while (handleCount < needHandleTotalCustomItem);
+      return result;
+    });
+  }
+  syncAll(syncConfig, context) {
+    return __async(this, null, function* () {
+      const items = yield this.collectAll(syncConfig, context);
+      if (!items.length) {
+        return;
+      }
+      const page = new SearchPageTypeOf(items.length, 1, items.length, null, items);
+      yield this.handleItems(page, items, context);
+    });
+  }
+  collectAll(syncConfig, context) {
+    return __async(this, null, function* () {
+      context.syncOffset = 0;
+      let handleCount = 0;
+      let totalForHandle = 0;
+      let isFirstStep = true;
+      const result = [];
+      do {
+        const searchPage = yield this.getItems(syncConfig, context);
+        if (this.isStopped(context)) {
+          break;
+        }
+        const { list, total } = searchPage;
+        if (!searchPage || !list || list.length == 0) {
+          break;
+        }
+        if (isFirstStep) {
+          totalForHandle = total;
+          isFirstStep = false;
+        }
+        handleCount += list.length;
+        const subjectListItems = yield this.removeExists(list, syncConfig, context);
+        result.push(...subjectListItems);
+        context.syncOffset = context.syncOffset + PAGE_SIZE;
+        if (!isPreviewMode(context)) {
+          yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
+        }
+      } while (handleCount <= totalForHandle);
+      return result;
+    });
+  }
+  syncLastThirty(syncConfig, context) {
+    return __async(this, null, function* () {
+      const items = yield this.collectLastThirty(syncConfig, context);
+      if (!items.length) {
+        return;
+      }
+      const page = new SearchPageTypeOf(items.length, 1, items.length, null, items);
+      yield this.handleItems(page, items, context);
+    });
+  }
+  collectLastThirty(syncConfig, context) {
+    return __async(this, null, function* () {
+      context.syncOffset = 0;
+      const searchPage = yield this.getItems(syncConfig, context);
+      if (this.isStopped(context)) {
+        return [];
+      }
+      const { list } = searchPage;
+      if (!searchPage || !list || list.length == 0) {
+        return [];
+      }
+      return yield this.removeExists(list, syncConfig, context);
+    });
+  }
+};
+
+// src/org/wanxp/constant/Douban.ts
+var doubanSubjectSyncListUrl = function(subjectType, userId, doType, start2) {
+  return `https://${subjectType}.douban.com/people/${userId}/${doType}?start=${start2}&sort=time&rating=all&filter=all&mode=list`;
+};
+
+// src/org/wanxp/douban/sync/handler/list/DoubanAbstractListHandler.ts
+var DoubanAbstractListHandler = class {
+  getPageData(context) {
+    return __async(this, null, function* () {
+      let all = [];
+      let pages = SearchPage.emptyWithNoType();
+      const url = this.getUrl(context, context.syncOffset);
+      if (!context.syncPreviewMode && !context.plugin.statusHolder.syncing()) {
+        return SearchPage.emptyWithNoType();
+      }
+      let subjectListItemSearchPageTypeOf = yield this.getPageList(url, context);
+      if (subjectListItemSearchPageTypeOf && context.plugin.statusHolder.syncStatus) {
+        context.plugin.statusHolder.syncStatus.setAllTotal(subjectListItemSearchPageTypeOf.total);
+      }
+      return subjectListItemSearchPageTypeOf;
+    });
+  }
+  delay(ms) {
+    return __async(this, null, function* () {
+    });
+  }
+  getUrl(context, start2) {
+    return doubanSubjectSyncListUrl(this.getSyncTypeDomain(), context.userComponent.getUserId(), this.getDoType(), start2);
+  }
+  getSyncTypeDomain() {
+    return SyncTypeUrlDomain.get(this.getSyncType());
+  }
+  getPageList(url, context) {
+    return __async(this, null, function* () {
+      return DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager).then(load).then((data2) => this.parseSubjectFromHtml(data2, context)).catch((e) => log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e));
+    });
+  }
+  parseSubjectFromHtml(dataHtml, context) {
+    const items = dataHtml(".item-show").get().map((i) => {
+      const item = dataHtml(i);
+      const linkValue = item.find("div.title > a").attr("href");
+      const titleValue = item.find("div.title > a").text().trim();
+      const updateDateStr = item.find("div.date").text().trim();
+      let updateDate = null;
+      try {
+        updateDate = new Date(updateDateStr);
+      } catch (e) {
+        console.error(e);
+        log.info("parse date error:" + titleValue);
+      }
+      let idPattern = /(\d){5,10}/g;
+      let ececResult = idPattern.exec(linkValue);
+      return !ececResult ? null : { id: ececResult[0], url: linkValue, title: titleValue, updateDate };
+    });
+    const subjectNumText = dataHtml(".subject-num").text().trim();
+    const totalNumMatch = subjectNumText.match(/\/\s*(\d+)/);
+    const totalNum = totalNumMatch ? parseInt(totalNumMatch[1], 10) : 0;
+    return new SearchPage(totalNum, Math.floor(context.syncOffset / PAGE_SIZE) + 1, PAGE_SIZE, null, items);
+  }
+  support(config) {
+    return this.getDoType() == config.scope || ALL == config.scope;
+  }
+  static create(syncType, doType) {
+    return new class extends DoubanAbstractListHandler {
+      getSyncType() {
+        return syncType;
+      }
+      getDoType() {
+        return doType;
+      }
+    }();
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/DoubanMovieSyncHandler.ts
+var DoubanMovieSyncHandler = class extends DoubanAbstractSyncHandler {
+  constructor(plugin) {
+    super(plugin, new DoubanMovieLoadHandler(plugin), [
+      DoubanAbstractListHandler.create(SyncType.movie, DoubanSubjectState.collect),
+      DoubanAbstractListHandler.create(SyncType.movie, DoubanSubjectState.wish),
+      DoubanAbstractListHandler.create(SyncType.movie, DoubanSubjectState.do)
+    ]);
+  }
+  getSyncType() {
+    return SyncType.movie;
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/DoubanBookSyncHandler.ts
+var DoubanBookSyncHandler = class extends DoubanAbstractSyncHandler {
+  constructor(plugin) {
+    super(plugin, new DoubanBookLoadHandler(plugin), [
+      DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.collect),
+      DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.wish),
+      DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.do)
+    ]);
+  }
+  getSyncType() {
+    return SyncType.book;
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/DoubanMusicSyncHandler.ts
+var DoubanMusicSyncHandler = class extends DoubanAbstractSyncHandler {
+  getSyncType() {
+    return SyncType.music;
+  }
+  constructor(plugin) {
+    super(plugin, new DoubanMusicLoadHandler(plugin), [
+      DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.collect),
+      DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.wish),
+      DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.do)
+    ]);
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/DoubanTeleplaySyncHandler.ts
+var DoubanTeleplaySyncHandler = class extends DoubanAbstractSyncHandler {
+  constructor(plugin) {
+    super(plugin, new DoubanTeleplayLoadHandler(plugin), [
+      DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.collect),
+      DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.wish),
+      DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.do)
+    ]);
+  }
+  getSyncType() {
+    return SyncType.teleplay;
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/DoubanGameSyncHandler.ts
+var DoubanGameSyncHandler = class extends DoubanAbstractSyncHandler {
+  constructor(plugin) {
+    super(plugin, new DoubanGameLoadHandler(plugin), [
+      DoubanAbstractListHandler.create(SyncType.game, DoubanSubjectState.collect),
+      DoubanAbstractListHandler.create(SyncType.game, DoubanSubjectState.wish),
+      DoubanAbstractListHandler.create(SyncType.game, DoubanSubjectState.do)
+    ]);
+  }
+  getSyncType() {
+    return SyncType.game;
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/DoubanOtherSyncHandler.ts
+var DoubanOtherSyncHandler = class extends DoubanAbstractSyncHandler {
+  constructor(plugin) {
+    super(plugin, new DoubanOtherLoadHandler(plugin), []);
+  }
+  getSyncType() {
+    throw new Error("\u6682\u4E0D\u652F\u6301\u540C\u6B65\u8FD9\u7C7B\u578B\u7684\u6570\u636E");
+  }
+  support(t) {
+    throw new Error("Method not implemented.");
+  }
+  sync(syncConfig, context) {
+    return __async(this, null, function* () {
+      return Promise.resolve();
+    });
+  }
+};
+
+// src/org/wanxp/douban/sync/handler/SyncPreviewHandler.ts
+var SyncPreviewHandler = class {
+  constructor(app, plugin) {
+    this.app = app;
+    this.plugin = plugin;
+    this.defaultSyncHandler = new DoubanOtherSyncHandler(plugin);
+    this.syncHandlers = [
+      new DoubanMovieSyncHandler(plugin),
+      new DoubanBookSyncHandler(plugin),
+      new DoubanMusicSyncHandler(plugin),
+      new DoubanTeleplaySyncHandler(plugin),
+      new DoubanGameSyncHandler(plugin),
+      this.defaultSyncHandler
+    ];
+  }
+  preview(syncConfig, context) {
+    return __async(this, null, function* () {
+      const syncHandler = this.syncHandlers.find((handler) => handler.support(syncConfig.syncType));
+      if (syncHandler) {
+        return yield syncHandler.preview(syncConfig, context);
+      }
+      return yield this.defaultSyncHandler.preview(syncConfig, context);
+    });
+  }
+};
+
+// src/org/wanxp/douban/component/SyncPreviewModal.ts
+var import_obsidian36 = __toModule(require("obsidian"));
+var SyncPreviewModal = class extends import_obsidian36.Modal {
+  constructor(app, result, onConfirm) {
+    super(app);
+    this.result = result;
+    this.onConfirm = onConfirm;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h3", { text: i18nHelper.getMessage("130300") });
+    contentEl.createEl("p", { text: i18nHelper.getMessage("130301", String(this.result.affectedCount), String(this.result.total)) });
+    const summary = contentEl.createEl("ul");
+    summary.createEl("li", { text: i18nHelper.getMessage("130302", String(this.result.createCount)) });
+    summary.createEl("li", { text: i18nHelper.getMessage("130303", String(this.result.replaceCount)) });
+    summary.createEl("li", { text: i18nHelper.getMessage("130304", String(this.result.existsCount)) });
+    summary.createEl("li", { text: i18nHelper.getMessage("130305", String(this.result.unHandleCount)) });
+    if (this.result.backupEnabled && this.result.replaceCount > 0) {
+      contentEl.createEl("p", { text: i18nHelper.getMessage("130306") });
+    }
+    if (this.result.inheritSummary.length > 0) {
+      contentEl.createEl("p", { text: i18nHelper.getMessage("130307", this.result.inheritSummary.join(", ")) });
+    }
+    contentEl.createEl("h4", { text: i18nHelper.getMessage("130308") });
+    const listEl = contentEl.createEl("ul");
+    const previewEntries = this.result.entries.slice(0, 80);
+    for (const entry of previewEntries) {
+      const suffix = entry.existingFilePath ? ` -> ${entry.existingFilePath}` : "";
+      listEl.createEl("li", { text: `${i18nHelper.getMessage(entry.action)} ${entry.title} (${entry.id})${suffix}` });
+    }
+    if (this.result.entries.length > previewEntries.length) {
+      contentEl.createEl("p", { text: i18nHelper.getMessage("130309", String(previewEntries.length), String(this.result.entries.length)) });
+    }
+    const buttonRow = contentEl.createDiv();
+    buttonRow.style.display = "flex";
+    buttonRow.style.justifyContent = "flex-end";
+    buttonRow.style.gap = "8px";
+    buttonRow.style.marginTop = "12px";
+    if (this.onConfirm) {
+      new import_obsidian36.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("130310")).setCta().onClick(() => __async(this, null, function* () {
+        var _a5;
+        yield (_a5 = this.onConfirm) == null ? void 0 : _a5.call(this);
+        this.close();
+      }));
+    }
+    new import_obsidian36.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
+  }
+};
+
+// src/org/wanxp/douban/component/DoubanSyncModal.ts
+var DoubanSyncModal = class extends import_obsidian37.Modal {
+  constructor(app, plugin, context) {
+    super(app);
+    this.plugin = plugin;
+    this.context = context;
+  }
+  onOpen() {
+    let { contentEl } = this;
+    this.show(contentEl);
+  }
+  show(contentEl) {
+    contentEl.empty();
+    if (this.plugin.statusHolder.syncing()) {
+      this.showSyncStatus(contentEl);
+    } else {
+      this.showSyncConfig(contentEl);
+    }
+  }
+  showSyncStatus(contentEl) {
+    const { syncStatus } = this.plugin.statusHolder;
+    const { syncConfig } = syncStatus;
+    contentEl.createEl("h3", { text: i18nHelper.getMessage("500002") });
+    this.showConfigPan(contentEl.createDiv("config"), syncConfig, true);
+    const sliderDiv = contentEl.createEl("div");
+    sliderDiv.addClass("obsidian_douban_sync_slider");
+    const controls = contentEl.createDiv("controls");
+    const stopButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110009")).onClick(() => __async(this, null, function* () {
+      this.close();
+      yield this.plugin.statusHolder.stopSync();
+    }));
+    const backgroundButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110010")).onClick(() => {
+      this.close();
+    });
+    this.showProgress(sliderDiv, backgroundButton, stopButton);
+    this.timer = setInterval(() => {
+      this.showProgress(sliderDiv, backgroundButton, stopButton);
+    }, 1e3);
+    backgroundButton.setClass("obsidian_douban_status_button");
+    stopButton.setClass("obsidian_douban_status_button");
+  }
+  showProgress(sliderDiv, backgroundButton, stopButton) {
+    sliderDiv.empty();
+    new import_obsidian37.Setting(sliderDiv);
+    let progress = sliderDiv.createDiv("progress");
+    const { syncStatus } = this.plugin.statusHolder;
+    if (!this.plugin.statusHolder.syncStarted) {
+      progress.innerHTML = `<p>
+    <label for="file">${i18nHelper.getMessage("110033")}</label>
+    <progress class="obsidian_douban_sync_slider" max="${syncStatus.getTotal() == 0 ? 1 : syncStatus.getTotal()}" value="${syncStatus.getHasHandle()}"> </progress> <span> ${syncStatus.getHasHandle()}/${syncStatus.getTotal()}:${i18nHelper.getMessage("110036")}  </span>
+</p>
+<p>
+<label for="file">${i18nHelper.getMessage("110092")}</label>
+<span>${i18nHelper.getMessage("110090", syncStatus.getTypeName(), syncStatus.getScopeName(), syncStatus.getAllTotal(), syncStatus.getTotal())}</span>
+</p>
+<p>
+<label for="file">${i18nHelper.getMessage("110091")}</label>
+<span>${syncStatus.getMessage()}</span>
+</p>
+`;
+      backgroundButton.setDisabled(true);
+      stopButton.setButtonText(i18nHelper.getMessage("110036"));
+      return;
+    }
+    progress.innerHTML = `<p>
+    <label for="file">${i18nHelper.getMessage("110033")}</label>
+    <progress class="obsidian_douban_sync_slider" max="${syncStatus.getTotal() == 0 ? 1 : syncStatus.getTotal()}" value="${syncStatus.getHasHandle()}"> </progress> <span> ${syncStatus.getTotal() == 0 ? i18nHelper.getMessage("110043") : syncStatus.getHasHandle() + "/" + syncStatus.getTotal()}
+${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + TimeUtil.estimateTimeMsg(syncStatus.getNeedHandled() - syncStatus.getHandle(), syncStatus.getOverSize())} </span>
+</p>
+<p>
+<label for="file">${i18nHelper.getMessage("110092")}</label>
+<span>${i18nHelper.getMessage("110090", syncStatus.getTypeName(), syncStatus.getScopeName(), syncStatus.getAllTotal(), syncStatus.getTotal())}</span>
+</p>
+<p>
+<label for="file">${i18nHelper.getMessage("110091")}</label>
+<span>${syncStatus.getMessage()}</span>
+</p>
+`;
+  }
+  showSyncConfig(contentEl) {
+    if (this.timer != null) {
+      (0, import_timers.clearInterval)(this.timer);
+    }
+    contentEl.createEl("h3", { text: i18nHelper.getMessage("500001") });
+    const { settings } = this.plugin;
+    let syncConfig = {
+      syncType: SyncType.movie,
+      scope: ALL,
+      force: false,
+      dataFilePath: settings.dataFilePath == "" || settings.dataFilePath == null ? DEFAULT_SETTINGS.dataFilePath : settings.dataFilePath,
+      dataFileNamePath: settings.dataFileNamePath == "" || settings.dataFileNamePath == null ? DEFAULT_SETTINGS.dataFileNamePath : settings.dataFileNamePath,
+      cacheImage: settings.cacheImage == null ? DEFAULT_SETTINGS.cacheImage : settings.cacheImage,
+      cacheHighQuantityImage: settings.cacheHighQuantityImage == null ? DEFAULT_SETTINGS.cacheHighQuantityImage : settings.cacheHighQuantityImage,
+      overwriteCoverImage: settings.overwriteCoverImage == null ? DEFAULT_SETTINGS.overwriteCoverImage : settings.overwriteCoverImage,
+      attachmentPath: settings.attachmentPath == "" || settings.attachmentPath == null ? DEFAULT_SETTINGS.attachmentPath : settings.attachmentPath,
+      attachmentFileName: settings.attachmentFileName == "" || settings.attachmentFileName == null ? DEFAULT_SETTINGS.attachmentFileName : settings.attachmentFileName,
+      templateFile: this.getDefaultTemplatePath(SyncType.movie),
+      incrementalUpdate: true,
+      inheritOldFields: false,
+      syncConditionType: SyncConditionType.ALL,
+      syncConditionDateFromValue: TimeUtil.getLastMonth(),
+      syncConditionDateToValue: new Date(),
+      syncConditionCountFromValue: 1,
+      syncConditionCountToValue: 30
+    };
+    this.showConfigPan(contentEl.createDiv("config"), syncConfig, false);
+    const controls = contentEl.createDiv("controls");
+    const cancelButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+      this.close();
+    });
+    const previewButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130300")).onClick(() => __async(this, null, function* () {
+      if (!(yield this.plugin.checkLogin(this.context))) {
+        return;
+      }
+      previewButton.setDisabled(true);
+      try {
+        yield this.showPreview(syncConfig, contentEl, syncButton);
+      } finally {
+        previewButton.setDisabled(false);
+      }
+    }));
+    const syncButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110007")).onClick(() => __async(this, null, function* () {
+      if (!(yield this.plugin.checkLogin(this.context))) {
+        return;
+      }
+      if (syncConfig.force) {
+        yield this.showPreview(syncConfig, contentEl, syncButton, true);
+        return;
+      }
+      yield this.startSyncFlow(syncConfig, contentEl, syncButton);
+    }));
+    syncButton.setClass("obsidian_douban_search_button");
+    cancelButton.setClass("obsidian_douban_search_button");
+    previewButton.setClass("obsidian_douban_search_button");
+  }
+  showPreview(syncConfig, contentEl, syncButton, allowStart = false) {
+    return __async(this, null, function* () {
+      try {
+        const previewHandler = new SyncPreviewHandler(this.app, this.plugin);
+        const previewResult = yield previewHandler.preview(syncConfig, __spreadProps(__spreadValues({}, this.context), {
+          syncConfig,
+          syncPreviewMode: true
+        }));
+        new SyncPreviewModal(this.app, previewResult, allowStart ? () => __async(this, null, function* () {
+          yield this.startSyncFlow(syncConfig, contentEl, syncButton);
+        }) : void 0).open();
+      } catch (error) {
+        log.error("Failed to generate sync preview", error);
+        new import_obsidian37.Notice(i18nHelper.getMessage("130311"));
+      }
+    });
+  }
+  startSyncFlow(syncConfig, contentEl, syncButton) {
+    return __async(this, null, function* () {
+      syncButton.setDisabled(true);
+      if (!this.plugin.statusHolder.startSync(syncConfig)) {
+        syncButton.setDisabled(false);
+        return;
+      }
+      this.updateContextByConfig(syncConfig);
+      this.show(contentEl);
+      yield this.plugin.sync(this.context);
+    });
+  }
+  updateContextByConfig(syncConfig) {
+    const { context } = this;
+    context.syncConfig = syncConfig;
+    context.syncActive = true;
+  }
+  showConfigPan(contentEl, config, disable) {
+    new import_obsidian37.Setting(contentEl);
+    this.showTypeDropdown(contentEl, config, disable);
+    this.showCondition(contentEl, config, disable);
+    this.showUpdateAllConfig(contentEl, config, disable);
+    const forceConfigContainer = contentEl.createDiv("sync-force-config");
+    this.renderForceRelatedConfigs(forceConfigContainer, config, disable);
+  }
+  renderForceRelatedConfigs(containerEl, config, disable) {
+    containerEl.empty();
+    this.showForceUpdateConfig(containerEl, config, disable, () => {
+      this.renderForceRelatedConfigs(containerEl, config, disable);
+    });
+    this.showInheritOldFieldsConfig(containerEl, config, disable, () => {
+      this.renderForceRelatedConfigs(containerEl, config, disable);
+    });
+  }
+  onClose() {
+    return __async(this, null, function* () {
+      let { contentEl } = this;
+      contentEl.empty();
+      if (this.timer != null) {
+        (0, import_timers.clearInterval)(this.timer);
+      }
+    });
+  }
+  openScopeDropdown(contentEl, config, disable) {
+    switch (config.syncType) {
+      case SyncType.movie:
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_MOVIE_SYNC, config, disable);
+        break;
+      case SyncType.book:
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_BOOK_SYNC, config, disable);
+        break;
+      case SyncType.broadcast:
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_BROADCAST_SYNC, config, disable);
+        break;
+      case SyncType.note:
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_NOTE_SYNC, config, disable);
+        break;
+      case SyncType.music:
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_MUSIC_SYNC, config, disable);
+        break;
+      case SyncType.teleplay:
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_TELEPLAY_SYNC, config, disable);
+        break;
+      case SyncType.game:
+        config.scope = DoubanSubjectState.collect;
+        this.showScopeDropdown(contentEl, DoubanSubjectStateRecords_GAME_SYNC, config, disable);
+        break;
+    }
+  }
+  showTypeDropdown(containerEl, config, disable) {
+    const settings = new import_obsidian37.Setting(containerEl);
+    const scopeSelections = containerEl.createDiv("scope-selection");
+    settings.setName(i18nHelper.getMessage("110030")).addDropdown((dropdown) => {
+      dropdown.addOptions(SyncTypeRecords).setValue(config.syncType).onChange((value) => {
+        config.syncType = value;
+        config.templateFile = this.getDefaultTemplatePath(value);
+        this.openScopeDropdown(scopeSelections, config, disable);
+      });
+    }).setDisabled(disable);
+    this.openScopeDropdown(scopeSelections, config, disable);
+  }
+  getDefaultTemplatePath(value) {
+    const { settings } = this.plugin;
+    const raw = value === SyncType.movie ? settings.movieTemplateConfig : value === SyncType.book ? settings.bookTemplateConfig : value === SyncType.music ? settings.musicTemplateConfig : value === SyncType.teleplay ? settings.teleplayTemplateConfig : value === SyncType.game ? settings.gameTemplateConfig : void 0;
+    if (!raw)
+      return "";
+    if (typeof raw === "string")
+      return raw;
+    if (raw.source === "file" && raw.filePath)
+      return raw.filePath;
+    return "";
+  }
+  showScopeDropdown(containerEl, scopeSelections, config, disable) {
+    containerEl.empty();
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110032")).addDropdown((dropdown) => {
+      dropdown.addOptions(scopeSelections);
+      dropdown.setValue(config.scope).onChange((value) => __async(this, null, function* () {
+        config.scope = value;
+      }));
+    }).setDisabled(disable);
+  }
+  showOutiFleName(containerEl, config, disable) {
+    const dataFilePathSetting = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121601")).setDesc(i18nHelper.getMessage("121602")).addText((textField) => {
+      textField.setPlaceholder(i18nHelper.getMessage("121602")).setValue(config.dataFileNamePath).onChange((value) => __async(this, null, function* () {
+        config.dataFileNamePath = value;
+      }));
+    }).setDisabled(disable);
+  }
+  showOutputFolderSelections(containerEl, config, disable) {
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121501")).setDesc(i18nHelper.getMessage("121502")).addSearch((search) => __async(this, null, function* () {
+      new PathSuggest(this.app, search.inputEl, "folder");
+      search.setValue(config.dataFilePath).setPlaceholder(i18nHelper.getMessage("121503")).onChange((value) => __async(this, null, function* () {
+        config.dataFilePath = value;
+      }));
+    })).setDisabled(disable);
+  }
+  showTemplateFileSelectionSetting(containerEl, config, disable) {
+    containerEl.empty();
+    const key = this.getKey(config.syncType);
+    let setting = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121101")).setDesc(i18nHelper.getMessage("121102")).addSearch((search) => __async(this, null, function* () {
+      new PathSuggest(this.app, search.inputEl, "file");
+      search.setValue(config.templateFile).onChange((value) => __async(this, null, function* () {
+        config.templateFile = value;
+      }));
+    })).setDisabled(disable);
+    setting.addExtraButton((button) => {
+      button.setIcon("copy").setTooltip(i18nHelper.getMessage("121903")).onClick(() => __async(this, null, function* () {
+        navigator.clipboard.writeText(getDefaultTemplateContent(key));
+      }));
+    });
+    setting.addExtraButton((button) => {
+      button.setIcon("document").setTooltip(i18nHelper.getMessage("121901")).onClick(() => __async(this, null, function* () {
+        navigator.clipboard.writeText(getDefaultTemplateContent(key, false));
+      }));
+    });
+  }
+  getKey(supportType) {
+    return supportType + "TemplateFile";
+  }
+  showForceUpdateConfig(containerEl, config, disable, onToggle) {
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110031")).setDesc(i18nHelper.getMessage("500110")).addToggle((toggleComponent) => {
+      toggleComponent.setValue(config.force).onChange((value) => __async(this, null, function* () {
+        config.force = value;
+        onToggle && onToggle();
+      }));
+    }).setDisabled(disable);
+  }
+  showInheritOldFieldsConfig(containerEl, config, disable, onToggle) {
+    const setting = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110097")).setDesc(i18nHelper.getMessage("110098")).setDisabled(disable || !config.force);
+    setting.addToggle((toggleComponent) => {
+      toggleComponent.setValue(!!config.inheritOldFields).onChange((value) => __async(this, null, function* () {
+        config.inheritOldFields = value;
+        onToggle && onToggle();
+      }));
+    });
+  }
+  showAttachmentsFileConfig(containerEl, config, disable) {
+    const settings = new import_obsidian37.Setting(containerEl);
+    let attachmentFileEl = containerEl.createDiv("attachment-file-path-selection");
+    settings.setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
+      toggleComponent.setValue(config.cacheImage).onChange((value) => __async(this, null, function* () {
+        config.cacheImage = value;
+        this.showAttachmentPathSelections(value, attachmentFileEl, config, disable);
+      }));
+    }).setDisabled(disable);
+    this.showAttachmentPathSelections(config.cacheImage, attachmentFileEl, config, disable);
+  }
+  showAttachmentPathSelections(show, containerEl, config, disable) {
+    containerEl.empty();
+    if (!show) {
+      return;
+    }
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121432")).setDesc(i18nHelper.getMessage("121433")).addSearch((search) => __async(this, null, function* () {
+      new PathSuggest(this.plugin.app, search.inputEl, "folder");
+      search.setValue(config.attachmentPath).setPlaceholder(i18nHelper.getMessage("121434")).onChange((value) => __async(this, null, function* () {
+        config.attachmentPath = value;
+      }));
+    })).setDisabled(disable);
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121452")).setDesc(i18nHelper.getMessage("121453")).addSearch((search) => __async(this, null, function* () {
+      new PathSuggest(this.plugin.app, search.inputEl, "folder");
+      search.setValue(config.attachmentFileName).setPlaceholder(i18nHelper.getMessage("121454")).onChange((value) => __async(this, null, function* () {
+        config.attachmentFileName = value;
+      }));
+    })).setDisabled(disable);
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121438")).addToggle((toggleComponent) => {
+      toggleComponent.setValue(config.cacheHighQuantityImage).onChange((value) => __async(this, null, function* () {
+        config.cacheHighQuantityImage = value;
+      }));
+    }).setDisabled(disable);
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
+      toggleComponent.setValue(config.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
+        config.overwriteCoverImage = value;
+      }));
+    }).setDisabled(disable);
+  }
+  showUpdateAllConfig(containerEl, config, disable) {
+    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110039")).setDesc(i18nHelper.getMessage("110040")).addToggle((toggleComponent) => {
+      toggleComponent.setTooltip(i18nHelper.getMessage("110040")).setValue(config.incrementalUpdate).onChange((value) => __async(this, null, function* () {
+        config.incrementalUpdate = value;
+      }));
+    }).setDisabled(disable);
+  }
+  showCondition(contentEl, config, disable) {
+    showConditionItem(contentEl.createDiv("sync-douban-condition"), this.plugin.settingsManager, config, disable);
+  }
+};
+function showConditionItem(containerEl, manager, config, disable) {
+  containerEl.empty();
+  const condition = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110070"));
+  const conditionDesc = condition.descEl.createDiv("sync-douban-condition-desc");
+  new import_obsidian37.DropdownComponent(conditionDesc).addOptions(SyncConditionTypeRecords).setValue(config.syncConditionType).onChange((value) => {
+    config.syncConditionType = value;
+    showConditionItem(containerEl, manager, config, disable);
+  }).setDisabled(disable);
+  showConditionItemInput(conditionDesc, config, disable);
+}
+function showConditionItemInput(containerEl, config, disable) {
+  if (config.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
+    showCustomInputCount(containerEl, config, disable);
+  } else if (config.syncConditionType == SyncConditionType.CUSTOM_TIME) {
+    showCustomInputTime(containerEl, config, disable);
+  }
+}
+function showCustomInputCount(containerEl, config, disable) {
+  containerEl.createEl("span", { text: "   " });
+  containerEl.createEl("span", { text: i18nHelper.getMessage("110077") });
+  containerEl.createEl("span", { text: i18nHelper.getMessage("110078") });
+  const fromField = new import_obsidian37.TextComponent(containerEl);
+  fromField.setPlaceholder(i18nHelper.getMessage("110080")).setValue(config.syncConditionCountFromValue + "").onChange((value) => __async(this, null, function* () {
+    if (!value) {
+      config.syncConditionCountFromValue = 1;
+      return;
+    }
+    try {
+      config.syncConditionCountFromValue = parseInt(value);
+    } catch (e) {
+      log.notice(i18nHelper.getMessage("112080"));
+    }
+  })).setDisabled(disable);
+  let fromEl = fromField.inputEl;
+  fromEl.addClass("obsidian_douban_settings_input");
+  fromEl.style.width = "20%";
+  containerEl.appendChild(fromEl);
+  const lang2 = window.localStorage.getItem("language") || "en";
+  if (lang2 === "zh" || lang2 === "zh-CN" || lang2 === "zh-TW") {
+    containerEl.createEl("span", { text: i18nHelper.getMessage("110073") });
+  }
+  containerEl.createEl("span", { text: i18nHelper.getMessage("110079") });
+  containerEl.createEl("span", { text: i18nHelper.getMessage("110078") });
+  const toField = new import_obsidian37.TextComponent(containerEl);
+  toField.setPlaceholder(i18nHelper.getMessage("110080")).setValue(config.syncConditionCountToValue + "").onChange((value) => __async(this, null, function* () {
+    if (!value) {
+      config.syncConditionCountToValue = 30;
+      return;
+    }
+    try {
+      config.syncConditionCountToValue = parseInt(value);
+    } catch (e) {
+      log.notice(i18nHelper.getMessage("112080"));
+    }
+  })).setDisabled(disable);
+  let toEl = toField.inputEl;
+  toEl.addClass("obsidian_douban_settings_input");
+  toEl.style.width = "20%";
+  containerEl.appendChild(toEl);
+  if (lang2 === "zh" || lang2 === "zh-CN" || lang2 === "zh-TW") {
+    containerEl.createEl("span", { text: i18nHelper.getMessage("110073") });
+  }
+  containerEl.createEl("span", { text: "  " });
+  const buttopn = new import_obsidian37.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
+  containerEl.appendChild(buttopn.buttonEl);
+}
+function showCustomInputTime(containerEl, config, disable) {
+  containerEl.createEl("span", { text: i18nHelper.getMessage("110077") });
+  const fromDateField = new import_obsidian37.TextComponent(containerEl);
+  const fromDateEl = fromDateField.inputEl;
+  fromDateEl.type = "date";
+  fromDateEl.value = config.syncConditionDateFromValue ? config.syncConditionDateFromValue.toISOString().substring(0, 10) : TimeUtil.getLastMonth().toISOString().substring(0, 10);
+  fromDateField.setPlaceholder(i18nHelper.getMessage("110075")).setValue(config.syncConditionDateFromValue ? config.syncConditionDateFromValue.toISOString().substring(0, 10) : TimeUtil.getLastMonth().toISOString().substring(0, 10)).onChange((value) => __async(this, null, function* () {
+    if (!value) {
+      return;
+    }
+    try {
+      config.syncConditionDateFromValue = new Date(value);
+    } catch (e) {
+      log.notice(i18nHelper.getMessage("110082"));
+    }
+  })).setDisabled(disable);
+  fromDateEl.addClass("obsidian_douban_settings_input");
+  containerEl.appendChild(fromDateEl);
+  containerEl.createEl("span", { text: i18nHelper.getMessage("110079") });
+  const toDateField = new import_obsidian37.TextComponent(containerEl);
+  let toDateEl = toDateField.inputEl;
+  toDateEl.type = "date";
+  toDateEl.value = config.syncConditionDateToValue ? config.syncConditionDateToValue.toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
+  toDateField.setPlaceholder(i18nHelper.getMessage("110075")).setValue(config.syncConditionDateToValue ? config.syncConditionDateToValue.toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10)).onChange((value) => __async(this, null, function* () {
+    if (!value) {
+      return;
+    }
+    try {
+      config.syncConditionDateToValue = new Date(value);
+    } catch (e) {
+      log.notice(i18nHelper.getMessage("110082"));
+    }
+  })).setDisabled(disable);
+  toDateEl.addClass("obsidian_douban_settings_input");
+  containerEl.appendChild(toDateEl);
+  new import_obsidian37.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
+}
+
 // src/org/wanxp/douban/model/GlobalStatusHolder.ts
+var import_obsidian38 = __toModule(require("obsidian"));
 var GlobalStatusHolder = class {
   constructor(app, plugin) {
     this._app = app;
@@ -25661,7 +26816,7 @@ var GlobalStatusHolder = class {
   startSync(syncConfigOut) {
     if (this.syncStarted) {
       const { syncConfig } = this.syncStatus;
-      new import_obsidian35.Notice(i18nHelper.getMessage("110008"), SyncTypeRecords[syncConfig.syncType], DoubanSubjectState[syncConfig.scope]);
+      new import_obsidian38.Notice(i18nHelper.getMessage("110008"), SyncTypeRecords[syncConfig.syncType], DoubanSubjectState[syncConfig.scope]);
       return false;
     }
     this.syncStatus = new SyncStatusHolder(syncConfigOut, this._app);
@@ -26050,9 +27205,13 @@ var SettingsManager = class {
     this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
     this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
     this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
+    this.settings.syncBackupBeforeReplace = DEFAULT_SETTINGS.syncBackupBeforeReplace;
+    this.settings.syncBackupFolder = DEFAULT_SETTINGS.syncBackupFolder;
+    this.settings.includeSensitiveInSettingExport = DEFAULT_SETTINGS.includeSensitiveInSettingExport;
+    this.settings.dataProtection = DEFAULT_SETTINGS.dataProtection;
   }
   clearLoginInfo() {
-    this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginHeadersContent;
+    this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginCookiesContent;
     this.settings.loginHeadersContent = DEFAULT_SETTINGS.loginHeadersContent;
   }
   clearSyncCache() {
@@ -26061,7 +27220,8 @@ var SettingsManager = class {
   loadAndSaveSettings(config) {
     return __async(this, null, function* () {
       this.validateSettings(config);
-      this.settings = Object.assign({}, config);
+      this.settings = sanitizeImportedSettings(config);
+      this.plugin.settings = this.settings;
       yield this.plugin.saveSettings();
     });
   }
@@ -26073,493 +27233,13 @@ var SettingsManager = class {
   getSettings() {
     return this.settings;
   }
-};
-
-// src/org/wanxp/douban/sync/handler/SyncHandler.ts
-var import_obsidian36 = __toModule(require("obsidian"));
-
-// src/org/wanxp/douban/sync/handler/DoubanAbstractSyncHandler.ts
-function toDateList(dataList) {
-  const dateList = dataList.map((item) => item.updateDate).sort((a, b) => {
-    try {
-      return a.getTime() - b.getTime();
-    } catch (e) {
-    }
-    return 0;
-  });
-  return dateList;
-}
-var DoubanAbstractSyncHandler = class {
-  constructor(plugin, doubanSubjectLoadHandler, doubanListHandlers) {
-    this.plugin = plugin;
-    this.doubanSubjectLoadHandler = doubanSubjectLoadHandler;
-    this.doubanListHandlers = doubanListHandlers;
-  }
-  support(t) {
-    return this.getSyncType() == t;
-  }
-  sync(syncConfig, context) {
-    return __async(this, null, function* () {
-      if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
-        yield this.syncByTimeLimit(syncConfig, context);
-      } else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
-        yield this.syncByCountLimit(syncConfig, context);
-      } else if (syncConfig.syncConditionType == SyncConditionType.ALL) {
-        yield this.syncAll(syncConfig, context);
-      } else if (syncConfig.syncConditionType == SyncConditionType.LAST_THIRTY) {
-        yield this.syncLastThirty(syncConfig, context);
-      } else {
-        log.warn(i18nHelper.getMessage("110083"));
-      }
-    });
-  }
-  getByTimeLimit(syncConfig, context) {
-    return __async(this, null, function* () {
-      const startDate = syncConfig.syncConditionDateFromValue ? new Date(syncConfig.syncConditionDateFromValue) : null;
-      const endDate = syncConfig.syncConditionDateToValue ? new Date(syncConfig.syncConditionDateToValue) : null;
-      if (!startDate && !endDate) {
-        log.warn(i18nHelper.getMessage("110081"));
-        return;
-      }
-      const cacheList = new Map();
-      const searchPage = yield this.getItems(syncConfig, context);
-      if (!searchPage) {
-        return;
-      }
-      const total = searchPage.total;
-      const lastPage = total / PAGE_SIZE + 1;
-      if (lastPage == 1) {
-        return searchPage.list;
-      }
-      let leftPage = 1;
-      let startPage = 1;
-      let rightPage = lastPage;
-      let endPage = lastPage;
-      let currentPage = 1;
-      cacheList.set(currentPage, searchPage);
-      if (startDate != null) {
-        do {
-          if (!context.plugin.statusHolder.syncing()) {
-            break;
-          }
-          let page = cacheList.get(currentPage);
-          if (!page) {
-            page = yield this.getItems(syncConfig, context);
-            if (!page) {
-              break;
-            }
-            cacheList.set(currentPage, page);
-          }
-          const pageItems = page.list;
-          const pageDateList = toDateList(pageItems);
-          if (pageDateList[pageDateList.length - 1] >= startDate) {
-            leftPage = currentPage;
-            endPage = currentPage;
-            currentPage = Math.ceil((leftPage + rightPage) / 2);
-          } else {
-            rightPage = currentPage;
-            endPage = currentPage;
-            currentPage = Math.floor((leftPage + rightPage) / 2);
-          }
-          if (currentPage == leftPage || currentPage == rightPage) {
-            break;
-          }
-        } while (currentPage < lastPage);
-      }
-      leftPage = 1;
-      rightPage = lastPage;
-      currentPage = 1;
-      if (endDate != null) {
-        do {
-          if (!context.plugin.statusHolder.syncing()) {
-            break;
-          }
-          let page = cacheList.get(currentPage);
-          if (!page) {
-            page = yield this.getItems(syncConfig, context);
-            if (!page) {
-              break;
-            }
-            cacheList.set(currentPage, page);
-          }
-          const pageItems = page.list;
-          const pageDateList = toDateList(pageItems);
-          if (pageDateList[0] <= endDate) {
-            rightPage = currentPage;
-            startPage = currentPage;
-            currentPage = Math.ceil((leftPage + rightPage) / 2);
-          } else {
-            leftPage = currentPage;
-            startPage = currentPage;
-            currentPage = Math.floor((leftPage + rightPage) / 2);
-          }
-          if (currentPage == leftPage || currentPage == rightPage) {
-            break;
-          }
-        } while (currentPage < lastPage);
-      }
-      let needHandleItems = [];
-      for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-        if (!context.plugin.statusHolder.syncing()) {
-          break;
-        }
-        let page = cacheList.get(pageNum);
-        if (!page) {
-          page = yield this.getItems(syncConfig, context);
-          if (!page) {
-            break;
-          }
-          cacheList.set(pageNum, page);
-        }
-        const pageItems = page.list;
-        needHandleItems = needHandleItems.concat(pageItems.filter((item) => {
-          const itemDate = item.updateDate;
-          return (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
-        }));
-      }
-      return needHandleItems;
-    });
-  }
-  syncByTimeLimit(syncConfig, context) {
-    return __async(this, null, function* () {
-      const items = yield this.getByTimeLimit(syncConfig, context);
-      if (!items || items.length == 0) {
-        return;
-      }
-      const subjectListItems = yield this.removeExists(items, syncConfig, context);
-      const searchPage = new SearchPageTypeOf(subjectListItems.length, 1, subjectListItems.length, null, subjectListItems);
-      yield this.handleItems(searchPage, subjectListItems, context);
-    });
-  }
-  getItems(syncConfig, context) {
-    return __async(this, null, function* () {
-      const supportHandlers = this.doubanListHandlers.filter((h) => h.support(syncConfig));
-      const handler = supportHandlers[0];
-      if (!context.plugin.statusHolder.syncing()) {
-        return SearchPage.emptyWithNoType();
-      }
-      const item = yield handler.getPageData(context);
-      if (!context.plugin.statusHolder.syncing()) {
-        return SearchPage.emptyWithNoType();
-      }
-      return item;
-    });
-  }
-  removeExists(items, syncConfig, context) {
-    return __async(this, null, function* () {
-      if (!context.plugin.statusHolder.syncing()) {
-        return [];
-      }
-      return items;
-    });
-  }
-  handleItems(searchPage, items, context) {
-    return __async(this, null, function* () {
-      if (!items || items.length == 0) {
-        return;
-      }
-      const { syncStatus } = context.syncStatusHolder;
-      const { syncConfig } = context;
-      syncStatus.totalNum(searchPage.total);
-      const needHandled = syncStatus.getTotal() - syncStatus.getHasHandle();
-      syncStatus.setNeedHandled(needHandled);
-      const dataFilePath = (syncConfig == null ? void 0 : syncConfig.dataFilePath) || "";
-      yield syncStatus.buildExistingFilesCache(dataFilePath);
-      for (const item of items) {
-        if (!context.plugin.statusHolder.syncing()) {
-          return;
-        }
-        try {
-          if (syncStatus.shouldSync(item.id)) {
-            const localExists = syncStatus.checkLocalExists(item.id);
-            if (localExists && !syncConfig.force) {
-              syncStatus.exists(item.id, item.title, syncStatus.getExistingFilePath(item.id));
-            } else {
-              yield this.doubanSubjectLoadHandler.handle(item.id, context);
-              yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
-            }
-          } else {
-            syncStatus.unHandle(item.id, item.title);
-          }
-        } catch (e) {
-          log.error(`Failed to sync item ${item.id}: ${e}`, e);
-          log.notice(i18nHelper.getMessage("130120"));
-          syncStatus.fail(item.id, item.title);
-        }
-      }
-    });
-  }
-  syncByCountLimit(syncConfig, context) {
-    return __async(this, null, function* () {
-      const { syncConditionCountFromValue, syncConditionCountToValue } = syncConfig;
-      const startOffset = Math.floor((syncConditionCountFromValue - 1) / PAGE_SIZE) * PAGE_SIZE;
-      context.syncOffset = startOffset;
-      let endOffsetNumberForCustom = 0;
-      let needHandleTotalCustomItem = 0;
-      let isFirstStep = true;
-      let handleCount = 0;
-      do {
-        const searchPage = yield this.getItems(syncConfig, context);
-        if (!context.plugin.statusHolder.syncing()) {
-          break;
-        }
-        const { list, total } = searchPage;
-        if (!searchPage || !list || list.length == 0) {
-          break;
-        }
-        if (syncConditionCountFromValue > total) {
-          context.syncStatusHolder.syncStatus.setMessage(i18nHelper.getMessage("130121", total));
-          break;
-        }
-        if (endOffsetNumberForCustom == 0) {
-          endOffsetNumberForCustom = Math.min(syncConditionCountToValue ? syncConditionCountToValue : searchPage.total, searchPage.total);
-          needHandleTotalCustomItem = endOffsetNumberForCustom - syncConditionCountFromValue + 1;
-        }
-        let subjectListItems = [];
-        if (Math.floor((syncConditionCountFromValue - 1) / PAGE_SIZE) == Math.floor((endOffsetNumberForCustom - 1) / PAGE_SIZE)) {
-          const startIndex = Math.floor((syncConditionCountFromValue - 1) % PAGE_SIZE);
-          const endIndex = Math.floor((endOffsetNumberForCustom - 1) % PAGE_SIZE);
-          subjectListItems = yield this.removeExists(list.slice(startIndex, endIndex + 1), syncConfig, context);
-          handleCount += endIndex - startIndex + 1;
-        } else if (isFirstStep) {
-          const startIndex = (syncConditionCountFromValue - 1) % PAGE_SIZE;
-          handleCount += list.length - startIndex;
-          subjectListItems = yield this.removeExists(list.slice(startIndex), syncConfig, context);
-          isFirstStep = false;
-        } else if (needHandleTotalCustomItem - handleCount <= PAGE_SIZE) {
-          const endIndex = needHandleTotalCustomItem - handleCount;
-          subjectListItems = yield this.removeExists(list.slice(0, endIndex), syncConfig, context);
-          handleCount += endIndex;
-        } else {
-          subjectListItems = yield this.removeExists(list, syncConfig, context);
-          handleCount += PAGE_SIZE;
-        }
-        if (!subjectListItems || subjectListItems.length == 0) {
-          yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
-          continue;
-        }
-        searchPage.total = needHandleTotalCustomItem;
-        yield this.handleItems(searchPage, subjectListItems, context);
-        context.syncOffset = context.syncOffset + PAGE_SIZE;
-        yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
-      } while (handleCount < needHandleTotalCustomItem);
-    });
-  }
-  syncAll(syncConfig, context) {
-    return __async(this, null, function* () {
-      context.syncOffset = 0;
-      let handleCount = 0;
-      let totalForHandle = 0;
-      let isFirstStep = true;
-      do {
-        const searchPage = yield this.getItems(syncConfig, context);
-        if (!context.plugin.statusHolder.syncing()) {
-          break;
-        }
-        const { list, total } = searchPage;
-        if (!searchPage || !list || list.length == 0) {
-          break;
-        }
-        if (isFirstStep) {
-          totalForHandle = total;
-          isFirstStep = false;
-        }
-        handleCount += list.length;
-        const subjectListItems = yield this.removeExists(list, syncConfig, context);
-        if (!subjectListItems || subjectListItems.length == 0) {
-          yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
-          continue;
-        }
-        yield this.handleItems(searchPage, subjectListItems, context);
-        context.syncOffset = context.syncOffset + PAGE_SIZE;
-        yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
-      } while (handleCount <= totalForHandle);
-    });
-  }
-  syncLastThirty(syncConfig, context) {
-    return __async(this, null, function* () {
-      context.syncOffset = 0;
-      const searchPage = yield this.getItems(syncConfig, context);
-      if (!context.plugin.statusHolder.syncing()) {
-        return;
-      }
-      const { list, total } = searchPage;
-      if (!searchPage || !list || list.length == 0) {
-        return;
-      }
-      const subjectListItems = yield this.removeExists(list, syncConfig, context);
-      if (!subjectListItems || subjectListItems.length == 0) {
-        return;
-      }
-      searchPage.total = Math.min(list.length, total);
-      yield this.handleItems(searchPage, subjectListItems, context);
-    });
-  }
-};
-
-// src/org/wanxp/douban/sync/handler/DoubanOtherSyncHandler.ts
-var DoubanOtherSyncHandler = class extends DoubanAbstractSyncHandler {
-  constructor(plugin) {
-    super(plugin, new DoubanOtherLoadHandler(plugin), []);
-  }
-  getSyncType() {
-    throw new Error("\u6682\u4E0D\u652F\u6301\u540C\u6B65\u8FD9\u7C7B\u578B\u7684\u6570\u636E");
-  }
-  support(t) {
-    throw new Error("Method not implemented.");
-  }
-  sync(syncConfig, context) {
-    return __async(this, null, function* () {
-      return Promise.resolve();
-    });
-  }
-};
-
-// src/org/wanxp/constant/Douban.ts
-var doubanSubjectSyncListUrl = function(subjectType, userId, doType, start2) {
-  return `https://${subjectType}.douban.com/people/${userId}/${doType}?start=${start2}&sort=time&rating=all&filter=all&mode=list`;
-};
-
-// src/org/wanxp/douban/sync/handler/list/DoubanAbstractListHandler.ts
-var DoubanAbstractListHandler = class {
-  getPageData(context) {
-    return __async(this, null, function* () {
-      let all = [];
-      let pages = SearchPage.emptyWithNoType();
-      const url = this.getUrl(context, context.syncOffset);
-      if (!context.plugin.statusHolder.syncing()) {
-        return SearchPage.emptyWithNoType();
-      }
-      let subjectListItemSearchPageTypeOf = yield this.getPageList(url, context);
-      if (subjectListItemSearchPageTypeOf) {
-        context.plugin.statusHolder.syncStatus.setAllTotal(subjectListItemSearchPageTypeOf.total);
-      }
-      return subjectListItemSearchPageTypeOf;
-    });
-  }
-  delay(ms) {
-    return __async(this, null, function* () {
-    });
-  }
-  getUrl(context, start2) {
-    return doubanSubjectSyncListUrl(this.getSyncTypeDomain(), context.userComponent.getUserId(), this.getDoType(), start2);
-  }
-  getSyncTypeDomain() {
-    return SyncTypeUrlDomain.get(this.getSyncType());
-  }
-  getPageList(url, context) {
-    return __async(this, null, function* () {
-      return DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager).then(load).then((data2) => this.parseSubjectFromHtml(data2, context)).catch((e) => log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e));
-    });
-  }
-  parseSubjectFromHtml(dataHtml, context) {
-    const items = dataHtml(".item-show").get().map((i) => {
-      const item = dataHtml(i);
-      const linkValue = item.find("div.title > a").attr("href");
-      const titleValue = item.find("div.title > a").text().trim();
-      const updateDateStr = item.find("div.date").text().trim();
-      let updateDate = null;
-      try {
-        updateDate = new Date(updateDateStr);
-      } catch (e) {
-        console.error(e);
-        log.info("parse date error:" + titleValue);
-      }
-      let idPattern = /(\d){5,10}/g;
-      let ececResult = idPattern.exec(linkValue);
-      return !ececResult ? null : { id: ececResult[0], url: linkValue, title: titleValue, updateDate };
-    });
-    const subjectNumText = dataHtml(".subject-num").text().trim();
-    const totalNumMatch = subjectNumText.match(/\/\s*(\d+)/);
-    const totalNum = totalNumMatch ? parseInt(totalNumMatch[1], 10) : 0;
-    return new SearchPage(totalNum, Math.floor(context.syncOffset / PAGE_SIZE) + 1, PAGE_SIZE, null, items);
-  }
-  support(config) {
-    return this.getDoType() == config.scope || ALL == config.scope;
-  }
-  static create(syncType, doType) {
-    return new class extends DoubanAbstractListHandler {
-      getSyncType() {
-        return syncType;
-      }
-      getDoType() {
-        return doType;
-      }
-    }();
-  }
-};
-
-// src/org/wanxp/douban/sync/handler/DoubanMovieSyncHandler.ts
-var DoubanMovieSyncHandler = class extends DoubanAbstractSyncHandler {
-  constructor(plugin) {
-    super(plugin, new DoubanMovieLoadHandler(plugin), [
-      DoubanAbstractListHandler.create(SyncType.movie, DoubanSubjectState.collect),
-      DoubanAbstractListHandler.create(SyncType.movie, DoubanSubjectState.wish),
-      DoubanAbstractListHandler.create(SyncType.movie, DoubanSubjectState.do)
-    ]);
-  }
-  getSyncType() {
-    return SyncType.movie;
-  }
-};
-
-// src/org/wanxp/douban/sync/handler/DoubanMusicSyncHandler.ts
-var DoubanMusicSyncHandler = class extends DoubanAbstractSyncHandler {
-  getSyncType() {
-    return SyncType.music;
-  }
-  constructor(plugin) {
-    super(plugin, new DoubanMusicLoadHandler(plugin), [
-      DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.collect),
-      DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.wish),
-      DoubanAbstractListHandler.create(SyncType.music, DoubanSubjectState.do)
-    ]);
-  }
-};
-
-// src/org/wanxp/douban/sync/handler/DoubanBookSyncHandler.ts
-var DoubanBookSyncHandler = class extends DoubanAbstractSyncHandler {
-  constructor(plugin) {
-    super(plugin, new DoubanBookLoadHandler(plugin), [
-      DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.collect),
-      DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.wish),
-      DoubanAbstractListHandler.create(SyncType.book, DoubanSubjectState.do)
-    ]);
-  }
-  getSyncType() {
-    return SyncType.book;
-  }
-};
-
-// src/org/wanxp/douban/sync/handler/DoubanTeleplaySyncHandler.ts
-var DoubanTeleplaySyncHandler = class extends DoubanAbstractSyncHandler {
-  constructor(plugin) {
-    super(plugin, new DoubanTeleplayLoadHandler(plugin), [
-      DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.collect),
-      DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.wish),
-      DoubanAbstractListHandler.create(SyncType.teleplay, DoubanSubjectState.do)
-    ]);
-  }
-  getSyncType() {
-    return SyncType.teleplay;
-  }
-};
-
-// src/org/wanxp/douban/sync/handler/DoubanGameSyncHandler.ts
-var DoubanGameSyncHandler = class extends DoubanAbstractSyncHandler {
-  constructor(plugin) {
-    super(plugin, new DoubanGameLoadHandler(plugin), [
-      DoubanAbstractListHandler.create(SyncType.game, DoubanSubjectState.collect),
-      DoubanAbstractListHandler.create(SyncType.game, DoubanSubjectState.wish),
-      DoubanAbstractListHandler.create(SyncType.game, DoubanSubjectState.do)
-    ]);
-  }
-  getSyncType() {
-    return SyncType.game;
+  getSettingsExportData(includeSensitive = false) {
+    return buildSettingsExportData(this.settings, includeSensitive);
   }
 };
 
 // src/org/wanxp/douban/sync/handler/SyncHandler.ts
+var import_obsidian39 = __toModule(require("obsidian"));
 var SyncHandler = class {
   constructor(app, plugin, syncConfig, context) {
     this.app = app;
@@ -26652,6 +27332,20 @@ var SyncHandler = class {
           details += "\n";
         }
       }
+      const reportTime = (0, import_obsidian39.moment)(new Date()).format("YYYYMMDDHHmmss");
+      const reportPath = `${this.plugin.fileHandler.getTmpPath()}/sync-report-${reportTime}.json`;
+      yield this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        condition: {
+          type: syncStatus.getTypeName(),
+          scope: syncStatus.getScopeName(),
+          syncCondition: syncStatus.getSyncConditionName(),
+          incrementalUpdate: syncConfig.incrementalUpdate,
+          force: syncConfig.force
+        },
+        summary: Object.fromEntries(statusHandleMap.entries()),
+        results: Array.from(syncResultMap.values())
+      }, null, 2));
       let analysis = "";
       try {
         const folderPath = this.syncConfig.dataFilePath || "";
@@ -26700,8 +27394,13 @@ var SyncHandler = class {
         }
       } catch (_) {
       }
-      const result = i18nHelper.getMessage("110037", condition, summary, details + analysis);
-      const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian36.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
+      const result = i18nHelper.getMessage("110037", condition, summary, `${details + analysis}
+
+### \u8C03\u8BD5\u62A5\u544A
+
+- JSON: \`${reportPath}\`
+`);
+      const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian39.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
       yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
     });
   }
@@ -26859,13 +27558,13 @@ var UserComponent = class {
 };
 
 // src/org/wanxp/douban/note/DoubanNoteManager.ts
-var import_obsidian39 = __toModule(require("obsidian"));
+var import_obsidian42 = __toModule(require("obsidian"));
 
 // src/org/wanxp/utils/FrontmatterUtil.ts
-var import_obsidian37 = __toModule(require("obsidian"));
+var import_obsidian40 = __toModule(require("obsidian"));
 function getFileFrontmatter(app, filePath) {
   const file = app.vault.getAbstractFileByPath(filePath);
-  if (!(file instanceof import_obsidian37.TFile)) {
+  if (!(file instanceof import_obsidian40.TFile)) {
     return null;
   }
   const cache = app.metadataCache.getFileCache(file);
@@ -26876,8 +27575,8 @@ function getFileFrontmatter(app, filePath) {
 }
 
 // src/org/wanxp/douban/note/NoteSelectModal.ts
-var import_obsidian38 = __toModule(require("obsidian"));
-var NoteSelectModal = class extends import_obsidian38.FuzzySuggestModal {
+var import_obsidian41 = __toModule(require("obsidian"));
+var NoteSelectModal = class extends import_obsidian41.FuzzySuggestModal {
   constructor(plugin) {
     super(plugin.app);
     this.resolveFn = null;
@@ -27028,8 +27727,8 @@ var DoubanNoteManager = class {
   createOrAppendForCurrentFile() {
     return __async(this, null, function* () {
       const file = this.app.workspace.getActiveFile();
-      if (!(file instanceof import_obsidian39.TFile)) {
-        new import_obsidian39.Notice(i18nHelper.getMessage("130130"));
+      if (!(file instanceof import_obsidian42.TFile)) {
+        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       yield this.createOrAppendForLocalFile(file);
@@ -27039,18 +27738,18 @@ var DoubanNoteManager = class {
     return __async(this, null, function* () {
       const notePathTemplate = this.plugin.settings.notePathTemplate;
       if (!(notePathTemplate == null ? void 0 : notePathTemplate.trim())) {
-        new import_obsidian39.Notice(i18nHelper.getMessage("130131"));
+        new import_obsidian42.Notice(i18nHelper.getMessage("130131"));
         return;
       }
       const context = this.resolveContext(localFile);
       if (!context) {
-        new import_obsidian39.Notice(i18nHelper.getMessage("130130"));
+        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       const vars = { id: context.doubanId, title: context.title, type: context.type };
-      const notePath = (0, import_obsidian39.normalizePath)(applyTemplate(notePathTemplate, vars).replace(/(?<!\.md)$/i, ".md"));
+      const notePath = (0, import_obsidian42.normalizePath)(applyTemplate(notePathTemplate, vars).replace(/(?<!\.md)$/i, ".md"));
       const existingFile = this.app.vault.getAbstractFileByPath(notePath);
-      if (!(existingFile instanceof import_obsidian39.TFile)) {
+      if (!(existingFile instanceof import_obsidian42.TFile)) {
         const parentPath = notePath.substring(0, notePath.lastIndexOf("/"));
         if (parentPath && !this.app.vault.getAbstractFileByPath(parentPath)) {
           yield this.app.vault.createFolder(parentPath);
@@ -27075,19 +27774,19 @@ title: ${context.title}
         fm["\u7B14\u8BB0"] = link.includes('"') ? link.replaceAll('"', '\\"') : link;
       });
       yield this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
-      new import_obsidian39.Notice(i18nHelper.getMessage(existingFile instanceof import_obsidian39.TFile ? "130133" : "130132", notePath));
+      new import_obsidian42.Notice(i18nHelper.getMessage(existingFile instanceof import_obsidian42.TFile ? "130133" : "130132", notePath));
     });
   }
   linkExistingNoteForCurrentFile() {
     return __async(this, null, function* () {
       const file = this.app.workspace.getActiveFile();
-      if (!(file instanceof import_obsidian39.TFile)) {
-        new import_obsidian39.Notice(i18nHelper.getMessage("130130"));
+      if (!(file instanceof import_obsidian42.TFile)) {
+        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       const context = this.resolveContext(file);
       if (!context) {
-        new import_obsidian39.Notice(i18nHelper.getMessage("130130"));
+        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       const selectModal = new NoteSelectModal(this.plugin);
@@ -27110,7 +27809,7 @@ title: ${context.title}
       yield this.app.fileManager.processFrontMatter(file, (fm) => {
         fm["\u7B14\u8BB0"] = link.includes('"') ? link.replaceAll('"', '\\"') : link;
       });
-      new import_obsidian39.Notice(i18nHelper.getMessage("130143", noteFile.path));
+      new import_obsidian42.Notice(i18nHelper.getMessage("130143", noteFile.path));
     });
   }
   resolveContext(localFile) {
@@ -27136,37 +27835,6 @@ function toStr(value) {
   if (typeof value === "number" && Number.isFinite(value)) {
     return String(value);
   }
-  return null;
-}
-
-// src/org/wanxp/utils/VaultUtil.ts
-var import_obsidian40 = __toModule(require("obsidian"));
-function scanVaultForDoubanIds(app, folderPath) {
-  const result = new Map();
-  const allFiles = app.vault.getMarkdownFiles();
-  const normalizedPath = folderPath ? (0, import_obsidian40.normalizePath)(folderPath) : "";
-  const targetFiles = normalizedPath ? allFiles.filter((file) => file.path.startsWith(normalizedPath)) : allFiles;
-  for (const file of targetFiles) {
-    try {
-      const cache = app.metadataCache.getFileCache(file);
-      const frontmatter = cache == null ? void 0 : cache.frontmatter;
-      if (!frontmatter)
-        continue;
-      const doubanId = extractDoubanId(frontmatter);
-      if (doubanId) {
-        result.set(doubanId, { file, frontmatter });
-      }
-    } catch (e) {
-    }
-  }
-  return result;
-}
-function extractDoubanId(frontmatter) {
-  const id = frontmatter["doubanId"];
-  if (typeof id === "string" && id.trim())
-    return id.trim();
-  if (typeof id === "number")
-    return String(id);
   return null;
 }
 
@@ -27419,10 +28087,10 @@ function stripQuotedValue(value) {
 }
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var import_obsidian44 = __toModule(require("obsidian"));
+var import_obsidian46 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataExporter.ts
-var import_obsidian41 = __toModule(require("obsidian"));
+var import_obsidian43 = __toModule(require("obsidian"));
 var UserDataExporter = class {
   constructor(app) {
     this.app = app;
@@ -27449,7 +28117,7 @@ var UserDataExporter = class {
             items
           };
           const fileName = `douban-user-data-${typeLabel}.json`;
-          const filePath = (0, import_obsidian41.normalizePath)(`${outputDir}/${fileName}`);
+          const filePath = (0, import_obsidian43.normalizePath)(`${outputDir}/${fileName}`);
           yield this.saveFile(filePath, JSON.stringify(exportData, null, 2));
           files.push(filePath);
         }
@@ -27472,7 +28140,7 @@ var UserDataExporter = class {
   }
   ensureDirectory(path) {
     return __async(this, null, function* () {
-      const normalizedPath = (0, import_obsidian41.normalizePath)(path);
+      const normalizedPath = (0, import_obsidian43.normalizePath)(path);
       const exists = yield this.app.vault.adapter.exists(normalizedPath);
       if (!exists) {
         yield this.app.vault.createFolder(normalizedPath);
@@ -27481,9 +28149,9 @@ var UserDataExporter = class {
   }
   saveFile(path, content) {
     return __async(this, null, function* () {
-      const normalizedPath = (0, import_obsidian41.normalizePath)(path);
+      const normalizedPath = (0, import_obsidian43.normalizePath)(path);
       const existing = this.app.vault.getAbstractFileByPath(normalizedPath);
-      if (existing instanceof import_obsidian41.TFile) {
+      if (existing instanceof import_obsidian43.TFile) {
         yield this.app.vault.process(existing, () => content);
       } else {
         yield this.app.vault.create(normalizedPath, content);
@@ -27493,10 +28161,10 @@ var UserDataExporter = class {
 };
 
 // src/org/wanxp/douban/userdata/ImportPreviewModal.ts
-var import_obsidian43 = __toModule(require("obsidian"));
+var import_obsidian45 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataImporter.ts
-var import_obsidian42 = __toModule(require("obsidian"));
+var import_obsidian44 = __toModule(require("obsidian"));
 var UserDataImporter = class {
   constructor(app) {
     this.fileCache = null;
@@ -27506,7 +28174,7 @@ var UserDataImporter = class {
   importFromFile(filePath, options, onProgress) {
     return __async(this, null, function* () {
       const file = this.app.vault.getAbstractFileByPath(filePath);
-      if (!(file instanceof import_obsidian42.TFile)) {
+      if (!(file instanceof import_obsidian44.TFile)) {
         throw new Error("Import file not found");
       }
       const content = yield this.app.vault.read(file);
@@ -27747,7 +28415,7 @@ var UserDataImporter = class {
       const items = [];
       for (const filePath of filePaths) {
         const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (file instanceof import_obsidian42.TFile) {
+        if (file instanceof import_obsidian44.TFile) {
           items.push({ name: filePath, content: yield this.app.vault.read(file) });
         }
       }
@@ -27876,7 +28544,7 @@ var UserDataImporter = class {
 };
 
 // src/org/wanxp/douban/userdata/ImportPreviewModal.ts
-var ImportPreviewModal = class extends import_obsidian43.Modal {
+var ImportPreviewModal = class extends import_obsidian45.Modal {
   constructor(app) {
     super(app);
     this.importData = null;
@@ -28003,7 +28671,7 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     this.renderAttributeSettingsPanel();
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    const nextBtn = new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => {
+    const nextBtn = new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => {
       this.rebuildDiffs();
       for (const diff of this.diffs) {
         if (diff.localFile === null || diff.identical) {
@@ -28013,7 +28681,7 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       this.currentStep = "diffs";
       this.renderStep();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
     const updateSelectedCount = () => {
       const count = this.diffs.filter((d) => d.selected).length;
       selectedCountEl.setText(i18nHelper.getMessage("130265", count));
@@ -28066,7 +28734,7 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
       row.createEl("td", { text: attrName, cls: "import-attr-name" });
       const actionCell = row.createEl("td");
       const currentAction = (_a5 = this.attrActions.get(attrName)) != null ? _a5 : "keep";
-      new import_obsidian43.Setting(actionCell).addDropdown((dropdown) => {
+      new import_obsidian45.Setting(actionCell).addDropdown((dropdown) => {
         dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267")).addOption("alias", i18nHelper.getMessage("130268")).setValue(currentAction === "keep" || currentAction === "ignore" ? currentAction : "alias").onChange((value) => {
           var _a6;
           if (value === "alias") {
@@ -28126,7 +28794,7 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
         row.createEl("td", { text: String((_a5 = diff.localValue) != null ? _a5 : "") });
         row.createEl("td", { text: String((_b = diff.importValue) != null ? _b : "") });
         const strategyCell = row.createEl("td");
-        new import_obsidian43.Setting(strategyCell).addDropdown((dropdown) => {
+        new import_obsidian45.Setting(strategyCell).addDropdown((dropdown) => {
           dropdown.addOption("keep_local", i18nHelper.getMessage("130244")).addOption("overwrite", i18nHelper.getMessage("130245")).addOption("smart_merge", i18nHelper.getMessage("130246")).setValue(diff.strategy).onChange((value) => {
             diff.strategy = value;
           });
@@ -28146,8 +28814,8 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
     }
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
-    new import_obsidian43.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
+    new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   renderResult() {
     const result = this.importResult;
@@ -28165,7 +28833,7 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
         errorList.createEl("li", { text: `... ${result.errors.length - 10} more` });
       }
     }
-    new import_obsidian43.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
+    new import_obsidian45.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
   }
   doImport() {
     return __async(this, null, function* () {
@@ -28186,7 +28854,7 @@ var ImportPreviewModal = class extends import_obsidian43.Modal {
 };
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var UserDataExportModal = class extends import_obsidian44.Modal {
+var UserDataExportModal = class extends import_obsidian46.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -28199,10 +28867,10 @@ var UserDataExportModal = class extends import_obsidian44.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130201", folderPath) });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
       yield this.doExport(folderPath, outputDir);
     })).setClass("obsidian_douban_search_button");
-    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   doExport(folderPath, outputDir) {
     return __async(this, null, function* () {
@@ -28226,7 +28894,7 @@ var UserDataExportModal = class extends import_obsidian44.Modal {
     this.contentEl.empty();
   }
 };
-var UserDataImportModal = class extends import_obsidian44.Modal {
+var UserDataImportModal = class extends import_obsidian46.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -28237,11 +28905,11 @@ var UserDataImportModal = class extends import_obsidian44.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130211") });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
+    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
       this.close();
       new ImportPreviewModal(this.app).open();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian44.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   onClose() {
     this.contentEl.empty();
@@ -28249,8 +28917,8 @@ var UserDataImportModal = class extends import_obsidian44.Modal {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian46 = __toModule(require("obsidian"));
-var DoubanPlugin = class extends import_obsidian45.Plugin {
+var import_obsidian48 = __toModule(require("obsidian"));
+var DoubanPlugin = class extends import_obsidian47.Plugin {
   putToObsidian(context, extract3) {
     return __async(this, null, function* () {
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
@@ -28312,6 +28980,7 @@ var DoubanPlugin = class extends import_obsidian45.Plugin {
   }
   createFile(context, result) {
     return __async(this, null, function* () {
+      var _a5;
       let filePath = result.filePath ? result.filePath : DEFAULT_SETTINGS.dataFilePath;
       filePath = FileUtil.join(filePath, result.fileName);
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
@@ -28322,28 +28991,71 @@ var DoubanPlugin = class extends import_obsidian45.Plugin {
         if (context.syncStatusHolder.syncStatus.syncConfig.force) {
           const existingFilePath = syncStatus.getExistingFilePath(subject.id);
           let localUserData = null;
+          let backupPath = null;
           if (existingFilePath) {
-            const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
-            if (existingFile instanceof import_obsidian46.TFile) {
-              const extractor = new UserDataExtractor(this.app);
-              localUserData = yield extractor.extractFromFileAsync(existingFile);
+            try {
+              if (this.settings.syncBackupBeforeReplace) {
+                backupPath = yield this.fileHandler.backupMarkdownFile(existingFilePath, this.settings.syncBackupFolder);
+              }
+            } catch (error) {
+              syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u5907\u4EFD\u65E7\u6587\u4EF6\u5931\u8D25\uFF1A${existingFilePath}`);
+              log.error(`Failed to backup file before force sync: ${existingFilePath}`, error);
+              return;
+            }
+            try {
+              const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+              if (existingFile instanceof import_obsidian48.TFile) {
+                const extractor = new UserDataExtractor(this.app);
+                localUserData = yield extractor.extractFromFileAsync(existingFile);
+              }
+            } catch (error) {
+              syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u8BFB\u53D6\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF1A${existingFilePath}`);
+              log.error(`Failed to extract local user data from ${existingFilePath}`, error);
+              return;
             }
           }
-          const exists = yield this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
-          if (localUserData) {
-            const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-            if (newFile instanceof import_obsidian46.TFile) {
-              const merger = new UserDataMerger();
-              const currentContent = yield this.app.vault.read(newFile);
-              const mergedContent = merger.mergeUserData(currentContent, localUserData, this.settings.dataProtection);
-              if (mergedContent !== currentContent) {
-                yield this.app.vault.process(newFile, () => mergedContent);
+          let exists = false;
+          try {
+            exists = yield this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
+          } catch (error) {
+            if (backupPath && existingFilePath === fullFilePath) {
+              yield this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+            }
+            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u5199\u5165\u65B0\u6587\u4EF6\u5931\u8D25\uFF1A${fullFilePath}`);
+            log.error(`Failed to write synced file: ${fullFilePath}`, error);
+            return;
+          }
+          try {
+            if (localUserData && ((_a5 = context.syncConfig) == null ? void 0 : _a5.inheritOldFields)) {
+              const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+              if (newFile instanceof import_obsidian48.TFile) {
+                const merger = new UserDataMerger();
+                const currentContent = yield this.app.vault.read(newFile);
+                const mergedContent = merger.mergeUserData(currentContent, localUserData, this.settings.dataProtection);
+                if (mergedContent !== currentContent) {
+                  yield this.app.vault.process(newFile, () => mergedContent);
+                }
               }
             }
+          } catch (error) {
+            if (backupPath && existingFilePath === fullFilePath) {
+              yield this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+            } else if (existingFilePath && existingFilePath !== fullFilePath) {
+              yield this.fileHandler.deleteFile(fullFilePath);
+            }
+            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u7EE7\u627F\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF0C\u5DF2\u505C\u6B62\u66FF\u6362\uFF1A${subject.title}`);
+            log.error(`Failed to merge protected user data for ${subject.title}`, error);
+            return;
           }
           if (existingFilePath && existingFilePath !== fullFilePath) {
-            yield this.fileHandler.deleteFile(existingFilePath);
-            syncStatus.removeFromExistingCache(subject.id);
+            try {
+              yield this.fileHandler.deleteFile(existingFilePath);
+              syncStatus.removeFromExistingCache(subject.id);
+            } catch (error) {
+              syncStatus == null ? void 0 : syncStatus.manualReview(subject.id, subject.title, fullFilePath, `\u65E7\u6587\u4EF6\u5220\u9664\u5931\u8D25\uFF0C\u5DF2\u4FDD\u7559\u65B0\u65E7\u4E24\u4E2A\u6587\u4EF6\uFF1A${existingFilePath}`);
+              log.error(`Failed to delete old file after force sync: ${existingFilePath}`, error);
+              return;
+            }
           }
           if (exists) {
             syncStatus != null ? syncStatus.replace(subject.id, subject.title, fullFilePath) : null;
@@ -28565,7 +29277,7 @@ var DoubanPlugin = class extends import_obsidian45.Plugin {
   }
   loadSettings() {
     return __async(this, null, function* () {
-      this.settings = Object.assign({}, DEFAULT_SETTINGS, yield this.loadData());
+      this.settings = sanitizeImportedSettings(yield this.loadData());
       this.migrateTemplateSettings();
       this.doubanExtractHandler = new DoubanSearchChooseItemHandler(this.app, this);
       this.fileHandler = new FileHandler(this.app);
@@ -28629,13 +29341,13 @@ var DoubanPlugin = class extends import_obsidian45.Plugin {
         if (!result) {
           return;
         }
-        new import_obsidian45.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
+        new import_obsidian47.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
         this.initSyncDefaultSettings(syncConfig);
         context.syncStatusHolder.initHandledData();
         this.showStatus(i18nHelper.getMessage("140203", SyncTypeRecords[syncConfig.syncType]));
         const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
         yield syncHandler.sync();
-        new import_obsidian45.Notice(i18nHelper.getMessage("140302"));
+        new import_obsidian47.Notice(i18nHelper.getMessage("140302"));
       } catch (e) {
         log.error(i18nHelper.getMessage("140206", e.message), e);
       } finally {
@@ -28657,7 +29369,7 @@ var DoubanPlugin = class extends import_obsidian45.Plugin {
       }
       if (!uc.isLogin()) {
         this.settingsManager.debug("\u4E3B\u754C\u9762:\u540C\u6B65\u65F6\u7684\u767B\u5F55\u72B6\u6001\u68C0\u6D4B\u5B8C\u6210: \u5C1D\u8BD5\u83B7\u53D6\u7528\u6237\u4FE1\u606F\u5931\u8D25");
-        new import_obsidian45.Notice(i18nHelper.getMessage("140303"));
+        new import_obsidian47.Notice(i18nHelper.getMessage("140303"));
         return false;
       }
       return true;

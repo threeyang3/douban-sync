@@ -84,6 +84,9 @@ title: {{title}}
 ## 感想
 `,
 	dataProtection: DEFAULT_DATA_PROTECTION_SETTINGS,
+	syncBackupBeforeReplace: true,
+	syncBackupFolder: '.tmp/obsidian-douban/backups',
+	includeSensitiveInSettingExport: false,
 
 }
 

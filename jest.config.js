@@ -15,6 +15,7 @@ module.exports = {
 	],
 	moduleNameMapper: {
 		'^@APP/(.*)$': '<rootDir>/src/douban/$1',
+		'^obsidian$': '<rootDir>/test/mocks/obsidian.ts',
 	},
 	collectCoverageFrom: [
 		"**/baseTs/upperFirst.ts",

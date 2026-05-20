@@ -14,7 +14,10 @@ An Obsidian plugin for importing and syncing Douban data. It can create notes fr
 - Customize templates, output paths, and field variables
 - Export custom properties to JSON and import them with merge or overwrite modes
 - Use built-in `basic / compact / sync` template presets and write them directly to template files
+- Preview templates, save them as reusable files, and restore the built-in default template
 - Inherit selected frontmatter fields from existing notes during forced replacement sync
+- Preview forced sync changes before execution, back up old notes automatically, and emit a structured sync report
+- Export settings without login credentials by default and import settings through a whitelist-based sanitizer
 - Works on desktop and mobile Obsidian
 
 ## Usage
@@ -26,6 +29,8 @@ Open the Obsidian command palette with <kbd>Ctrl</kbd> + <kbd>P</kbd>, search fo
 After logging in to Douban, the plugin can sync your personal collection records.
 
 ![Sync Data From Douban](doc/img/sync_data_from_douban.gif)
+
+Before a forced replacement sync runs, the plugin can now show a preview of which notes will be created, replaced, or skipped. When automatic backup is enabled, the old note is backed up before the replacement step.
 
 ## Settings
 
@@ -39,6 +44,14 @@ After logging in to Douban, the plugin can sync your personal collection records
 - Custom properties now support `Export JSON`, `Merge Import`, and `Overwrite Import`
 - Template settings now provide built-in presets that can be copied or written to files directly
 - The sync modal now supports inheriting selected frontmatter fields from the old note during forced replacement
+
+### New in 2.1.x
+
+- Force sync now supports pre-execution preview and confirmation
+- Old notes can be backed up automatically before destructive replacement
+- Sync results now generate a structured JSON report for troubleshooting
+- Settings export excludes login credentials by default
+- Template preview/editor now supports `Save As File` and `Restore Default Template`
 
 ## Installation
 

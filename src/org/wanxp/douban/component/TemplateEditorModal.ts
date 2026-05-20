@@ -1,25 +1,36 @@
 import {App, ButtonComponent, Modal} from "obsidian";
 import {i18nHelper} from "../../lang/helper";
 import {TemplateKey} from "../../constant/Constsant";
+import {TemplateSaveAsModal} from "./TemplateSaveAsModal";
+
+interface TemplateEditorModalOptions {
+	readOnly?: boolean;
+	onSave?: (content: string) => Promise<void>;
+	onSaveAs?: (targetPath: string, content: string) => Promise<void>;
+	onRestoreDefault?: () => Promise<string>;
+}
 
 export class TemplateEditorModal extends Modal {
 	private content: string;
 	private templateKey: TemplateKey;
 	private readOnly: boolean;
 	private onSave: (content: string) => Promise<void>;
+	private onSaveAs?: (targetPath: string, content: string) => Promise<void>;
+	private onRestoreDefault?: () => Promise<string>;
 
 	constructor(
 		app: App,
 		templateKey: TemplateKey,
 		content: string,
-		readOnly: boolean = false,
-		onSave?: (content: string) => Promise<void>
+		options: TemplateEditorModalOptions = {},
 	) {
 		super(app);
 		this.templateKey = templateKey;
 		this.content = content;
-		this.readOnly = readOnly;
-		this.onSave = onSave;
+		this.readOnly = !!options.readOnly;
+		this.onSave = options.onSave;
+		this.onSaveAs = options.onSaveAs;
+		this.onRestoreDefault = options.onRestoreDefault;
 	}
 
 	onOpen() {
@@ -71,6 +82,23 @@ export class TemplateEditorModal extends Modal {
 				.onClick(async () => {
 					await this.onSave?.(this.content);
 					this.close();
+				});
+			if (this.onRestoreDefault) {
+				new ButtonComponent(buttonRow)
+					.setButtonText(i18nHelper.getMessage('121946'))
+					.onClick(async () => {
+						this.content = await this.onRestoreDefault?.();
+						textarea.value = this.content;
+					});
+			}
+		}
+		if (this.onSaveAs) {
+			new ButtonComponent(buttonRow)
+				.setButtonText(i18nHelper.getMessage('121943'))
+				.onClick(() => {
+					new TemplateSaveAsModal(this.app, async (targetPath) => {
+						await this.onSaveAs?.(targetPath, this.content);
+					}).open();
 				});
 		}
 		new ButtonComponent(buttonRow)

@@ -21,7 +21,7 @@ function getObsidianLocale(): string {
 	}
 
 	// 方式2: 从 localStorage 获取 (备用)
-	if (lang === 'en') {
+	if (lang === 'en' && typeof window !== 'undefined' && window.localStorage) {
 		const localStorageLang = window.localStorage.getItem('language');
 		if (localStorageLang) {
 			lang = localStorageLang;

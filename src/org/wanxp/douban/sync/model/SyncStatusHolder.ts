@@ -9,6 +9,7 @@ import {
 } from "../../../constant/Constsant";
 import {SyncHandledData} from "../../setting/model/SyncHandledData";
 import {DoubanSubjectStateRecords_SYNC} from "../../../constant/DoubanUserState";
+import { extractDoubanId } from "../../../utils/VaultUtil";
 
 export default class SyncStatusHolder {
 
@@ -21,6 +22,7 @@ export default class SyncStatusHolder {
 	[SyncItemStatus.replace, 0],
 	[SyncItemStatus.create, 0],
 	[SyncItemStatus.fail, 0],
+		[SyncItemStatus.manualReview, 0],
 		[SyncItemStatus.failByDiffType, 0],
 		[SyncItemStatus.unHandle, 0],
 	]);
@@ -119,12 +121,16 @@ export default class SyncStatusHolder {
 		}
 	}
 
-	public fail(id:string, title:string) {
-		this.updateResult(id, title, SyncItemStatus.fail);
+	public fail(id:string, title:string, detailMsg?: string, fileName?: string) {
+		this.updateResult(id, title, SyncItemStatus.fail, fileName, detailMsg);
 	}
 
 	public failByDiffType(id:string, title:string, detailMsg?: string) {
 		this.updateResult(id, title, SyncItemStatus.failByDiffType, undefined, detailMsg);
+	}
+
+	public manualReview(id:string, title:string, fileName?: string, detailMsg?: string) {
+		this.updateResult(id, title, SyncItemStatus.manualReview, fileName, detailMsg);
 	}
 
 	private updateResult(id:string, title:string, status:SyncItemStatus, fileName?:string, detailMsg?: string) {
@@ -174,11 +180,13 @@ export default class SyncStatusHolder {
 			}
 			try {
 				const cache = this.app.metadataCache.getFileCache(file);
-				if (cache?.frontmatter?.doubanId) {
-					const doubanId = String(cache.frontmatter.doubanId).trim();
-					if (doubanId) {
-						this.existingDoubanIdsCache.set(doubanId, file.path);
-					}
+				const frontmatter = cache?.frontmatter as Record<string, unknown> | undefined;
+				if (!frontmatter) {
+					continue;
+				}
+				const doubanId = extractDoubanId(frontmatter);
+				if (doubanId) {
+					this.existingDoubanIdsCache.set(doubanId, file.path);
 				}
 			} catch (e) {
 				// 忽略单个文件的缓存错误

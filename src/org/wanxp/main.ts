@@ -38,6 +38,7 @@ import {UserDataExtractor} from "./douban/userdata/UserDataExtractor";
 import {UserDataMerger} from "./douban/userdata/UserDataMerger";
 import {UserDataExportModal, UserDataImportModal} from "./douban/userdata/UserDataModal";
 import {TFile} from "obsidian";
+import { sanitizeImportedSettings } from "./douban/setting/SettingsIO";
 
 export default class DoubanPlugin extends Plugin {
 	public settings: DoubanPluginSetting;
@@ -121,37 +122,87 @@ export default class DoubanPlugin extends Plugin {
 		const fullFilePath = filePath + '.md';
 		if (Action.Sync == context.action) {
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
-				// 在force模式下，先检查是否存在该doubanId的旧文件
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
-				// 在替换前提取旧文件的用户数据（自定义属性+正文分区）
 				let localUserData = null;
+				let backupPath: string | null = null;
 				if (existingFilePath) {
-					const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
-					if (existingFile instanceof TFile) {
-						const extractor = new UserDataExtractor(this.app);
-						localUserData = await extractor.extractFromFileAsync(existingFile);
+					try {
+						if (this.settings.syncBackupBeforeReplace) {
+							backupPath = await this.fileHandler.backupMarkdownFile(
+								existingFilePath,
+								this.settings.syncBackupFolder,
+							);
+						}
+					} catch (error) {
+						syncStatus?.fail(subject.id, subject.title, `备份旧文件失败：${existingFilePath}`);
+						log.error(`Failed to backup file before force sync: ${existingFilePath}`, error);
+						return;
+					}
+
+					try {
+						const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+						if (existingFile instanceof TFile) {
+							const extractor = new UserDataExtractor(this.app);
+							localUserData = await extractor.extractFromFileAsync(existingFile);
+						}
+					} catch (error) {
+						syncStatus?.fail(subject.id, subject.title, `读取旧文件数据失败：${existingFilePath}`);
+						log.error(`Failed to extract local user data from ${existingFilePath}`, error);
+						return;
 					}
 				}
-				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
-				// 数据保护：将旧文件的自定义属性和正文分区合并到新文件
-				if (localUserData) {
-					const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-					if (newFile instanceof TFile) {
-						const merger = new UserDataMerger();
-						const currentContent = await this.app.vault.read(newFile);
-						const mergedContent = merger.mergeUserData(
-							currentContent, localUserData, this.settings.dataProtection,
-						);
-						if (mergedContent !== currentContent) {
-							await this.app.vault.process(newFile, () => mergedContent);
+
+				let exists = false;
+				try {
+					exists = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
+				} catch (error) {
+					if (backupPath && existingFilePath === fullFilePath) {
+						await this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+					}
+					syncStatus?.fail(subject.id, subject.title, `写入新文件失败：${fullFilePath}`);
+					log.error(`Failed to write synced file: ${fullFilePath}`, error);
+					return;
+				}
+
+				try {
+					if (localUserData && context.syncConfig?.inheritOldFields) {
+						const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+						if (newFile instanceof TFile) {
+							const merger = new UserDataMerger();
+							const currentContent = await this.app.vault.read(newFile);
+							const mergedContent = merger.mergeUserData(
+								currentContent, localUserData, this.settings.dataProtection,
+							);
+							if (mergedContent !== currentContent) {
+								await this.app.vault.process(newFile, () => mergedContent);
+							}
 						}
 					}
+				} catch (error) {
+					if (backupPath && existingFilePath === fullFilePath) {
+						await this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+					} else if (existingFilePath && existingFilePath !== fullFilePath) {
+						await this.fileHandler.deleteFile(fullFilePath);
+					}
+					syncStatus?.fail(subject.id, subject.title, `继承旧文件数据失败，已停止替换：${subject.title}`);
+					log.error(`Failed to merge protected user data for ${subject.title}`, error);
+					return;
 				}
+
 				if (existingFilePath && existingFilePath !== fullFilePath) {
-					// 仅在新文件成功写入并完成继承后删除旧文件
-					await this.fileHandler.deleteFile(existingFilePath);
-					// 从缓存中移除旧记录
-					syncStatus.removeFromExistingCache(subject.id);
+					try {
+						await this.fileHandler.deleteFile(existingFilePath);
+						syncStatus.removeFromExistingCache(subject.id);
+					} catch (error) {
+						syncStatus?.manualReview(
+							subject.id,
+							subject.title,
+							fullFilePath,
+							`旧文件删除失败，已保留新旧两个文件：${existingFilePath}`,
+						);
+						log.error(`Failed to delete old file after force sync: ${existingFilePath}`, error);
+						return;
+					}
 				}
 				if (exists) {
 					syncStatus != null ? syncStatus.replace(subject.id, subject.title, fullFilePath):null;
@@ -368,7 +419,7 @@ export default class DoubanPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = sanitizeImportedSettings(await this.loadData());
 		this.migrateTemplateSettings();
 		this.doubanExtractHandler = new DoubanSearchChooseItemHandler(this.app, this);
 		this.fileHandler = new FileHandler(this.app);

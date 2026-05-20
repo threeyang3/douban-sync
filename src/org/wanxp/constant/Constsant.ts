@@ -280,6 +280,7 @@ export enum SyncItemStatus {
 	replace = 'replace',
 	create = 'create',
 	fail = 'fail',
+	manualReview = 'manualReview',
 	failByDiffType = 'failByDiffType',
 	unHandle = 'unHandle',
 }

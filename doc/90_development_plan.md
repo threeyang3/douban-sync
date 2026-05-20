@@ -126,14 +126,14 @@ nav_order: 900
 
 计划：
 - tags 修复：`parseUserInfo` 不再将 `extract.type` 注入 `myTags`
-- 模板封面链接：所有内置模板 frontmatter 添加 `image: {{imageData.url}}`
+- 模板封面链接：所有内置模板 frontmatter 添加 `image: \{\{imageData.url\}\}`
 - 模板设置 UI：每类模板一行 dropdown（内置/文件/自定义）+ 上下文按钮 + 复制按钮
 - 模板编辑器：支持预览（只读）和编辑（自定义内容）两种模式
 - 设置迁移：旧 `xxxTemplateFile` 自动迁移到 `TemplateConfig`
 
 验收：
 - tags 不再包含 "book"/"movie" 等类型标签
-- 内置模板 frontmatter 含 `image: {{imageData.url}}`
+- 内置模板 frontmatter 含 `image: \{\{imageData.url\}\}`
 - 模板设置 UI 简洁，每行只有 dropdown + 上下文按钮 + 复制按钮
 - 旧用户设置自动迁移，无需手动操作
 - 构建无报错
@@ -164,9 +164,42 @@ nav_order: 900
 
 状态：已完成（2026-05-10）
 
+## 7. 同步安全增强 + 模板工作流补强
+
+目标：降低强制替换同步的数据风险，补齐同步前确认与模板复用体验。
+
+涉及模块：
+- `src/org/wanxp/douban/setting/SettingsIO.ts` — 设置导出脱敏 + 导入白名单清洗
+- `src/org/wanxp/douban/setting/AdvancedSettingsHelper.ts` — 备份与敏感配置导出开关
+- `src/org/wanxp/file/FileHandler.ts` — 旧笔记备份/恢复/通用文本写入
+- `src/org/wanxp/main.ts` — 强制替换同步的备份、继承、回滚顺序
+- `src/org/wanxp/douban/sync/handler/SyncPreviewHandler.ts` — 同步预览汇总
+- `src/org/wanxp/douban/component/SyncPreviewModal.ts` — 同步前确认 UI
+- `src/org/wanxp/douban/component/TemplateEditorModal.ts`
+- `src/org/wanxp/douban/component/TemplateSaveAsModal.ts`
+- `src/org/wanxp/douban/setting/TemplateSettingHelper.ts`
+- `test/SyncPreviewHandler.spec.ts` 及既有测试文件
+
+计划：
+- 强制替换前默认备份旧笔记；备份失败时中止危险替换
+- 设置导出默认排除登录凭据；设置导入只接受插件支持字段
+- 强制替换同步前先展示预览，列出 create / replace / skip / unHandle
+- 模板支持预览时另存为文件，自定义模板支持恢复内置默认模板
+- 同步结果补充 JSON 报告，便于失败排查
+
+验收：
+- `npm run build` 通过
+- `npm test` 通过
+- 强制替换同步会先预览，确认后才真正执行
+- 替换条目在备份开启时会先生成备份文件
+- 配置导出默认不含登录凭据
+- 模板可从预览/编辑器直接另存为文件
+
+状态：已完成（2026-05-20）
+
 ## 后续建议
 
-1. 为 `1.2.0` / `1.4.0` / `1.5.0` 新功能补充文档截图
-2. 为自定义属性导入导出补测试
-3. 为用户数据导出/导入补单元测试
-4. 为同步继承补更多 frontmatter 边界测试
+1. 为同步预览、模板另存为、自动备份补充文档截图
+2. 为模板另存为 / 恢复默认补 UI 层测试
+3. 为同步结果 JSON 报告补更细的断言测试
+4. 评估是否为同步预览增加按条目筛选、导出或分页浏览能力
