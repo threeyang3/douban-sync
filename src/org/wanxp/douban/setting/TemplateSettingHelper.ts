@@ -21,6 +21,7 @@ const TEMPLATE_TYPES: Array<{nameKey: string, configKey: keyof DoubanPluginSetti
 	{nameKey: '120401', configKey: 'noteTemplateConfig', templateKey: TemplateKey.noteTemplateFile},
 	{nameKey: '121301', configKey: 'gameTemplateConfig', templateKey: TemplateKey.gameTemplateFile},
 	{nameKey: '121801', configKey: 'teleplayTemplateConfig', templateKey: TemplateKey.teleplayTemplateFile},
+	{nameKey: '121803', configKey: 'theaterTemplateConfig', templateKey: TemplateKey.theaterTemplateFile},
 ];
 
 export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsManager) {

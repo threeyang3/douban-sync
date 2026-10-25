@@ -5,11 +5,12 @@ import DoubanSubject from "../model/DoubanSubject";
 import DoubanTeleplaySubject from "../model/DoubanTeleplaySubject";
 import SchemaOrg from "src/org/wanxp/utils/SchemaOrg";
 import HandleContext from "../model/HandleContext";
-import {DataValueType, PersonNameMode, SupportType} from "../../../constant/Constsant";
+import {DataValueType, PersonNameMode, PropertyName, SupportType} from "../../../constant/Constsant";
 import {UserStateSubject} from "../model/UserStateSubject";
 import {moment} from "obsidian";
 import {TITLE_ALIASES_SPECIAL_CHAR_REG_G} from "../../../utils/YamlUtil";
 import {DataField} from "../../../utils/model/DataField";
+import DoubanPageParser from "../../../utils/DoubanPageParser";
 
 /**
  * teleplay
@@ -65,14 +66,14 @@ export class DoubanTeleplayLoadHandler extends DoubanAbstractLoadHandler<DoubanT
 
 	analysisUser(html: CheerioAPI, context: HandleContext): {data:CheerioAPI ,  userState: UserStateSubject} {
 		const rate = html('input#n_rating').val();
-		const rating = html('span#rating');
-		const tagsStr = rating.next().next().text().trim();
-		const tags = tagsStr ? tagsStr.replace('标签:', '').trim().split(' ') : null;
+		const tags = DoubanPageParser.parseUserTags(html);
 		const stateWord = html('div#interest_sect_level > div.a_stars > span.mr10').text().trim();
 		const collectionDateStr = html('div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date').text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		let component = rating.next().next().next().next().text().trim();
-			component = this.filterCommentText(component);
+		const component = DoubanPageParser.parseUserComment(
+			html,
+			this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment),
+		);
 
 		const userState: UserStateSubject = {
 			tags: tags,
@@ -167,16 +168,11 @@ export class DoubanTeleplayLoadHandler extends DoubanAbstractLoadHandler<DoubanT
 
 		this.handlePersonNameByMeta(html, teleplay,  context, 'video:actor', 'actor');
 		this.handlePersonNameByMeta(html, teleplay,  context, 'video:director', 'director');
-		// 获取所有summary元素，选择最长的（完整版简介）
-		// 豆瓣页面可能同时存在折叠部分和完整部分，选择最长的避免重复
-		const summaries = html("span[property='v:summary']").get();
-		let desc = '';
-		for (const s of summaries) {
-			const text = html(s).text().trim();
-			if (text.length > desc.length) {
-				desc = text;
-			}
-		}
+		const desc = DoubanPageParser.extractLongestText(html, [
+			"[id^='link-report'] span.all.hidden",
+			"#link-report .all.hidden",
+			"span[property='v:summary']",
+		]);
 		if (desc) {
 			teleplay.desc = desc;
 		}

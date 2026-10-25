@@ -15,6 +15,7 @@ import { ALL } from "../../../../constant/DoubanUserState";
 import { DoubanHttpUtil } from "../../../../utils/DoubanHttpUtil";
 import { SearchPage } from "../../../data/model/SearchPage";
 import {SearchPageTypeOf} from "../../../data/model/SearchPageTypeOf";
+import DoubanPageGuard from "../../../../utils/DoubanPageGuard";
 
 export default abstract class DoubanAbstractListHandler
 	implements DoubanListHandler
@@ -57,21 +58,25 @@ export default abstract class DoubanAbstractListHandler
 		url: string,
 		context: HandleContext,
 	): Promise<SearchPageTypeOf<SubjectListItem>> {
-		return DoubanHttpUtil.httpRequestGet(
-			url,
-			context.plugin.settingsManager.getHeaders(),
-			context.plugin.settingsManager,
-		)
-			.then(load)
-			.then((data) => this.parseSubjectFromHtml(data, context))
-			.catch((e) =>
-				log.error(
-					i18nHelper
-						.getMessage("130101")
-						.replace("{0}", e.toString()),
-					e,
-				),
+		try {
+			const html = await DoubanHttpUtil.httpRequestGet(
+				url,
+				context.plugin.settingsManager.getHeaders(),
+				context.plugin.settingsManager,
 			);
+			DoubanPageGuard.assertCanParse(html);
+			return this.parseSubjectFromHtml(load(html), context);
+		} catch (e) {
+			const detail = DoubanPageGuard.describeError(e);
+			context.plugin.statusHolder?.syncStatus?.setMessage(detail);
+			log.error(
+				i18nHelper
+					.getMessage("130101")
+					.replace("{0}", detail),
+				e,
+			);
+			return SearchPage.emptyWithNoType();
+		}
 	}
 
 	parseSubjectFromHtml(

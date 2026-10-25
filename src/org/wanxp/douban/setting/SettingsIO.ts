@@ -1,6 +1,8 @@
 import { DEFAULT_SETTINGS } from '../../constant/DefaultSettings';
 import { DoubanPluginSetting, TemplateConfig, TemplateSource } from './model/DoubanPluginSetting';
 import { DEFAULT_DATA_PROTECTION_SETTINGS } from '../userdata/types';
+import {ArrayLengthLimit} from './model/ArrayLengthLimit';
+import {SupportType, SupportTypeMap} from '../../constant/Constsant';
 
 export interface SettingsExportData {
 	version: string;
@@ -69,6 +71,27 @@ function normalizeArray<T>(value: unknown, fallback: T[]): T[] {
 	return Array.isArray(value) ? (value as T[]) : fallback;
 }
 
+function normalizeArrayLengthLimits(value: unknown): ArrayLengthLimit[] {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+	const result: ArrayLengthLimit[] = [];
+	value.forEach(item => {
+		if (!isRecord(item)) {
+			return;
+		}
+		const rawType = typeof item.type === 'string' ? item.type : '';
+		const type = (SupportTypeMap as Record<string, SupportType>)[rawType]
+			|| (SupportTypeMap as Record<string, SupportType>)[rawType.toLowerCase()];
+		const field = typeof item.field === 'string' ? item.field.trim() : '';
+		const limit = typeof item.limit === 'number' ? Math.floor(item.limit) : Number.NaN;
+		if (type && field && Number.isInteger(limit) && limit >= 0) {
+			result.push({type, field, limit});
+		}
+	});
+	return result;
+}
+
 function extractSettingsPayload(config: unknown): Record<string, unknown> {
 	if (config == null) {
 		return {};
@@ -115,6 +138,9 @@ export function sanitizeImportedSettings(config: unknown): DoubanPluginSetting {
 			case 'teleplayTemplateConfig':
 				sanitized.teleplayTemplateConfig = normalizeTemplateConfig(value, payload.teleplayTemplateFile);
 				return;
+			case 'theaterTemplateConfig':
+				sanitized.theaterTemplateConfig = normalizeTemplateConfig(value, payload.theaterTemplateFile);
+				return;
 			case 'dataProtection':
 				if (isRecord(value)) {
 					sanitized.dataProtection = {
@@ -141,7 +167,11 @@ export function sanitizeImportedSettings(config: unknown): DoubanPluginSetting {
 			case 'pictureBedFlag':
 			case 'syncBackupBeforeReplace':
 			case 'includeSensitiveInSettingExport':
+			case 'showAfterCreate':
 				sanitized[key] = normalizeBoolean(value, sanitized[key] as boolean) as never;
+				return;
+			case 'arrayLengthLimits':
+				sanitized.arrayLengthLimits = normalizeArrayLengthLimits(value);
 				return;
 			case 'customProperties':
 			case 'syncHandledDataArray':
@@ -165,6 +195,7 @@ export function sanitizeImportedSettings(config: unknown): DoubanPluginSetting {
 			case 'noteTemplateFile':
 			case 'gameTemplateFile':
 			case 'teleplayTemplateFile':
+			case 'theaterTemplateFile':
 			case 'dateFormat':
 			case 'timeFormat':
 			case 'searchUrl':
@@ -192,28 +223,32 @@ export function sanitizeImportedSettings(config: unknown): DoubanPluginSetting {
 	});
 
 	sanitized.movieTemplateConfig = normalizeTemplateConfig(
-		sanitized.movieTemplateConfig,
+		'movieTemplateConfig' in payload ? sanitized.movieTemplateConfig : undefined,
 		sanitized.movieTemplateFile,
 	);
 	sanitized.bookTemplateConfig = normalizeTemplateConfig(
-		sanitized.bookTemplateConfig,
+		'bookTemplateConfig' in payload ? sanitized.bookTemplateConfig : undefined,
 		sanitized.bookTemplateFile,
 	);
 	sanitized.musicTemplateConfig = normalizeTemplateConfig(
-		sanitized.musicTemplateConfig,
+		'musicTemplateConfig' in payload ? sanitized.musicTemplateConfig : undefined,
 		sanitized.musicTemplateFile,
 	);
 	sanitized.noteTemplateConfig = normalizeTemplateConfig(
-		sanitized.noteTemplateConfig,
+		'noteTemplateConfig' in payload ? sanitized.noteTemplateConfig : undefined,
 		sanitized.noteTemplateFile,
 	);
 	sanitized.gameTemplateConfig = normalizeTemplateConfig(
-		sanitized.gameTemplateConfig,
+		'gameTemplateConfig' in payload ? sanitized.gameTemplateConfig : undefined,
 		sanitized.gameTemplateFile,
 	);
 	sanitized.teleplayTemplateConfig = normalizeTemplateConfig(
-		sanitized.teleplayTemplateConfig,
+		'teleplayTemplateConfig' in payload ? sanitized.teleplayTemplateConfig : undefined,
 		sanitized.teleplayTemplateFile,
+	);
+	sanitized.theaterTemplateConfig = normalizeTemplateConfig(
+		'theaterTemplateConfig' in payload ? sanitized.theaterTemplateConfig : undefined,
+		sanitized.theaterTemplateFile,
 	);
 
 	return sanitized;

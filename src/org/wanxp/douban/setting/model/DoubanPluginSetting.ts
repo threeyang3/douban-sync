@@ -5,6 +5,7 @@ import {ScoreSetting} from "./ScoreSetting";
 import PictureBedSetting from "./PictureBedSetting";
 import {SupportType} from "../../../constant/Constsant";
 import {DataProtectionSettings} from "../../userdata/types";
+import {ArrayLengthLimit} from "./ArrayLengthLimit";
 
 export type TemplateSource = 'builtin' | 'file' | 'custom';
 
@@ -23,12 +24,14 @@ export interface DoubanPluginSetting {
 	noteTemplateFile: string,
 	gameTemplateFile: string,
 	teleplayTemplateFile: string,
+	theaterTemplateFile: string,
 	movieTemplateConfig?: TemplateConfig,
 	bookTemplateConfig?: TemplateConfig,
 	musicTemplateConfig?: TemplateConfig,
 	noteTemplateConfig?: TemplateConfig,
 	gameTemplateConfig?: TemplateConfig,
 	teleplayTemplateConfig?: TemplateConfig,
+	theaterTemplateConfig?: TemplateConfig,
 	dateFormat: string,
 	timeFormat: string,
 	searchUrl: string,
@@ -48,6 +51,7 @@ export interface DoubanPluginSetting {
 	cacheImage: boolean,
 	cacheHighQuantityImage: boolean,
 		overwriteCoverImage: boolean,
+	showAfterCreate: boolean,
 	attachmentPath: string,
 	attachmentFileName: string,
 	pictureBedFlag: boolean
@@ -66,4 +70,5 @@ export interface DoubanPluginSetting {
 	syncBackupBeforeReplace: boolean,
 	syncBackupFolder: string,
 	includeSensitiveInSettingExport: boolean,
+	arrayLengthLimits: ArrayLengthLimit[],
 }

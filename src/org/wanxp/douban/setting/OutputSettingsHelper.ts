@@ -15,6 +15,7 @@ import {VariableUtil} from "../../utils/VariableUtil";
 import {FileUtil} from "../../utils/FileUtil";
 import {ScoreSetting} from "./model/ScoreSetting";
 import DoubanPlugin from "../../main";
+import {constructArrayLengthLimitSettingsUI} from "./ArrayLengthLimitSettingsHelper";
 
 
 function showStarExample(containerEl: HTMLElement, manager: SettingsManager) {
@@ -126,6 +127,15 @@ export function constructOutUI(containerEl: HTMLElement, manager: SettingsManage
 
 	constructOutputFileNameUI(outFolder, filePathDisplayExample, manager);
 
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('showAfterCreateName'))
+		.setDesc(i18nHelper.getMessage('showAfterCreateDesc'))
+		.addToggle(toggle => toggle
+			.setValue(manager.plugin.settings.showAfterCreate)
+			.onChange(async value => {
+				manager.plugin.settings.showAfterCreate = value;
+				await manager.plugin.saveSettings();
+			}));
 
 	new Setting(containerEl).setName(i18nHelper.getMessage('121201')).then((setting) => {
 		setting.addDropdown((dropdwon) => {
@@ -152,6 +162,7 @@ export function constructOutUI(containerEl: HTMLElement, manager: SettingsManage
 		});
 	});
 	scoreSettingDisplay(containerEl, manager);
+	constructArrayLengthLimitSettingsUI(containerEl, manager);
 }
 
 

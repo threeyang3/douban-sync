@@ -30,5 +30,13 @@ features:
     icon: 📚
     details: 结合DataView生成，整合你的书籍，建立个人书架，统一管理
     link: /Obsidian-Douban-DataView-Jump
+  - title: 扫码登录
+    icon: 🔐
+    details: 桌面端和移动端都可使用豆瓣 App 扫码登录，同时保留 Cookie 登录备用
+    link: /20_howtouse_25_setting_login_douban_cookie
+  - title: 批量导入
+    icon: 📥
+    details: 粘贴多个豆瓣 URL，支持去重、进度、取消和逐条失败原因
+    link: /20_howtouse_20_setting
 ---
 

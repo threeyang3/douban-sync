@@ -78,14 +78,17 @@ export default class UserComponent {
 		if(!headers) {
 			return new User();
 		}
-		this.settingsManager.debug('配置界面:loginCookie:豆瓣headers信息正常，尝试获取用户信息,headers:' + headers);
+		this.settingsManager.debug('配置界面:loginCookie:豆瓣headers信息正常，尝试获取用户信息');
 		await this.loadUserInfoByHeaders(headers).then(user => {
 			this.user = user;
 			this.settingsManager.debug(`配置界面:loginCookie:豆瓣headers信息正常，${user&&user.id?'获取用户信息成功id:'+ StringUtil.confuse(user.id) + ',用户名:'+ StringUtil.confuse(user.name) :'获取用户信息失败'}`);
 		});
-		if(this.user) {
+		if(this.user?.id && this.user?.login) {
 			this.verified = true;
 			this.settingsManager.updateSetting('loginHeadersContent', JSON.stringify(headers));
+		} else {
+			this.user = null;
+			this.verified = false;
 		}
 		return this.user;
 	}
@@ -100,11 +103,23 @@ export default class UserComponent {
 		const headers: object = this.settingsManager.getHeadersByCookie(cookie);
 		return this.loginHeaders(headers)
 			.then(user => {
-				if(this.user) {
+				if(user?.id && user?.login) {
 					this.settingsManager.updateSetting('loginCookiesContent', cookie);
 				}
 				return user;
 			});
+	}
+
+	async acceptQrLoginCookie(cookie: string): Promise<User> {
+		if (!cookie || !/(?:^|;\s*)dbcl2=/.test(cookie)) {
+			return null;
+		}
+		await this.settingsManager.updateSetting('loginCookiesContent', cookie);
+		const user = new User();
+		user.login = true;
+		this.user = user;
+		this.verified = false;
+		return user;
 	}
 
 

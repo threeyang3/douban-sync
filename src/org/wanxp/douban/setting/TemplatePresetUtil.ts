@@ -32,6 +32,7 @@ function getCompactTemplateContent(key: TemplateKey): string {
 	switch (key) {
 		case TemplateKey.movieTemplateFile:
 		case TemplateKey.teleplayTemplateFile:
+		case TemplateKey.theaterTemplateFile:
 			return `---
 doubanId: {{id}}
 title: {{title}}

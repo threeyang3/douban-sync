@@ -197,6 +197,66 @@ nav_order: 900
 
 状态：已完成（2026-05-20）
 
+## 8. 上游稳定性与 P1 能力吸收
+
+目标：在不替换现有模板、同步保护与数据导入能力的前提下，吸收上游的网络稳定性、页面解析和登录改进。
+
+涉及模块：
+- `src/org/wanxp/utils/DoubanPageGuard.ts` — 登录页、验证页、禁止访问、空页面和关键字段守卫
+- `src/org/wanxp/utils/HttpRequestPolicy.ts` — 超时、有限重试、重定向与敏感凭据边界
+- `src/org/wanxp/utils/DoubanPageParser.ts` — 标签、短评和完整简介的语义化提取
+- `src/org/wanxp/utils/DoubanChallengeUtil.ts` — 受支持的豆瓣 proof-of-work 验证页处理
+- `src/org/wanxp/douban/component/DoubanQrLoginModal.ts` — 桌面端与移动端二维码登录
+- `src/org/wanxp/douban/setting/LoginSettingsHelper.ts` — 二维码登录与手工 Cookie 登录入口
+- `src/org/wanxp/douban/data/handler/` — 电影、电视剧、图书、音乐、游戏与舞台剧解析接入
+
+已完成：
+- 页面异常不会继续创建或覆盖笔记，同步报告记录失败阶段和原因。
+- 桌面端请求支持绝对超时、GET/HEAD 有限重试和主动中止；移动端请求支持统一超时与失败恢复。
+- Cookie、Authorization 和登录 code 不进入普通日志；跨非豆瓣域重定向会剥离敏感请求头。
+- 标签与短评优先按语义容器提取，旧版位置选择器作为后备。
+- 二维码登录支持等待扫码、已扫码、成功、失效、取消、超时和连续网络失败；关闭窗口会停止轮询。
+- 二维码在本地生成，登录凭证先保存、用户资料可延迟验证，且失败不会覆盖原有可用 Cookie。
+
+状态：已完成（2026-10-25）
+
+## 9. P2 输出控制与模板变量
+
+目标：控制大型条目写入体积，补齐模板字段，并保留旧版本的自动打开行为。
+
+涉及模块：
+- `src/org/wanxp/douban/setting/model/ArrayLengthLimit.ts`
+- `src/org/wanxp/douban/setting/ArrayLengthLimitSettingsHelper.ts`
+- `src/org/wanxp/douban/setting/SettingsIO.ts`
+- `src/org/wanxp/utils/VariableUtil.ts`
+- `src/org/wanxp/douban/data/model/DoubanSubject.ts`
+- `src/org/wanxp/douban/data/model/DoubanBookSubject.ts`
+- `src/org/wanxp/douban/data/handler/DoubanAbstractLoadHandler.ts`
+- `src/org/wanxp/douban/data/handler/DoubanBookLoadHandler.ts`
+
+已完成：
+- 支持按内容类型和字段限制数组输出长度，同一字段匹配多条规则时采用更严格的非零上限。
+- 数组限制只影响生成笔记时的变量，不修改原始抓取数据和用户已有内容。
+- 新增 `{{imageName}}` 和图书 `{{popularComments}}` 模板变量。
+- 新增“创建后打开笔记”设置；搜索导入默认保持打开，同步任务继续后台执行。
+- 新增批量 URL 导入，支持链接规范化、去重、movie/teleplay 自动识别、顺序限速、取消和逐条失败原因。
+- 完善舞台剧字段解析，兼容顶层信息与多版本演出区块，并补充独立模板和旧页面回退。
+- 设置导入、导出和恢复默认值均已覆盖新配置。
+
+状态：已完成（2026-10-25）
+
+## 10. P3 体验与维护改进
+
+目标：完成设置、搜索、国际化和模板变量交互的最后一轮体验优化。
+
+已完成：
+- 国际化文案在每次读取时重新检测 Obsidian 当前语言，不再固定在插件加载时。
+- 搜索框 Enter 阻止事件继续传播，避免触发底层 Obsidian 交互；取消搜索不会再误提交已输入内容。
+- 模板变量表格中的变量名可点击复制为 `{{变量名}}`，用户状态变量同样支持复制。
+- 设置页支持窄容器布局：页签横向滚动，设置项和控件自动换行，宽表格可横向滚动。
+
+状态：已完成（2026-10-25）
+
 ## 后续建议
 
 1. 为同步预览、模板另存为、自动备份补充文档截图

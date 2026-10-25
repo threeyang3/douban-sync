@@ -98,6 +98,7 @@ export enum TemplateKey {
 	noteTemplateFile = 'noteTemplateFile',
 	gameTemplateFile = 'gameTemplateFile',
 	teleplayTemplateFile = 'teleplayTemplateFile',
+	theaterTemplateFile = 'theaterTemplateFile',
 }
 
 export enum SupportType {

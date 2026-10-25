@@ -17,7 +17,6 @@ function getObsidianLocale(): string {
 	const momentLocale = moment.locale();
 	if (momentLocale) {
 		lang = momentLocale;
-		console.log('[Obsidian-Douban] Detected language from moment.locale():', lang);
 	}
 
 	// 方式2: 从 localStorage 获取 (备用)
@@ -25,7 +24,6 @@ function getObsidianLocale(): string {
 		const localStorageLang = window.localStorage.getItem('language');
 		if (localStorageLang) {
 			lang = localStorageLang;
-			console.log('[Obsidian-Douban] Detected language from localStorage:', lang);
 		}
 	}
 
@@ -46,12 +44,11 @@ const localeMap: { [k: string]: Partial<typeof en> } = {
 	'zh-cn': zhCN,
 };
 
-const lang = getObsidianLocale();
-const locale = localeMap[lang] || localeMap['en'];
-
 
 export default class I18nHelper {
 	public getMessage(str: keyof typeof en | string, ...params: any[]): string {
+		const lang = getObsidianLocale();
+		const locale = localeMap[lang] || localeMap['en'];
 		if (!locale) {
 			console.error('Error: obsidian douban locale not found', lang);
 		}

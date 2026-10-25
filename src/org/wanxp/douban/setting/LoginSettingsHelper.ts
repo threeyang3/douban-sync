@@ -5,6 +5,7 @@ import DoubanLoginModel from "../component/DoubanLoginModel";
 import User from "../user/User";
 import StringUtil from "../../utils/StringUtil";
 import {log} from "../../utils/Logutil";
+import DoubanQrLoginModal from "../component/DoubanQrLoginModal";
 
 export function constructLoginUI(containerEl: HTMLElement, manager: SettingsManager) {
 	// containerEl.createEl('h3', { text: i18nHelper.getMessage('1210') });
@@ -68,6 +69,18 @@ export function constructLoginSettingsUI(containerEl: HTMLElement, manager: Sett
 				manager.debug(`配置界面:点击登录按钮`)
 				const loginModel = new DoubanLoginModel(containerEl, manager);
 				await loginModel.doLogin();
+			});
+	});
+	new Setting(loginSetting).setName(i18nHelper.getMessage('100140')).addButton((button) => {
+		return button
+			.setButtonText(i18nHelper.getMessage('100140'))
+			.setCta()
+			.onClick(() => {
+				new DoubanQrLoginModal(
+					manager.plugin.app,
+					manager,
+					() => constructDoubanTokenSettingsUI(containerEl, manager),
+				).open();
 			});
 	});
 	const loginCookieSetting:Setting = new Setting(loginSetting).setName(i18nHelper.getMessage('100133'));
@@ -136,11 +149,15 @@ export function constructLoginCookieSettingsUI(containerEl: HTMLElement, parentC
 export function constructHasLoginSettingsUI(containerEl: HTMLElement, manager: SettingsManager) {
 	const user: User = manager.plugin.userComponent.getUser();
 	let userDom = new DocumentFragment();
-	userDom.createDiv().innerHTML =
-		`${i18nHelper.getMessage('100120')}<br>
+	if (user.id) {
+		userDom.createDiv().innerHTML =
+			`${i18nHelper.getMessage('100120')}<br>
 ${i18nHelper.getMessage('100123')}: <a href="https://www.douban.com/people/${user.id}/">${user.id}</a><br>
 		${i18nHelper.getMessage('100124')}: ${user.name}<br>
 ${i18nHelper.getMessage('100125')}`;
+	} else {
+		userDom.createDiv().setText(i18nHelper.getMessage('100154'));
+	}
 	manager.debug(`配置界面:展示豆瓣登录信息:id:${StringUtil.confuse(user.id)}, 用户名:${StringUtil.confuse(user.name)}`)
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('100126'))
@@ -161,19 +178,44 @@ ${i18nHelper.getMessage('100125')}`;
 }
 
 function showMobileLogin(containerEl: HTMLElement, manager: SettingsManager) {
-	new Setting(containerEl)
+	const loginButtons = containerEl.createDiv('login-button');
+	const cookieContainer = containerEl.createDiv('login-button-cookie');
+	new Setting(loginButtons)
 		.setName(i18nHelper.getMessage('100126'))
 		.setDesc(i18nHelper.getMessage('100129'))
+		.addButton((button) => {
+			return button
+				.setButtonText(i18nHelper.getMessage('100140'))
+				.setCta()
+				.onClick(() => {
+					new DoubanQrLoginModal(
+						manager.plugin.app,
+						manager,
+						() => constructDoubanTokenSettingsUI(containerEl, manager),
+					).open();
+				});
+		});
+	new Setting(loginButtons)
+		.setName(i18nHelper.getMessage('100135'))
+		.addButton((button) => {
+			return button
+				.setButtonText(i18nHelper.getMessage('100135'))
+				.onClick(() => constructLoginCookieSettingsUI(cookieContainer, containerEl, manager));
+		});
 }
 
 function showMobileLogout(containerEl: HTMLElement, manager: SettingsManager) {
 	const user: User = manager.plugin.userComponent.getUser();
 	let userDom = new DocumentFragment();
-	userDom.createDiv().innerHTML =
-		`${i18nHelper.getMessage('100120')}<br>
+	if (user.id) {
+		userDom.createDiv().innerHTML =
+			`${i18nHelper.getMessage('100120')}<br>
 ${i18nHelper.getMessage('100123')}: <a href="https://www.douban.com/people/${user.id}/">${user.id}</a><br>
 		${i18nHelper.getMessage('100124')}: ${user.name}<br>
 ${i18nHelper.getMessage('100125')}`;
+	} else {
+		userDom.createDiv().setText(i18nHelper.getMessage('100154'));
+	}
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('100126'))
 		.setDesc(userDom)

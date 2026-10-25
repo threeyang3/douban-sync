@@ -1,6 +1,6 @@
 import SettingsManager from "./SettingsManager";
 import {i18nHelper} from "../../lang/helper";
-import {Setting} from "obsidian";
+import {Notice, Setting} from "obsidian";
 import DoubanPlugin from "../../main";
 
 export function constructTemplateVariablesUI(containerEl: HTMLElement, manager: SettingsManager) {
@@ -8,7 +8,8 @@ export function constructTemplateVariablesUI(containerEl: HTMLElement, manager: 
 	containerEl.createEl('p', { text: i18nHelper.getMessage('122003') });
 
 	const basicVariablesTable = new DocumentFragment();
-	basicVariablesTable.createDiv().innerHTML = `
+	const basicVariablesContent = basicVariablesTable.createDiv();
+	basicVariablesContent.innerHTML = `
 ${i18nHelper.getMessage('122004')}
 <br>
 <br>
@@ -82,6 +83,10 @@ ${i18nHelper.getMessage('122004')}
 		<td>${i18nHelper.getMessage('310505')}</td>
 		<td>${i18nHelper.getMessage('310605')}</td>
 		<td>${i18nHelper.getMessage('310705')}</td>
+	</tr>
+	<tr>
+		<td>imageName</td>
+		<td colspan="7">${i18nHelper.getMessage('imageNameDesc')}</td>
 	</tr>
 	<tr>
 		<td>imageData.url</td>
@@ -177,15 +182,23 @@ ${i18nHelper.getMessage('122004')}
 		<td>${i18nHelper.getMessage('330102')}</td>
 	</tr>
 </table>`;
+	enableVariableCopy(basicVariablesContent);
 
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('122001'))
 		.setDesc(basicVariablesTable)
 	;
+	containerEl.createEl('p', {
+		text: `{{popularComments}} - ${i18nHelper.getMessage('popularCommentsDesc')}`,
+	});
+	containerEl.createEl('p', {
+		text: i18nHelper.getMessage('theaterVariablesDesc'),
+	});
 
 
 	const extraVariablesTable = new DocumentFragment();
-	extraVariablesTable.createDiv().innerHTML = `
+	const extraVariablesContent = extraVariablesTable.createDiv();
+	extraVariablesContent.innerHTML = `
 ${i18nHelper.getMessage('122004')}
 <br>
 <br>
@@ -313,6 +326,7 @@ ${i18nHelper.getMessage('122004')}
 		<td>${i18nHelper.getMessage('310722')}</th>
 	</tr>
 </table>`;
+	enableVariableCopy(extraVariablesContent);
 
 
 	new Setting(containerEl)
@@ -321,7 +335,8 @@ ${i18nHelper.getMessage('122004')}
 
 
 	const userInfoVariables = new DocumentFragment();
-	userInfoVariables.createDiv().innerHTML = `
+	const userInfoContent = userInfoVariables.createDiv();
+	userInfoContent.innerHTML = `
 ${i18nHelper.getMessage('160225')}
 <br>
 <strong>myTags</strong> → ${i18nHelper.getMessage('160226')}<br>
@@ -334,7 +349,29 @@ ${i18nHelper.getMessage('160225')}
 
 `
 	;
+	enableVariableCopy(userInfoContent);
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('122010'))
 		.setDesc(userInfoVariables);
+}
+
+function enableVariableCopy(container: HTMLElement): void {
+	container.querySelectorAll<HTMLElement>('td, th, strong').forEach(cell => {
+		const text = (cell.textContent || '').trim();
+		const match = text.match(/^([a-zA-Z][a-zA-Z0-9_.-]*)(?=[:：]|$)/);
+		if (!match) {
+			return;
+		}
+		const variable = `{{${match[1]}}}`;
+		cell.addClass('obsidian_douban_variable_copy');
+		cell.setAttr('title', i18nHelper.getMessage('122011'));
+		cell.addEventListener('click', async () => {
+			try {
+				await navigator.clipboard.writeText(variable);
+				new Notice(i18nHelper.getMessage('122012', variable));
+			} catch (_) {
+				new Notice(i18nHelper.getMessage('122013'));
+			}
+		});
+	});
 }

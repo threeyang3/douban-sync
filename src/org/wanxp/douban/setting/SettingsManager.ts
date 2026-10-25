@@ -171,6 +171,26 @@ export default class SettingsManager {
 		return arraySetting;
 	}
 
+	async addArrayLengthLimit() {
+		if (!this.settings.arrayLengthLimits) {
+			this.settings.arrayLengthLimits = [];
+		}
+		this.settings.arrayLengthLimits.push({
+			type: SupportType.all,
+			field: '',
+			limit: 0,
+		});
+		await this.plugin.saveSettings();
+	}
+
+	async removeArrayLengthLimit(index: number) {
+		if (!this.settings.arrayLengthLimits?.[index]) {
+			return;
+		}
+		this.settings.arrayLengthLimits.splice(index, 1);
+		await this.plugin.saveSettings();
+	}
+
 	getSettingStr(field: keyof DoubanPluginSetting): string {
 		const setting = this.getSetting(field);
 		if (setting) {
@@ -210,12 +230,14 @@ export default class SettingsManager {
 		this.settings.noteTemplateFile = DEFAULT_SETTINGS.noteTemplateFile;
 		this.settings.gameTemplateFile = DEFAULT_SETTINGS.gameTemplateFile;
 		this.settings.teleplayTemplateFile = DEFAULT_SETTINGS.teleplayTemplateFile;
+		this.settings.theaterTemplateFile = DEFAULT_SETTINGS.theaterTemplateFile;
 		this.settings.movieTemplateConfig = DEFAULT_SETTINGS.movieTemplateConfig;
 		this.settings.bookTemplateConfig = DEFAULT_SETTINGS.bookTemplateConfig;
 		this.settings.musicTemplateConfig = DEFAULT_SETTINGS.musicTemplateConfig;
 		this.settings.noteTemplateConfig = DEFAULT_SETTINGS.noteTemplateConfig;
 		this.settings.gameTemplateConfig = DEFAULT_SETTINGS.gameTemplateConfig;
 		this.settings.teleplayTemplateConfig = DEFAULT_SETTINGS.teleplayTemplateConfig;
+		this.settings.theaterTemplateConfig = DEFAULT_SETTINGS.theaterTemplateConfig;
 		this.settings.dateFormat = DEFAULT_SETTINGS.dateFormat;
 		this.settings.timeFormat = DEFAULT_SETTINGS.timeFormat;
 		this.settings.searchUrl = DEFAULT_SETTINGS.searchUrl;
@@ -227,10 +249,12 @@ export default class SettingsManager {
 		this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
 		this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
 		this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
+		this.settings.showAfterCreate = DEFAULT_SETTINGS.showAfterCreate;
 		this.settings.syncBackupBeforeReplace = DEFAULT_SETTINGS.syncBackupBeforeReplace;
 		this.settings.syncBackupFolder = DEFAULT_SETTINGS.syncBackupFolder;
 		this.settings.includeSensitiveInSettingExport = DEFAULT_SETTINGS.includeSensitiveInSettingExport;
 		this.settings.dataProtection = DEFAULT_SETTINGS.dataProtection;
+		this.settings.arrayLengthLimits = DEFAULT_SETTINGS.arrayLengthLimits.map(limit => ({...limit}));
 	}
 
 	clearLoginInfo() {

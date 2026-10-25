@@ -59,13 +59,25 @@ export const FileUtil = {
 	 * replace special characters for filename
 	 */
 	replaceSpecialCharactersForFileName(fileNameInput: string): string {
-		let fileName = fileNameInput.replaceAll(/[\\/:*?"<>|]/g, '_');
-		fileName = fileName.replaceAll(/[\n\r\t]/g, '_');
-		fileName = fileName.replaceAll(/\s+/g, '_');
+		let fileName = String(fileNameInput || '').trim();
+		// Keep ordinary spaces because they are valid in Obsidian and preserve titles.
+		fileName = fileName.replaceAll(/[\\/:*?"<>|\u0000-\u001F\u007F]/g, '_');
 		fileName = fileName.replaceAll(/^\.+/g, '_'); // remove leading dots
 		fileName = fileName.replaceAll(/\.+$/g, '_'); // remove trailing dots
-		fileName = fileName.replaceAll(/_+/g, '_'); // remove duplicate underscores
 		return fileName;
+	},
+
+	toMarkdownLinkPath(pathInput: string): string {
+		const path = String(pathInput || '').replace(/\\/g, '/');
+		if (!path || /^(?:https?:|data:|mailto:)/i.test(path)) {
+			return path;
+		}
+		return path.split('/').map(part => {
+			// Preserve already-encoded path segments to avoid double encoding.
+			return part.split(/(%[0-9A-Fa-f]{2})/g)
+				.map(segment => /^%[0-9A-Fa-f]{2}$/.test(segment) ? segment : encodeURIComponent(segment))
+				.join('');
+		}).join('/');
 	},
 
 

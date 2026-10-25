@@ -457,3 +457,138 @@
 	font-family: var(--font-monospace);
 	font-size: 0.9em;
 }
+.obsidian_douban_qr_login {
+	text-align: center;
+}
+
+.obsidian_douban_qr_image_container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	margin: 16px 0;
+}
+
+.obsidian_douban_qr_image_container img {
+	width: min(280px, 80vw);
+	height: auto;
+	padding: 12px;
+	border-radius: 12px;
+	background: #fff;
+	image-rendering: pixelated;
+}
+
+.obsidian_douban_qr_status {
+	min-height: 1.5em;
+	color: var(--text-muted);
+}
+
+.obsidian_douban_qr_status.has_error {
+	color: var(--text-error);
+}
+
+.obsidian_douban_qr_controls {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.obsidian_douban_batch_urls {
+	width: 100%;
+	min-height: 180px;
+	resize: vertical;
+}
+
+.obsidian_douban_batch_controls {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.obsidian_douban_batch_progress {
+	min-height: 1.5em;
+	margin-top: 12px;
+	color: var(--text-muted);
+}
+
+.obsidian_douban_batch_summary {
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.obsidian_douban_batch_summary p {
+	white-space: pre-wrap;
+	user-select: text;
+}
+
+.obsidian_douban_settings_tab_headers {
+	flex-wrap: nowrap;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.obsidian_douban_settings_tab_header {
+	flex: 0 0 auto;
+}
+
+.obsidian_douban_settings_tab_content.active {
+	container-type: inline-size;
+	min-width: 0;
+}
+
+.obsidian_douban_settings_tab_content .setting-item {
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.obsidian_douban_settings_tab_content .setting-item-info,
+.obsidian_douban_settings_tab_content .setting-item-control {
+	min-width: 0;
+}
+
+.obsidian_douban_settings_tab_content .setting-item-control {
+	flex-wrap: wrap;
+	max-width: 100%;
+}
+
+.obsidian_douban_settings_tab_content table {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.obsidian_douban_variable_copy {
+	cursor: pointer;
+	font-family: var(--font-monospace);
+	background: var(--background-modifier-hover);
+}
+
+.obsidian_douban_variable_copy:hover {
+	color: var(--text-accent);
+}
+
+@container (max-width: 640px) {
+	.obsidian_douban_settings_tab_content .setting-item {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.obsidian_douban_settings_tab_content .setting-item-control {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.obsidian_douban_settings_tab_content .setting-item-control > * {
+		max-width: 100%;
+	}
+
+	.obsidian_douban_template_file_select {
+		width: 100%;
+	}
+
+	.obsidian_douban_batch_controls {
+		flex-wrap: wrap;
+	}
+}

@@ -25,12 +25,14 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	noteTemplateFile: ``,
 	gameTemplateFile: ``,
 	teleplayTemplateFile: ``,
+	theaterTemplateFile: ``,
 	movieTemplateConfig: { source: 'builtin' },
 	bookTemplateConfig: { source: 'builtin' },
 	musicTemplateConfig: { source: 'builtin' },
 	noteTemplateConfig: { source: 'builtin' },
 	gameTemplateConfig: { source: 'builtin' },
 	teleplayTemplateConfig: { source: 'builtin' },
+	theaterTemplateConfig: { source: 'builtin' },
 	searchUrl: 'https://www.douban.com/search?q=',
 	dateFormat: "yyyy-MM-DD",
 	timeFormat: "HH:mm:ss",
@@ -58,6 +60,7 @@ export const DEFAULT_SETTINGS: DoubanPluginSetting = {
 	cacheImage: true,
 	cacheHighQuantityImage: true,
 		overwriteCoverImage: false,
+	showAfterCreate: true,
 	attachmentPath: 'assets',
 	attachmentFileName: "{{title}}",
 	syncHandledDataArray: [],
@@ -87,6 +90,7 @@ title: {{title}}
 	syncBackupBeforeReplace: true,
 	syncBackupFolder: '.tmp/obsidian-douban/backups',
 	includeSensitiveInSettingExport: false,
+	arrayLengthLimits: [],
 
 }
 

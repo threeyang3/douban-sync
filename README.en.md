@@ -1,6 +1,6 @@
 # Obsidian Douban Plugin
 
-An Obsidian plugin for importing and syncing Douban data. It can create notes from Douban movies, TV shows, books, music, games, notes, and personal collection records.
+An Obsidian plugin for importing and syncing Douban data. It can create notes from Douban movies, TV shows, books, music, games, notes, theater productions, and personal collection records.
 
 ![background](doc/background.png)
 
@@ -18,6 +18,12 @@ An Obsidian plugin for importing and syncing Douban data. It can create notes fr
 - Inherit selected frontmatter fields from existing notes during forced replacement sync
 - Preview forced sync changes before execution, back up old notes automatically, and emit a structured sync report
 - Export settings without login credentials by default and import settings through a whitelist-based sanitizer
+- Page guards, HTTP timeouts/limited retries, and isolated per-item failures prevent blank notes
+- QR code login with manual Cookie login retained as a fallback
+- Batch URL import with progress, cancellation, and per-item failure details
+- Per-type array length limits for fields such as actor, director, author, and aliases
+- Full theater parsing and an independent theater template
+- New `imageName` and book `popularComments` template variables
 - Works on desktop and mobile Obsidian
 
 ## Usage
@@ -45,6 +51,19 @@ Before a forced replacement sync runs, the plugin can now show a preview of whic
 - Template settings now provide built-in presets that can be copied or written to files directly
 - The sync modal now supports inheriting selected frontmatter fields from the old note during forced replacement
 
+### New in 2.2.0
+
+- Added page guards for login, challenge, access-denied, incomplete, and empty responses
+- Added desktop request timeouts, bounded GET/HEAD retries, redirect limits, and active aborts
+- Completed mobile request headers, timeouts, retries, and relative redirect handling
+- Added QR code login while retaining manual Cookie login on desktop and mobile
+- Added batch URL import with deduplication, movie/teleplay detection, cancellation, and failure isolation
+- Added array field length limits without modifying the original scraped data
+- Added complete theater parsing, templates, and legacy page fallbacks
+- Added `imageName` and book `popularComments` template variables
+- Added the open-after-create setting, narrow settings layout, and click-to-copy template variables
+- Internationalization now follows the current Obsidian locale at runtime
+
 ### New in 2.1.x
 
 - Force sync now supports pre-execution preview and confirmation
@@ -65,7 +84,7 @@ Before a forced replacement sync runs, the plugin can now show a preview of whic
 ### Manual
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from this repository's Release page
-2. Put them into `/.obsidian/plugins/obsidian-douban/` in your vault
+2. Put them into `/.obsidian/plugins/obsidian-douban-plugin/` in your vault
 3. Enable the plugin in Obsidian
 
 ## Development

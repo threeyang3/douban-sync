@@ -6,6 +6,7 @@ import {log} from "../../../../utils/Logutil";
 import {i18nHelper} from "../../../../lang/helper";
 import {DoubanHttpUtil} from "../../../../utils/DoubanHttpUtil";
 import {Platform} from "obsidian";
+import DoubanPageGuard from "../../../../utils/DoubanPageGuard";
 
 export abstract class AbstractSearchPageFetcher implements SearchPageFetcherInterface {
 
@@ -26,8 +27,13 @@ export abstract class AbstractSearchPageFetcher implements SearchPageFetcherInte
 			return Promise.resolve("");
 		}
 		return DoubanHttpUtil.httpRequestGet(url, this.settingsManager.getHeaders(), this.settingsManager)
+			.then(html => {
+				DoubanPageGuard.assertCanParse(html, {allowFragment: true});
+				return html;
+			})
 			.catch(e => {
-				throw log.error(i18nHelper.getMessage('130101').replace('{0}', e.toString()), e);
+				const detail = DoubanPageGuard.describeError(e);
+				throw log.error(i18nHelper.getMessage('130101').replace('{0}', detail), e);
 			});
 	}
 

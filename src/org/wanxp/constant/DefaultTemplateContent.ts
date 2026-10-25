@@ -313,6 +313,59 @@ ${teleplayTable}
 ## 感想
 `;
 
+// ==================== Theater ====================
+
+const theaterTable = `> | 演出日期 | {{datePublished}} |
+> | 类型 | \`= this.genre\` |
+> | 导演 | \`= this.director\` |
+> | 主演 | \`= this.actor\` |
+> | 演出团体 | {{publisher}} |`;
+
+const theaterSyncTable = `> | 状态 | \`= this.state\` |
+> | 类型 | \`= this.genre\` |
+> | 标签 | \`= this.tags\` |
+> | 评分 | \`= this.myRatingStar\` |
+> | 短评 | \`= this.短评\` |
+> | 导演 | \`= this.director\` |
+> | 主演 | \`= this.actor\` |
+> | 演出团体 | {{publisher}} |
+> | 演出日期 | {{datePublished}} |`;
+
+const theaterBasic = `---
+title: {{title}}
+originalTitle: {{originalTitle}}
+type: {{type}}
+genre: {{genre}}
+score: {{score}}
+datePublished: {{datePublished}}
+director: "[[{{director}}]]"
+actor: {{actor}}
+author: {{author}}
+publisher: {{publisher}}
+aliases: {{aliases}}
+language: {{language}}
+doubanId: {{id}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
+---
+
+> [!douban-info]+ 🎭 **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${theaterTable}
+
+> [!abstract]- **简介**
+> {{desc}}
+
+## 记录
+
+## 感想
+`;
+
 // ==================== Exports ====================
 
 export const DEFAULT_TEMPLATE_CONTENT: Record<string, string> = {
@@ -322,6 +375,7 @@ export const DEFAULT_TEMPLATE_CONTENT: Record<string, string> = {
 	noteTemplateFileContent: noteBasic,
 	gameTemplateFileContent: gameBasic,
 	teleplayTemplateFileContent: teleplayBasic,
+	theaterTemplateFileContent: theaterBasic,
 };
 
 export const DEFAULT_TEMPLATE_CONTENT_WITH_STATE: Record<string, string> = {
@@ -331,6 +385,7 @@ export const DEFAULT_TEMPLATE_CONTENT_WITH_STATE: Record<string, string> = {
 	noteTemplateFileContent: noteBasic,
 	gameTemplateFileContent: syncify(gameBasic, gameSyncTable, gameTable),
 	teleplayTemplateFileContent: syncify(teleplayBasic, teleplaySyncTable, teleplayTable),
+	theaterTemplateFileContent: syncify(theaterBasic, theaterSyncTable, theaterTable),
 };
 
 export function getDefaultTemplateContent(key: TemplateKey, useStateTemplate: boolean = true): string {

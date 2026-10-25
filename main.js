@@ -559,8 +559,8 @@ var require_follow_redirects = __commonJS({
   "node_modules/follow-redirects/index.js"(exports, module2) {
     var url = require("url");
     var URL2 = url.URL;
-    var http2 = require("http");
-    var https2 = require("https");
+    var http = require("http");
+    var https = require("https");
     var Writable = require("stream").Writable;
     var assert = require("assert");
     var debug = require_debug();
@@ -1034,7 +1034,7 @@ var require_follow_redirects = __commonJS({
     function escapeRegex2(regex) {
       return regex.replace(/[\]\\/()*+?.$]/g, "\\$&");
     }
-    module2.exports = wrap2({ http: http2, https: https2 });
+    module2.exports = wrap2({ http, https });
     module2.exports.wrap = wrap2;
   }
 });
@@ -2131,6 +2131,2092 @@ ${str}
   }
 });
 
+// node_modules/qrcode/lib/can-promise.js
+var require_can_promise = __commonJS({
+  "node_modules/qrcode/lib/can-promise.js"(exports, module2) {
+    module2.exports = function() {
+      return typeof Promise === "function" && Promise.prototype && Promise.prototype.then;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/utils.js
+var require_utils = __commonJS({
+  "node_modules/qrcode/lib/core/utils.js"(exports) {
+    var toSJISFunction;
+    var CODEWORDS_COUNT = [
+      0,
+      26,
+      44,
+      70,
+      100,
+      134,
+      172,
+      196,
+      242,
+      292,
+      346,
+      404,
+      466,
+      532,
+      581,
+      655,
+      733,
+      815,
+      901,
+      991,
+      1085,
+      1156,
+      1258,
+      1364,
+      1474,
+      1588,
+      1706,
+      1828,
+      1921,
+      2051,
+      2185,
+      2323,
+      2465,
+      2611,
+      2761,
+      2876,
+      3034,
+      3196,
+      3362,
+      3532,
+      3706
+    ];
+    exports.getSymbolSize = function getSymbolSize(version) {
+      if (!version)
+        throw new Error('"version" cannot be null or undefined');
+      if (version < 1 || version > 40)
+        throw new Error('"version" should be in range from 1 to 40');
+      return version * 4 + 17;
+    };
+    exports.getSymbolTotalCodewords = function getSymbolTotalCodewords(version) {
+      return CODEWORDS_COUNT[version];
+    };
+    exports.getBCHDigit = function(data2) {
+      let digit = 0;
+      while (data2 !== 0) {
+        digit++;
+        data2 >>>= 1;
+      }
+      return digit;
+    };
+    exports.setToSJISFunction = function setToSJISFunction(f) {
+      if (typeof f !== "function") {
+        throw new Error('"toSJISFunc" is not a valid function.');
+      }
+      toSJISFunction = f;
+    };
+    exports.isKanjiModeEnabled = function() {
+      return typeof toSJISFunction !== "undefined";
+    };
+    exports.toSJIS = function toSJIS(kanji) {
+      return toSJISFunction(kanji);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/error-correction-level.js
+var require_error_correction_level = __commonJS({
+  "node_modules/qrcode/lib/core/error-correction-level.js"(exports) {
+    exports.L = { bit: 1 };
+    exports.M = { bit: 0 };
+    exports.Q = { bit: 3 };
+    exports.H = { bit: 2 };
+    function fromString(string) {
+      if (typeof string !== "string") {
+        throw new Error("Param is not a string");
+      }
+      const lcStr = string.toLowerCase();
+      switch (lcStr) {
+        case "l":
+        case "low":
+          return exports.L;
+        case "m":
+        case "medium":
+          return exports.M;
+        case "q":
+        case "quartile":
+          return exports.Q;
+        case "h":
+        case "high":
+          return exports.H;
+        default:
+          throw new Error("Unknown EC Level: " + string);
+      }
+    }
+    exports.isValid = function isValid(level) {
+      return level && typeof level.bit !== "undefined" && level.bit >= 0 && level.bit < 4;
+    };
+    exports.from = function from(value, defaultValue) {
+      if (exports.isValid(value)) {
+        return value;
+      }
+      try {
+        return fromString(value);
+      } catch (e) {
+        return defaultValue;
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/bit-buffer.js
+var require_bit_buffer = __commonJS({
+  "node_modules/qrcode/lib/core/bit-buffer.js"(exports, module2) {
+    function BitBuffer() {
+      this.buffer = [];
+      this.length = 0;
+    }
+    BitBuffer.prototype = {
+      get: function(index2) {
+        const bufIndex = Math.floor(index2 / 8);
+        return (this.buffer[bufIndex] >>> 7 - index2 % 8 & 1) === 1;
+      },
+      put: function(num, length) {
+        for (let i = 0; i < length; i++) {
+          this.putBit((num >>> length - i - 1 & 1) === 1);
+        }
+      },
+      getLengthInBits: function() {
+        return this.length;
+      },
+      putBit: function(bit) {
+        const bufIndex = Math.floor(this.length / 8);
+        if (this.buffer.length <= bufIndex) {
+          this.buffer.push(0);
+        }
+        if (bit) {
+          this.buffer[bufIndex] |= 128 >>> this.length % 8;
+        }
+        this.length++;
+      }
+    };
+    module2.exports = BitBuffer;
+  }
+});
+
+// node_modules/qrcode/lib/core/bit-matrix.js
+var require_bit_matrix = __commonJS({
+  "node_modules/qrcode/lib/core/bit-matrix.js"(exports, module2) {
+    function BitMatrix(size) {
+      if (!size || size < 1) {
+        throw new Error("BitMatrix size must be defined and greater than 0");
+      }
+      this.size = size;
+      this.data = new Uint8Array(size * size);
+      this.reservedBit = new Uint8Array(size * size);
+    }
+    BitMatrix.prototype.set = function(row, col, value, reserved) {
+      const index2 = row * this.size + col;
+      this.data[index2] = value;
+      if (reserved)
+        this.reservedBit[index2] = true;
+    };
+    BitMatrix.prototype.get = function(row, col) {
+      return this.data[row * this.size + col];
+    };
+    BitMatrix.prototype.xor = function(row, col, value) {
+      this.data[row * this.size + col] ^= value;
+    };
+    BitMatrix.prototype.isReserved = function(row, col) {
+      return this.reservedBit[row * this.size + col];
+    };
+    module2.exports = BitMatrix;
+  }
+});
+
+// node_modules/qrcode/lib/core/alignment-pattern.js
+var require_alignment_pattern = __commonJS({
+  "node_modules/qrcode/lib/core/alignment-pattern.js"(exports) {
+    var getSymbolSize = require_utils().getSymbolSize;
+    exports.getRowColCoords = function getRowColCoords(version) {
+      if (version === 1)
+        return [];
+      const posCount = Math.floor(version / 7) + 2;
+      const size = getSymbolSize(version);
+      const intervals = size === 145 ? 26 : Math.ceil((size - 13) / (2 * posCount - 2)) * 2;
+      const positions = [size - 7];
+      for (let i = 1; i < posCount - 1; i++) {
+        positions[i] = positions[i - 1] - intervals;
+      }
+      positions.push(6);
+      return positions.reverse();
+    };
+    exports.getPositions = function getPositions(version) {
+      const coords = [];
+      const pos = exports.getRowColCoords(version);
+      const posLength = pos.length;
+      for (let i = 0; i < posLength; i++) {
+        for (let j = 0; j < posLength; j++) {
+          if (i === 0 && j === 0 || i === 0 && j === posLength - 1 || i === posLength - 1 && j === 0) {
+            continue;
+          }
+          coords.push([pos[i], pos[j]]);
+        }
+      }
+      return coords;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/finder-pattern.js
+var require_finder_pattern = __commonJS({
+  "node_modules/qrcode/lib/core/finder-pattern.js"(exports) {
+    var getSymbolSize = require_utils().getSymbolSize;
+    var FINDER_PATTERN_SIZE = 7;
+    exports.getPositions = function getPositions(version) {
+      const size = getSymbolSize(version);
+      return [
+        [0, 0],
+        [size - FINDER_PATTERN_SIZE, 0],
+        [0, size - FINDER_PATTERN_SIZE]
+      ];
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/mask-pattern.js
+var require_mask_pattern = __commonJS({
+  "node_modules/qrcode/lib/core/mask-pattern.js"(exports) {
+    exports.Patterns = {
+      PATTERN000: 0,
+      PATTERN001: 1,
+      PATTERN010: 2,
+      PATTERN011: 3,
+      PATTERN100: 4,
+      PATTERN101: 5,
+      PATTERN110: 6,
+      PATTERN111: 7
+    };
+    var PenaltyScores = {
+      N1: 3,
+      N2: 3,
+      N3: 40,
+      N4: 10
+    };
+    exports.isValid = function isValid(mask) {
+      return mask != null && mask !== "" && !isNaN(mask) && mask >= 0 && mask <= 7;
+    };
+    exports.from = function from(value) {
+      return exports.isValid(value) ? parseInt(value, 10) : void 0;
+    };
+    exports.getPenaltyN1 = function getPenaltyN1(data2) {
+      const size = data2.size;
+      let points = 0;
+      let sameCountCol = 0;
+      let sameCountRow = 0;
+      let lastCol = null;
+      let lastRow = null;
+      for (let row = 0; row < size; row++) {
+        sameCountCol = sameCountRow = 0;
+        lastCol = lastRow = null;
+        for (let col = 0; col < size; col++) {
+          let module3 = data2.get(row, col);
+          if (module3 === lastCol) {
+            sameCountCol++;
+          } else {
+            if (sameCountCol >= 5)
+              points += PenaltyScores.N1 + (sameCountCol - 5);
+            lastCol = module3;
+            sameCountCol = 1;
+          }
+          module3 = data2.get(col, row);
+          if (module3 === lastRow) {
+            sameCountRow++;
+          } else {
+            if (sameCountRow >= 5)
+              points += PenaltyScores.N1 + (sameCountRow - 5);
+            lastRow = module3;
+            sameCountRow = 1;
+          }
+        }
+        if (sameCountCol >= 5)
+          points += PenaltyScores.N1 + (sameCountCol - 5);
+        if (sameCountRow >= 5)
+          points += PenaltyScores.N1 + (sameCountRow - 5);
+      }
+      return points;
+    };
+    exports.getPenaltyN2 = function getPenaltyN2(data2) {
+      const size = data2.size;
+      let points = 0;
+      for (let row = 0; row < size - 1; row++) {
+        for (let col = 0; col < size - 1; col++) {
+          const last2 = data2.get(row, col) + data2.get(row, col + 1) + data2.get(row + 1, col) + data2.get(row + 1, col + 1);
+          if (last2 === 4 || last2 === 0)
+            points++;
+        }
+      }
+      return points * PenaltyScores.N2;
+    };
+    exports.getPenaltyN3 = function getPenaltyN3(data2) {
+      const size = data2.size;
+      let points = 0;
+      let bitsCol = 0;
+      let bitsRow = 0;
+      for (let row = 0; row < size; row++) {
+        bitsCol = bitsRow = 0;
+        for (let col = 0; col < size; col++) {
+          bitsCol = bitsCol << 1 & 2047 | data2.get(row, col);
+          if (col >= 10 && (bitsCol === 1488 || bitsCol === 93))
+            points++;
+          bitsRow = bitsRow << 1 & 2047 | data2.get(col, row);
+          if (col >= 10 && (bitsRow === 1488 || bitsRow === 93))
+            points++;
+        }
+      }
+      return points * PenaltyScores.N3;
+    };
+    exports.getPenaltyN4 = function getPenaltyN4(data2) {
+      let darkCount = 0;
+      const modulesCount = data2.data.length;
+      for (let i = 0; i < modulesCount; i++)
+        darkCount += data2.data[i];
+      const k = Math.abs(Math.ceil(darkCount * 100 / modulesCount / 5) - 10);
+      return k * PenaltyScores.N4;
+    };
+    function getMaskAt(maskPattern, i, j) {
+      switch (maskPattern) {
+        case exports.Patterns.PATTERN000:
+          return (i + j) % 2 === 0;
+        case exports.Patterns.PATTERN001:
+          return i % 2 === 0;
+        case exports.Patterns.PATTERN010:
+          return j % 3 === 0;
+        case exports.Patterns.PATTERN011:
+          return (i + j) % 3 === 0;
+        case exports.Patterns.PATTERN100:
+          return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+        case exports.Patterns.PATTERN101:
+          return i * j % 2 + i * j % 3 === 0;
+        case exports.Patterns.PATTERN110:
+          return (i * j % 2 + i * j % 3) % 2 === 0;
+        case exports.Patterns.PATTERN111:
+          return (i * j % 3 + (i + j) % 2) % 2 === 0;
+        default:
+          throw new Error("bad maskPattern:" + maskPattern);
+      }
+    }
+    exports.applyMask = function applyMask(pattern, data2) {
+      const size = data2.size;
+      for (let col = 0; col < size; col++) {
+        for (let row = 0; row < size; row++) {
+          if (data2.isReserved(row, col))
+            continue;
+          data2.xor(row, col, getMaskAt(pattern, row, col));
+        }
+      }
+    };
+    exports.getBestMask = function getBestMask(data2, setupFormatFunc) {
+      const numPatterns = Object.keys(exports.Patterns).length;
+      let bestPattern = 0;
+      let lowerPenalty = Infinity;
+      for (let p = 0; p < numPatterns; p++) {
+        setupFormatFunc(p);
+        exports.applyMask(p, data2);
+        const penalty = exports.getPenaltyN1(data2) + exports.getPenaltyN2(data2) + exports.getPenaltyN3(data2) + exports.getPenaltyN4(data2);
+        exports.applyMask(p, data2);
+        if (penalty < lowerPenalty) {
+          lowerPenalty = penalty;
+          bestPattern = p;
+        }
+      }
+      return bestPattern;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/error-correction-code.js
+var require_error_correction_code = __commonJS({
+  "node_modules/qrcode/lib/core/error-correction-code.js"(exports) {
+    var ECLevel = require_error_correction_level();
+    var EC_BLOCKS_TABLE = [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      1,
+      2,
+      2,
+      4,
+      1,
+      2,
+      4,
+      4,
+      2,
+      4,
+      4,
+      4,
+      2,
+      4,
+      6,
+      5,
+      2,
+      4,
+      6,
+      6,
+      2,
+      5,
+      8,
+      8,
+      4,
+      5,
+      8,
+      8,
+      4,
+      5,
+      8,
+      11,
+      4,
+      8,
+      10,
+      11,
+      4,
+      9,
+      12,
+      16,
+      4,
+      9,
+      16,
+      16,
+      6,
+      10,
+      12,
+      18,
+      6,
+      10,
+      17,
+      16,
+      6,
+      11,
+      16,
+      19,
+      6,
+      13,
+      18,
+      21,
+      7,
+      14,
+      21,
+      25,
+      8,
+      16,
+      20,
+      25,
+      8,
+      17,
+      23,
+      25,
+      9,
+      17,
+      23,
+      34,
+      9,
+      18,
+      25,
+      30,
+      10,
+      20,
+      27,
+      32,
+      12,
+      21,
+      29,
+      35,
+      12,
+      23,
+      34,
+      37,
+      12,
+      25,
+      34,
+      40,
+      13,
+      26,
+      35,
+      42,
+      14,
+      28,
+      38,
+      45,
+      15,
+      29,
+      40,
+      48,
+      16,
+      31,
+      43,
+      51,
+      17,
+      33,
+      45,
+      54,
+      18,
+      35,
+      48,
+      57,
+      19,
+      37,
+      51,
+      60,
+      19,
+      38,
+      53,
+      63,
+      20,
+      40,
+      56,
+      66,
+      21,
+      43,
+      59,
+      70,
+      22,
+      45,
+      62,
+      74,
+      24,
+      47,
+      65,
+      77,
+      25,
+      49,
+      68,
+      81
+    ];
+    var EC_CODEWORDS_TABLE = [
+      7,
+      10,
+      13,
+      17,
+      10,
+      16,
+      22,
+      28,
+      15,
+      26,
+      36,
+      44,
+      20,
+      36,
+      52,
+      64,
+      26,
+      48,
+      72,
+      88,
+      36,
+      64,
+      96,
+      112,
+      40,
+      72,
+      108,
+      130,
+      48,
+      88,
+      132,
+      156,
+      60,
+      110,
+      160,
+      192,
+      72,
+      130,
+      192,
+      224,
+      80,
+      150,
+      224,
+      264,
+      96,
+      176,
+      260,
+      308,
+      104,
+      198,
+      288,
+      352,
+      120,
+      216,
+      320,
+      384,
+      132,
+      240,
+      360,
+      432,
+      144,
+      280,
+      408,
+      480,
+      168,
+      308,
+      448,
+      532,
+      180,
+      338,
+      504,
+      588,
+      196,
+      364,
+      546,
+      650,
+      224,
+      416,
+      600,
+      700,
+      224,
+      442,
+      644,
+      750,
+      252,
+      476,
+      690,
+      816,
+      270,
+      504,
+      750,
+      900,
+      300,
+      560,
+      810,
+      960,
+      312,
+      588,
+      870,
+      1050,
+      336,
+      644,
+      952,
+      1110,
+      360,
+      700,
+      1020,
+      1200,
+      390,
+      728,
+      1050,
+      1260,
+      420,
+      784,
+      1140,
+      1350,
+      450,
+      812,
+      1200,
+      1440,
+      480,
+      868,
+      1290,
+      1530,
+      510,
+      924,
+      1350,
+      1620,
+      540,
+      980,
+      1440,
+      1710,
+      570,
+      1036,
+      1530,
+      1800,
+      570,
+      1064,
+      1590,
+      1890,
+      600,
+      1120,
+      1680,
+      1980,
+      630,
+      1204,
+      1770,
+      2100,
+      660,
+      1260,
+      1860,
+      2220,
+      720,
+      1316,
+      1950,
+      2310,
+      750,
+      1372,
+      2040,
+      2430
+    ];
+    exports.getBlocksCount = function getBlocksCount(version, errorCorrectionLevel) {
+      switch (errorCorrectionLevel) {
+        case ECLevel.L:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 0];
+        case ECLevel.M:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 1];
+        case ECLevel.Q:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 2];
+        case ECLevel.H:
+          return EC_BLOCKS_TABLE[(version - 1) * 4 + 3];
+        default:
+          return void 0;
+      }
+    };
+    exports.getTotalCodewordsCount = function getTotalCodewordsCount(version, errorCorrectionLevel) {
+      switch (errorCorrectionLevel) {
+        case ECLevel.L:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 0];
+        case ECLevel.M:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 1];
+        case ECLevel.Q:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 2];
+        case ECLevel.H:
+          return EC_CODEWORDS_TABLE[(version - 1) * 4 + 3];
+        default:
+          return void 0;
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/galois-field.js
+var require_galois_field = __commonJS({
+  "node_modules/qrcode/lib/core/galois-field.js"(exports) {
+    var EXP_TABLE = new Uint8Array(512);
+    var LOG_TABLE = new Uint8Array(256);
+    (function initTables() {
+      let x = 1;
+      for (let i = 0; i < 255; i++) {
+        EXP_TABLE[i] = x;
+        LOG_TABLE[x] = i;
+        x <<= 1;
+        if (x & 256) {
+          x ^= 285;
+        }
+      }
+      for (let i = 255; i < 512; i++) {
+        EXP_TABLE[i] = EXP_TABLE[i - 255];
+      }
+    })();
+    exports.log = function log2(n) {
+      if (n < 1)
+        throw new Error("log(" + n + ")");
+      return LOG_TABLE[n];
+    };
+    exports.exp = function exp(n) {
+      return EXP_TABLE[n];
+    };
+    exports.mul = function mul(x, y) {
+      if (x === 0 || y === 0)
+        return 0;
+      return EXP_TABLE[LOG_TABLE[x] + LOG_TABLE[y]];
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/polynomial.js
+var require_polynomial = __commonJS({
+  "node_modules/qrcode/lib/core/polynomial.js"(exports) {
+    var GF = require_galois_field();
+    exports.mul = function mul(p1, p2) {
+      const coeff = new Uint8Array(p1.length + p2.length - 1);
+      for (let i = 0; i < p1.length; i++) {
+        for (let j = 0; j < p2.length; j++) {
+          coeff[i + j] ^= GF.mul(p1[i], p2[j]);
+        }
+      }
+      return coeff;
+    };
+    exports.mod = function mod(divident, divisor) {
+      let result = new Uint8Array(divident);
+      while (result.length - divisor.length >= 0) {
+        const coeff = result[0];
+        for (let i = 0; i < divisor.length; i++) {
+          result[i] ^= GF.mul(divisor[i], coeff);
+        }
+        let offset2 = 0;
+        while (offset2 < result.length && result[offset2] === 0)
+          offset2++;
+        result = result.slice(offset2);
+      }
+      return result;
+    };
+    exports.generateECPolynomial = function generateECPolynomial(degree) {
+      let poly = new Uint8Array([1]);
+      for (let i = 0; i < degree; i++) {
+        poly = exports.mul(poly, new Uint8Array([1, GF.exp(i)]));
+      }
+      return poly;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/reed-solomon-encoder.js
+var require_reed_solomon_encoder = __commonJS({
+  "node_modules/qrcode/lib/core/reed-solomon-encoder.js"(exports, module2) {
+    var Polynomial = require_polynomial();
+    function ReedSolomonEncoder(degree) {
+      this.genPoly = void 0;
+      this.degree = degree;
+      if (this.degree)
+        this.initialize(this.degree);
+    }
+    ReedSolomonEncoder.prototype.initialize = function initialize(degree) {
+      this.degree = degree;
+      this.genPoly = Polynomial.generateECPolynomial(this.degree);
+    };
+    ReedSolomonEncoder.prototype.encode = function encode(data2) {
+      if (!this.genPoly) {
+        throw new Error("Encoder not initialized");
+      }
+      const paddedData = new Uint8Array(data2.length + this.degree);
+      paddedData.set(data2);
+      const remainder = Polynomial.mod(paddedData, this.genPoly);
+      const start2 = this.degree - remainder.length;
+      if (start2 > 0) {
+        const buff = new Uint8Array(this.degree);
+        buff.set(remainder, start2);
+        return buff;
+      }
+      return remainder;
+    };
+    module2.exports = ReedSolomonEncoder;
+  }
+});
+
+// node_modules/qrcode/lib/core/version-check.js
+var require_version_check = __commonJS({
+  "node_modules/qrcode/lib/core/version-check.js"(exports) {
+    exports.isValid = function isValid(version) {
+      return !isNaN(version) && version >= 1 && version <= 40;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/regex.js
+var require_regex = __commonJS({
+  "node_modules/qrcode/lib/core/regex.js"(exports) {
+    var numeric = "[0-9]+";
+    var alphanumeric = "[A-Z $%*+\\-./:]+";
+    var kanji = "(?:[u3000-u303F]|[u3040-u309F]|[u30A0-u30FF]|[uFF00-uFFEF]|[u4E00-u9FAF]|[u2605-u2606]|[u2190-u2195]|u203B|[u2010u2015u2018u2019u2025u2026u201Cu201Du2225u2260]|[u0391-u0451]|[u00A7u00A8u00B1u00B4u00D7u00F7])+";
+    kanji = kanji.replace(/u/g, "\\u");
+    var byte = "(?:(?![A-Z0-9 $%*+\\-./:]|" + kanji + ")(?:.|[\r\n]))+";
+    exports.KANJI = new RegExp(kanji, "g");
+    exports.BYTE_KANJI = new RegExp("[^A-Z0-9 $%*+\\-./:]+", "g");
+    exports.BYTE = new RegExp(byte, "g");
+    exports.NUMERIC = new RegExp(numeric, "g");
+    exports.ALPHANUMERIC = new RegExp(alphanumeric, "g");
+    var TEST_KANJI = new RegExp("^" + kanji + "$");
+    var TEST_NUMERIC = new RegExp("^" + numeric + "$");
+    var TEST_ALPHANUMERIC = new RegExp("^[A-Z0-9 $%*+\\-./:]+$");
+    exports.testKanji = function testKanji(str) {
+      return TEST_KANJI.test(str);
+    };
+    exports.testNumeric = function testNumeric(str) {
+      return TEST_NUMERIC.test(str);
+    };
+    exports.testAlphanumeric = function testAlphanumeric(str) {
+      return TEST_ALPHANUMERIC.test(str);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/mode.js
+var require_mode = __commonJS({
+  "node_modules/qrcode/lib/core/mode.js"(exports) {
+    var VersionCheck = require_version_check();
+    var Regex = require_regex();
+    exports.NUMERIC = {
+      id: "Numeric",
+      bit: 1 << 0,
+      ccBits: [10, 12, 14]
+    };
+    exports.ALPHANUMERIC = {
+      id: "Alphanumeric",
+      bit: 1 << 1,
+      ccBits: [9, 11, 13]
+    };
+    exports.BYTE = {
+      id: "Byte",
+      bit: 1 << 2,
+      ccBits: [8, 16, 16]
+    };
+    exports.KANJI = {
+      id: "Kanji",
+      bit: 1 << 3,
+      ccBits: [8, 10, 12]
+    };
+    exports.MIXED = {
+      bit: -1
+    };
+    exports.getCharCountIndicator = function getCharCountIndicator(mode, version) {
+      if (!mode.ccBits)
+        throw new Error("Invalid mode: " + mode);
+      if (!VersionCheck.isValid(version)) {
+        throw new Error("Invalid version: " + version);
+      }
+      if (version >= 1 && version < 10)
+        return mode.ccBits[0];
+      else if (version < 27)
+        return mode.ccBits[1];
+      return mode.ccBits[2];
+    };
+    exports.getBestModeForData = function getBestModeForData(dataStr) {
+      if (Regex.testNumeric(dataStr))
+        return exports.NUMERIC;
+      else if (Regex.testAlphanumeric(dataStr))
+        return exports.ALPHANUMERIC;
+      else if (Regex.testKanji(dataStr))
+        return exports.KANJI;
+      else
+        return exports.BYTE;
+    };
+    exports.toString = function toString2(mode) {
+      if (mode && mode.id)
+        return mode.id;
+      throw new Error("Invalid mode");
+    };
+    exports.isValid = function isValid(mode) {
+      return mode && mode.bit && mode.ccBits;
+    };
+    function fromString(string) {
+      if (typeof string !== "string") {
+        throw new Error("Param is not a string");
+      }
+      const lcStr = string.toLowerCase();
+      switch (lcStr) {
+        case "numeric":
+          return exports.NUMERIC;
+        case "alphanumeric":
+          return exports.ALPHANUMERIC;
+        case "kanji":
+          return exports.KANJI;
+        case "byte":
+          return exports.BYTE;
+        default:
+          throw new Error("Unknown mode: " + string);
+      }
+    }
+    exports.from = function from(value, defaultValue) {
+      if (exports.isValid(value)) {
+        return value;
+      }
+      try {
+        return fromString(value);
+      } catch (e) {
+        return defaultValue;
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/version.js
+var require_version = __commonJS({
+  "node_modules/qrcode/lib/core/version.js"(exports) {
+    var Utils = require_utils();
+    var ECCode = require_error_correction_code();
+    var ECLevel = require_error_correction_level();
+    var Mode = require_mode();
+    var VersionCheck = require_version_check();
+    var G18 = 1 << 12 | 1 << 11 | 1 << 10 | 1 << 9 | 1 << 8 | 1 << 5 | 1 << 2 | 1 << 0;
+    var G18_BCH = Utils.getBCHDigit(G18);
+    function getBestVersionForDataLength(mode, length, errorCorrectionLevel) {
+      for (let currentVersion = 1; currentVersion <= 40; currentVersion++) {
+        if (length <= exports.getCapacity(currentVersion, errorCorrectionLevel, mode)) {
+          return currentVersion;
+        }
+      }
+      return void 0;
+    }
+    function getReservedBitsCount(mode, version) {
+      return Mode.getCharCountIndicator(mode, version) + 4;
+    }
+    function getTotalBitsFromDataArray(segments, version) {
+      let totalBits = 0;
+      segments.forEach(function(data2) {
+        const reservedBits = getReservedBitsCount(data2.mode, version);
+        totalBits += reservedBits + data2.getBitsLength();
+      });
+      return totalBits;
+    }
+    function getBestVersionForMixedData(segments, errorCorrectionLevel) {
+      for (let currentVersion = 1; currentVersion <= 40; currentVersion++) {
+        const length = getTotalBitsFromDataArray(segments, currentVersion);
+        if (length <= exports.getCapacity(currentVersion, errorCorrectionLevel, Mode.MIXED)) {
+          return currentVersion;
+        }
+      }
+      return void 0;
+    }
+    exports.from = function from(value, defaultValue) {
+      if (VersionCheck.isValid(value)) {
+        return parseInt(value, 10);
+      }
+      return defaultValue;
+    };
+    exports.getCapacity = function getCapacity(version, errorCorrectionLevel, mode) {
+      if (!VersionCheck.isValid(version)) {
+        throw new Error("Invalid QR Code version");
+      }
+      if (typeof mode === "undefined")
+        mode = Mode.BYTE;
+      const totalCodewords = Utils.getSymbolTotalCodewords(version);
+      const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+      const dataTotalCodewordsBits = (totalCodewords - ecTotalCodewords) * 8;
+      if (mode === Mode.MIXED)
+        return dataTotalCodewordsBits;
+      const usableBits = dataTotalCodewordsBits - getReservedBitsCount(mode, version);
+      switch (mode) {
+        case Mode.NUMERIC:
+          return Math.floor(usableBits / 10 * 3);
+        case Mode.ALPHANUMERIC:
+          return Math.floor(usableBits / 11 * 2);
+        case Mode.KANJI:
+          return Math.floor(usableBits / 13);
+        case Mode.BYTE:
+        default:
+          return Math.floor(usableBits / 8);
+      }
+    };
+    exports.getBestVersionForData = function getBestVersionForData(data2, errorCorrectionLevel) {
+      let seg;
+      const ecl = ECLevel.from(errorCorrectionLevel, ECLevel.M);
+      if (Array.isArray(data2)) {
+        if (data2.length > 1) {
+          return getBestVersionForMixedData(data2, ecl);
+        }
+        if (data2.length === 0) {
+          return 1;
+        }
+        seg = data2[0];
+      } else {
+        seg = data2;
+      }
+      return getBestVersionForDataLength(seg.mode, seg.getLength(), ecl);
+    };
+    exports.getEncodedBits = function getEncodedBits(version) {
+      if (!VersionCheck.isValid(version) || version < 7) {
+        throw new Error("Invalid QR Code version");
+      }
+      let d = version << 12;
+      while (Utils.getBCHDigit(d) - G18_BCH >= 0) {
+        d ^= G18 << Utils.getBCHDigit(d) - G18_BCH;
+      }
+      return version << 12 | d;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/format-info.js
+var require_format_info = __commonJS({
+  "node_modules/qrcode/lib/core/format-info.js"(exports) {
+    var Utils = require_utils();
+    var G15 = 1 << 10 | 1 << 8 | 1 << 5 | 1 << 4 | 1 << 2 | 1 << 1 | 1 << 0;
+    var G15_MASK = 1 << 14 | 1 << 12 | 1 << 10 | 1 << 4 | 1 << 1;
+    var G15_BCH = Utils.getBCHDigit(G15);
+    exports.getEncodedBits = function getEncodedBits(errorCorrectionLevel, mask) {
+      const data2 = errorCorrectionLevel.bit << 3 | mask;
+      let d = data2 << 10;
+      while (Utils.getBCHDigit(d) - G15_BCH >= 0) {
+        d ^= G15 << Utils.getBCHDigit(d) - G15_BCH;
+      }
+      return (data2 << 10 | d) ^ G15_MASK;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/numeric-data.js
+var require_numeric_data = __commonJS({
+  "node_modules/qrcode/lib/core/numeric-data.js"(exports, module2) {
+    var Mode = require_mode();
+    function NumericData(data2) {
+      this.mode = Mode.NUMERIC;
+      this.data = data2.toString();
+    }
+    NumericData.getBitsLength = function getBitsLength(length) {
+      return 10 * Math.floor(length / 3) + (length % 3 ? length % 3 * 3 + 1 : 0);
+    };
+    NumericData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    NumericData.prototype.getBitsLength = function getBitsLength() {
+      return NumericData.getBitsLength(this.data.length);
+    };
+    NumericData.prototype.write = function write2(bitBuffer) {
+      let i, group, value;
+      for (i = 0; i + 3 <= this.data.length; i += 3) {
+        group = this.data.substr(i, 3);
+        value = parseInt(group, 10);
+        bitBuffer.put(value, 10);
+      }
+      const remainingNum = this.data.length - i;
+      if (remainingNum > 0) {
+        group = this.data.substr(i);
+        value = parseInt(group, 10);
+        bitBuffer.put(value, remainingNum * 3 + 1);
+      }
+    };
+    module2.exports = NumericData;
+  }
+});
+
+// node_modules/qrcode/lib/core/alphanumeric-data.js
+var require_alphanumeric_data = __commonJS({
+  "node_modules/qrcode/lib/core/alphanumeric-data.js"(exports, module2) {
+    var Mode = require_mode();
+    var ALPHA_NUM_CHARS = [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z",
+      " ",
+      "$",
+      "%",
+      "*",
+      "+",
+      "-",
+      ".",
+      "/",
+      ":"
+    ];
+    function AlphanumericData(data2) {
+      this.mode = Mode.ALPHANUMERIC;
+      this.data = data2;
+    }
+    AlphanumericData.getBitsLength = function getBitsLength(length) {
+      return 11 * Math.floor(length / 2) + 6 * (length % 2);
+    };
+    AlphanumericData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    AlphanumericData.prototype.getBitsLength = function getBitsLength() {
+      return AlphanumericData.getBitsLength(this.data.length);
+    };
+    AlphanumericData.prototype.write = function write2(bitBuffer) {
+      let i;
+      for (i = 0; i + 2 <= this.data.length; i += 2) {
+        let value = ALPHA_NUM_CHARS.indexOf(this.data[i]) * 45;
+        value += ALPHA_NUM_CHARS.indexOf(this.data[i + 1]);
+        bitBuffer.put(value, 11);
+      }
+      if (this.data.length % 2) {
+        bitBuffer.put(ALPHA_NUM_CHARS.indexOf(this.data[i]), 6);
+      }
+    };
+    module2.exports = AlphanumericData;
+  }
+});
+
+// node_modules/qrcode/lib/core/byte-data.js
+var require_byte_data = __commonJS({
+  "node_modules/qrcode/lib/core/byte-data.js"(exports, module2) {
+    var Mode = require_mode();
+    function ByteData(data2) {
+      this.mode = Mode.BYTE;
+      if (typeof data2 === "string") {
+        this.data = new TextEncoder().encode(data2);
+      } else {
+        this.data = new Uint8Array(data2);
+      }
+    }
+    ByteData.getBitsLength = function getBitsLength(length) {
+      return length * 8;
+    };
+    ByteData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    ByteData.prototype.getBitsLength = function getBitsLength() {
+      return ByteData.getBitsLength(this.data.length);
+    };
+    ByteData.prototype.write = function(bitBuffer) {
+      for (let i = 0, l = this.data.length; i < l; i++) {
+        bitBuffer.put(this.data[i], 8);
+      }
+    };
+    module2.exports = ByteData;
+  }
+});
+
+// node_modules/qrcode/lib/core/kanji-data.js
+var require_kanji_data = __commonJS({
+  "node_modules/qrcode/lib/core/kanji-data.js"(exports, module2) {
+    var Mode = require_mode();
+    var Utils = require_utils();
+    function KanjiData(data2) {
+      this.mode = Mode.KANJI;
+      this.data = data2;
+    }
+    KanjiData.getBitsLength = function getBitsLength(length) {
+      return length * 13;
+    };
+    KanjiData.prototype.getLength = function getLength() {
+      return this.data.length;
+    };
+    KanjiData.prototype.getBitsLength = function getBitsLength() {
+      return KanjiData.getBitsLength(this.data.length);
+    };
+    KanjiData.prototype.write = function(bitBuffer) {
+      let i;
+      for (i = 0; i < this.data.length; i++) {
+        let value = Utils.toSJIS(this.data[i]);
+        if (value >= 33088 && value <= 40956) {
+          value -= 33088;
+        } else if (value >= 57408 && value <= 60351) {
+          value -= 49472;
+        } else {
+          throw new Error("Invalid SJIS character: " + this.data[i] + "\nMake sure your charset is UTF-8");
+        }
+        value = (value >>> 8 & 255) * 192 + (value & 255);
+        bitBuffer.put(value, 13);
+      }
+    };
+    module2.exports = KanjiData;
+  }
+});
+
+// node_modules/dijkstrajs/dijkstra.js
+var require_dijkstra = __commonJS({
+  "node_modules/dijkstrajs/dijkstra.js"(exports, module2) {
+    "use strict";
+    var dijkstra = {
+      single_source_shortest_paths: function(graph, s, d) {
+        var predecessors = {};
+        var costs = {};
+        costs[s] = 0;
+        var open = dijkstra.PriorityQueue.make();
+        open.push(s, 0);
+        var closest2, u, v, cost_of_s_to_u, adjacent_nodes, cost_of_e, cost_of_s_to_u_plus_cost_of_e, cost_of_s_to_v, first_visit;
+        while (!open.empty()) {
+          closest2 = open.pop();
+          u = closest2.value;
+          cost_of_s_to_u = closest2.cost;
+          adjacent_nodes = graph[u] || {};
+          for (v in adjacent_nodes) {
+            if (adjacent_nodes.hasOwnProperty(v)) {
+              cost_of_e = adjacent_nodes[v];
+              cost_of_s_to_u_plus_cost_of_e = cost_of_s_to_u + cost_of_e;
+              cost_of_s_to_v = costs[v];
+              first_visit = typeof costs[v] === "undefined";
+              if (first_visit || cost_of_s_to_v > cost_of_s_to_u_plus_cost_of_e) {
+                costs[v] = cost_of_s_to_u_plus_cost_of_e;
+                open.push(v, cost_of_s_to_u_plus_cost_of_e);
+                predecessors[v] = u;
+              }
+            }
+          }
+        }
+        if (typeof d !== "undefined" && typeof costs[d] === "undefined") {
+          var msg = ["Could not find a path from ", s, " to ", d, "."].join("");
+          throw new Error(msg);
+        }
+        return predecessors;
+      },
+      extract_shortest_path_from_predecessor_list: function(predecessors, d) {
+        var nodes = [];
+        var u = d;
+        var predecessor;
+        while (u) {
+          nodes.push(u);
+          predecessor = predecessors[u];
+          u = predecessors[u];
+        }
+        nodes.reverse();
+        return nodes;
+      },
+      find_path: function(graph, s, d) {
+        var predecessors = dijkstra.single_source_shortest_paths(graph, s, d);
+        return dijkstra.extract_shortest_path_from_predecessor_list(predecessors, d);
+      },
+      PriorityQueue: {
+        make: function(opts) {
+          var T = dijkstra.PriorityQueue, t = {}, key;
+          opts = opts || {};
+          for (key in T) {
+            if (T.hasOwnProperty(key)) {
+              t[key] = T[key];
+            }
+          }
+          t.queue = [];
+          t.sorter = opts.sorter || T.default_sorter;
+          return t;
+        },
+        default_sorter: function(a, b) {
+          return a.cost - b.cost;
+        },
+        push: function(value, cost) {
+          var item = { value, cost };
+          this.queue.push(item);
+          this.queue.sort(this.sorter);
+        },
+        pop: function() {
+          return this.queue.shift();
+        },
+        empty: function() {
+          return this.queue.length === 0;
+        }
+      }
+    };
+    if (typeof module2 !== "undefined") {
+      module2.exports = dijkstra;
+    }
+  }
+});
+
+// node_modules/qrcode/lib/core/segments.js
+var require_segments = __commonJS({
+  "node_modules/qrcode/lib/core/segments.js"(exports) {
+    var Mode = require_mode();
+    var NumericData = require_numeric_data();
+    var AlphanumericData = require_alphanumeric_data();
+    var ByteData = require_byte_data();
+    var KanjiData = require_kanji_data();
+    var Regex = require_regex();
+    var Utils = require_utils();
+    var dijkstra = require_dijkstra();
+    function getStringByteLength(str) {
+      return unescape(encodeURIComponent(str)).length;
+    }
+    function getSegments(regex, mode, str) {
+      const segments = [];
+      let result;
+      while ((result = regex.exec(str)) !== null) {
+        segments.push({
+          data: result[0],
+          index: result.index,
+          mode,
+          length: result[0].length
+        });
+      }
+      return segments;
+    }
+    function getSegmentsFromString(dataStr) {
+      const numSegs = getSegments(Regex.NUMERIC, Mode.NUMERIC, dataStr);
+      const alphaNumSegs = getSegments(Regex.ALPHANUMERIC, Mode.ALPHANUMERIC, dataStr);
+      let byteSegs;
+      let kanjiSegs;
+      if (Utils.isKanjiModeEnabled()) {
+        byteSegs = getSegments(Regex.BYTE, Mode.BYTE, dataStr);
+        kanjiSegs = getSegments(Regex.KANJI, Mode.KANJI, dataStr);
+      } else {
+        byteSegs = getSegments(Regex.BYTE_KANJI, Mode.BYTE, dataStr);
+        kanjiSegs = [];
+      }
+      const segs = numSegs.concat(alphaNumSegs, byteSegs, kanjiSegs);
+      return segs.sort(function(s1, s2) {
+        return s1.index - s2.index;
+      }).map(function(obj) {
+        return {
+          data: obj.data,
+          mode: obj.mode,
+          length: obj.length
+        };
+      });
+    }
+    function getSegmentBitsLength(length, mode) {
+      switch (mode) {
+        case Mode.NUMERIC:
+          return NumericData.getBitsLength(length);
+        case Mode.ALPHANUMERIC:
+          return AlphanumericData.getBitsLength(length);
+        case Mode.KANJI:
+          return KanjiData.getBitsLength(length);
+        case Mode.BYTE:
+          return ByteData.getBitsLength(length);
+      }
+    }
+    function mergeSegments(segs) {
+      return segs.reduce(function(acc, curr) {
+        const prevSeg = acc.length - 1 >= 0 ? acc[acc.length - 1] : null;
+        if (prevSeg && prevSeg.mode === curr.mode) {
+          acc[acc.length - 1].data += curr.data;
+          return acc;
+        }
+        acc.push(curr);
+        return acc;
+      }, []);
+    }
+    function buildNodes(segs) {
+      const nodes = [];
+      for (let i = 0; i < segs.length; i++) {
+        const seg = segs[i];
+        switch (seg.mode) {
+          case Mode.NUMERIC:
+            nodes.push([
+              seg,
+              { data: seg.data, mode: Mode.ALPHANUMERIC, length: seg.length },
+              { data: seg.data, mode: Mode.BYTE, length: seg.length }
+            ]);
+            break;
+          case Mode.ALPHANUMERIC:
+            nodes.push([
+              seg,
+              { data: seg.data, mode: Mode.BYTE, length: seg.length }
+            ]);
+            break;
+          case Mode.KANJI:
+            nodes.push([
+              seg,
+              { data: seg.data, mode: Mode.BYTE, length: getStringByteLength(seg.data) }
+            ]);
+            break;
+          case Mode.BYTE:
+            nodes.push([
+              { data: seg.data, mode: Mode.BYTE, length: getStringByteLength(seg.data) }
+            ]);
+        }
+      }
+      return nodes;
+    }
+    function buildGraph(nodes, version) {
+      const table = {};
+      const graph = { start: {} };
+      let prevNodeIds = ["start"];
+      for (let i = 0; i < nodes.length; i++) {
+        const nodeGroup = nodes[i];
+        const currentNodeIds = [];
+        for (let j = 0; j < nodeGroup.length; j++) {
+          const node = nodeGroup[j];
+          const key = "" + i + j;
+          currentNodeIds.push(key);
+          table[key] = { node, lastCount: 0 };
+          graph[key] = {};
+          for (let n = 0; n < prevNodeIds.length; n++) {
+            const prevNodeId = prevNodeIds[n];
+            if (table[prevNodeId] && table[prevNodeId].node.mode === node.mode) {
+              graph[prevNodeId][key] = getSegmentBitsLength(table[prevNodeId].lastCount + node.length, node.mode) - getSegmentBitsLength(table[prevNodeId].lastCount, node.mode);
+              table[prevNodeId].lastCount += node.length;
+            } else {
+              if (table[prevNodeId])
+                table[prevNodeId].lastCount = node.length;
+              graph[prevNodeId][key] = getSegmentBitsLength(node.length, node.mode) + 4 + Mode.getCharCountIndicator(node.mode, version);
+            }
+          }
+        }
+        prevNodeIds = currentNodeIds;
+      }
+      for (let n = 0; n < prevNodeIds.length; n++) {
+        graph[prevNodeIds[n]].end = 0;
+      }
+      return { map: graph, table };
+    }
+    function buildSingleSegment(data2, modesHint) {
+      let mode;
+      const bestMode = Mode.getBestModeForData(data2);
+      mode = Mode.from(modesHint, bestMode);
+      if (mode !== Mode.BYTE && mode.bit < bestMode.bit) {
+        throw new Error('"' + data2 + '" cannot be encoded with mode ' + Mode.toString(mode) + ".\n Suggested mode is: " + Mode.toString(bestMode));
+      }
+      if (mode === Mode.KANJI && !Utils.isKanjiModeEnabled()) {
+        mode = Mode.BYTE;
+      }
+      switch (mode) {
+        case Mode.NUMERIC:
+          return new NumericData(data2);
+        case Mode.ALPHANUMERIC:
+          return new AlphanumericData(data2);
+        case Mode.KANJI:
+          return new KanjiData(data2);
+        case Mode.BYTE:
+          return new ByteData(data2);
+      }
+    }
+    exports.fromArray = function fromArray(array) {
+      return array.reduce(function(acc, seg) {
+        if (typeof seg === "string") {
+          acc.push(buildSingleSegment(seg, null));
+        } else if (seg.data) {
+          acc.push(buildSingleSegment(seg.data, seg.mode));
+        }
+        return acc;
+      }, []);
+    };
+    exports.fromString = function fromString(data2, version) {
+      const segs = getSegmentsFromString(data2, Utils.isKanjiModeEnabled());
+      const nodes = buildNodes(segs);
+      const graph = buildGraph(nodes, version);
+      const path = dijkstra.find_path(graph.map, "start", "end");
+      const optimizedSegs = [];
+      for (let i = 1; i < path.length - 1; i++) {
+        optimizedSegs.push(graph.table[path[i]].node);
+      }
+      return exports.fromArray(mergeSegments(optimizedSegs));
+    };
+    exports.rawSplit = function rawSplit(data2) {
+      return exports.fromArray(getSegmentsFromString(data2, Utils.isKanjiModeEnabled()));
+    };
+  }
+});
+
+// node_modules/qrcode/lib/core/qrcode.js
+var require_qrcode = __commonJS({
+  "node_modules/qrcode/lib/core/qrcode.js"(exports) {
+    var Utils = require_utils();
+    var ECLevel = require_error_correction_level();
+    var BitBuffer = require_bit_buffer();
+    var BitMatrix = require_bit_matrix();
+    var AlignmentPattern = require_alignment_pattern();
+    var FinderPattern = require_finder_pattern();
+    var MaskPattern = require_mask_pattern();
+    var ECCode = require_error_correction_code();
+    var ReedSolomonEncoder = require_reed_solomon_encoder();
+    var Version = require_version();
+    var FormatInfo = require_format_info();
+    var Mode = require_mode();
+    var Segments = require_segments();
+    function setupFinderPattern(matrix, version) {
+      const size = matrix.size;
+      const pos = FinderPattern.getPositions(version);
+      for (let i = 0; i < pos.length; i++) {
+        const row = pos[i][0];
+        const col = pos[i][1];
+        for (let r = -1; r <= 7; r++) {
+          if (row + r <= -1 || size <= row + r)
+            continue;
+          for (let c = -1; c <= 7; c++) {
+            if (col + c <= -1 || size <= col + c)
+              continue;
+            if (r >= 0 && r <= 6 && (c === 0 || c === 6) || c >= 0 && c <= 6 && (r === 0 || r === 6) || r >= 2 && r <= 4 && c >= 2 && c <= 4) {
+              matrix.set(row + r, col + c, true, true);
+            } else {
+              matrix.set(row + r, col + c, false, true);
+            }
+          }
+        }
+      }
+    }
+    function setupTimingPattern(matrix) {
+      const size = matrix.size;
+      for (let r = 8; r < size - 8; r++) {
+        const value = r % 2 === 0;
+        matrix.set(r, 6, value, true);
+        matrix.set(6, r, value, true);
+      }
+    }
+    function setupAlignmentPattern(matrix, version) {
+      const pos = AlignmentPattern.getPositions(version);
+      for (let i = 0; i < pos.length; i++) {
+        const row = pos[i][0];
+        const col = pos[i][1];
+        for (let r = -2; r <= 2; r++) {
+          for (let c = -2; c <= 2; c++) {
+            if (r === -2 || r === 2 || c === -2 || c === 2 || r === 0 && c === 0) {
+              matrix.set(row + r, col + c, true, true);
+            } else {
+              matrix.set(row + r, col + c, false, true);
+            }
+          }
+        }
+      }
+    }
+    function setupVersionInfo(matrix, version) {
+      const size = matrix.size;
+      const bits = Version.getEncodedBits(version);
+      let row, col, mod;
+      for (let i = 0; i < 18; i++) {
+        row = Math.floor(i / 3);
+        col = i % 3 + size - 8 - 3;
+        mod = (bits >> i & 1) === 1;
+        matrix.set(row, col, mod, true);
+        matrix.set(col, row, mod, true);
+      }
+    }
+    function setupFormatInfo(matrix, errorCorrectionLevel, maskPattern) {
+      const size = matrix.size;
+      const bits = FormatInfo.getEncodedBits(errorCorrectionLevel, maskPattern);
+      let i, mod;
+      for (i = 0; i < 15; i++) {
+        mod = (bits >> i & 1) === 1;
+        if (i < 6) {
+          matrix.set(i, 8, mod, true);
+        } else if (i < 8) {
+          matrix.set(i + 1, 8, mod, true);
+        } else {
+          matrix.set(size - 15 + i, 8, mod, true);
+        }
+        if (i < 8) {
+          matrix.set(8, size - i - 1, mod, true);
+        } else if (i < 9) {
+          matrix.set(8, 15 - i - 1 + 1, mod, true);
+        } else {
+          matrix.set(8, 15 - i - 1, mod, true);
+        }
+      }
+      matrix.set(size - 8, 8, 1, true);
+    }
+    function setupData(matrix, data2) {
+      const size = matrix.size;
+      let inc = -1;
+      let row = size - 1;
+      let bitIndex = 7;
+      let byteIndex = 0;
+      for (let col = size - 1; col > 0; col -= 2) {
+        if (col === 6)
+          col--;
+        while (true) {
+          for (let c = 0; c < 2; c++) {
+            if (!matrix.isReserved(row, col - c)) {
+              let dark = false;
+              if (byteIndex < data2.length) {
+                dark = (data2[byteIndex] >>> bitIndex & 1) === 1;
+              }
+              matrix.set(row, col - c, dark);
+              bitIndex--;
+              if (bitIndex === -1) {
+                byteIndex++;
+                bitIndex = 7;
+              }
+            }
+          }
+          row += inc;
+          if (row < 0 || size <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    }
+    function createData(version, errorCorrectionLevel, segments) {
+      const buffer = new BitBuffer();
+      segments.forEach(function(data2) {
+        buffer.put(data2.mode.bit, 4);
+        buffer.put(data2.getLength(), Mode.getCharCountIndicator(data2.mode, version));
+        data2.write(buffer);
+      });
+      const totalCodewords = Utils.getSymbolTotalCodewords(version);
+      const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+      const dataTotalCodewordsBits = (totalCodewords - ecTotalCodewords) * 8;
+      if (buffer.getLengthInBits() + 4 <= dataTotalCodewordsBits) {
+        buffer.put(0, 4);
+      }
+      while (buffer.getLengthInBits() % 8 !== 0) {
+        buffer.putBit(0);
+      }
+      const remainingByte = (dataTotalCodewordsBits - buffer.getLengthInBits()) / 8;
+      for (let i = 0; i < remainingByte; i++) {
+        buffer.put(i % 2 ? 17 : 236, 8);
+      }
+      return createCodewords(buffer, version, errorCorrectionLevel);
+    }
+    function createCodewords(bitBuffer, version, errorCorrectionLevel) {
+      const totalCodewords = Utils.getSymbolTotalCodewords(version);
+      const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+      const dataTotalCodewords = totalCodewords - ecTotalCodewords;
+      const ecTotalBlocks = ECCode.getBlocksCount(version, errorCorrectionLevel);
+      const blocksInGroup2 = totalCodewords % ecTotalBlocks;
+      const blocksInGroup1 = ecTotalBlocks - blocksInGroup2;
+      const totalCodewordsInGroup1 = Math.floor(totalCodewords / ecTotalBlocks);
+      const dataCodewordsInGroup1 = Math.floor(dataTotalCodewords / ecTotalBlocks);
+      const dataCodewordsInGroup2 = dataCodewordsInGroup1 + 1;
+      const ecCount = totalCodewordsInGroup1 - dataCodewordsInGroup1;
+      const rs = new ReedSolomonEncoder(ecCount);
+      let offset2 = 0;
+      const dcData = new Array(ecTotalBlocks);
+      const ecData = new Array(ecTotalBlocks);
+      let maxDataSize = 0;
+      const buffer = new Uint8Array(bitBuffer.buffer);
+      for (let b = 0; b < ecTotalBlocks; b++) {
+        const dataSize = b < blocksInGroup1 ? dataCodewordsInGroup1 : dataCodewordsInGroup2;
+        dcData[b] = buffer.slice(offset2, offset2 + dataSize);
+        ecData[b] = rs.encode(dcData[b]);
+        offset2 += dataSize;
+        maxDataSize = Math.max(maxDataSize, dataSize);
+      }
+      const data2 = new Uint8Array(totalCodewords);
+      let index2 = 0;
+      let i, r;
+      for (i = 0; i < maxDataSize; i++) {
+        for (r = 0; r < ecTotalBlocks; r++) {
+          if (i < dcData[r].length) {
+            data2[index2++] = dcData[r][i];
+          }
+        }
+      }
+      for (i = 0; i < ecCount; i++) {
+        for (r = 0; r < ecTotalBlocks; r++) {
+          data2[index2++] = ecData[r][i];
+        }
+      }
+      return data2;
+    }
+    function createSymbol(data2, version, errorCorrectionLevel, maskPattern) {
+      let segments;
+      if (Array.isArray(data2)) {
+        segments = Segments.fromArray(data2);
+      } else if (typeof data2 === "string") {
+        let estimatedVersion = version;
+        if (!estimatedVersion) {
+          const rawSegments = Segments.rawSplit(data2);
+          estimatedVersion = Version.getBestVersionForData(rawSegments, errorCorrectionLevel);
+        }
+        segments = Segments.fromString(data2, estimatedVersion || 40);
+      } else {
+        throw new Error("Invalid data");
+      }
+      const bestVersion = Version.getBestVersionForData(segments, errorCorrectionLevel);
+      if (!bestVersion) {
+        throw new Error("The amount of data is too big to be stored in a QR Code");
+      }
+      if (!version) {
+        version = bestVersion;
+      } else if (version < bestVersion) {
+        throw new Error("\nThe chosen QR Code version cannot contain this amount of data.\nMinimum version required to store current data is: " + bestVersion + ".\n");
+      }
+      const dataBits = createData(version, errorCorrectionLevel, segments);
+      const moduleCount = Utils.getSymbolSize(version);
+      const modules = new BitMatrix(moduleCount);
+      setupFinderPattern(modules, version);
+      setupTimingPattern(modules);
+      setupAlignmentPattern(modules, version);
+      setupFormatInfo(modules, errorCorrectionLevel, 0);
+      if (version >= 7) {
+        setupVersionInfo(modules, version);
+      }
+      setupData(modules, dataBits);
+      if (isNaN(maskPattern)) {
+        maskPattern = MaskPattern.getBestMask(modules, setupFormatInfo.bind(null, modules, errorCorrectionLevel));
+      }
+      MaskPattern.applyMask(maskPattern, modules);
+      setupFormatInfo(modules, errorCorrectionLevel, maskPattern);
+      return {
+        modules,
+        version,
+        errorCorrectionLevel,
+        maskPattern,
+        segments
+      };
+    }
+    exports.create = function create(data2, options) {
+      if (typeof data2 === "undefined" || data2 === "") {
+        throw new Error("No input text");
+      }
+      let errorCorrectionLevel = ECLevel.M;
+      let version;
+      let mask;
+      if (typeof options !== "undefined") {
+        errorCorrectionLevel = ECLevel.from(options.errorCorrectionLevel, ECLevel.M);
+        version = Version.from(options.version);
+        mask = MaskPattern.from(options.maskPattern);
+        if (options.toSJISFunc) {
+          Utils.setToSJISFunction(options.toSJISFunc);
+        }
+      }
+      return createSymbol(data2, version, errorCorrectionLevel, mask);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/renderer/utils.js
+var require_utils2 = __commonJS({
+  "node_modules/qrcode/lib/renderer/utils.js"(exports) {
+    function hex2rgba(hex) {
+      if (typeof hex === "number") {
+        hex = hex.toString();
+      }
+      if (typeof hex !== "string") {
+        throw new Error("Color should be defined as hex string");
+      }
+      let hexCode = hex.slice().replace("#", "").split("");
+      if (hexCode.length < 3 || hexCode.length === 5 || hexCode.length > 8) {
+        throw new Error("Invalid hex color: " + hex);
+      }
+      if (hexCode.length === 3 || hexCode.length === 4) {
+        hexCode = Array.prototype.concat.apply([], hexCode.map(function(c) {
+          return [c, c];
+        }));
+      }
+      if (hexCode.length === 6)
+        hexCode.push("F", "F");
+      const hexValue = parseInt(hexCode.join(""), 16);
+      return {
+        r: hexValue >> 24 & 255,
+        g: hexValue >> 16 & 255,
+        b: hexValue >> 8 & 255,
+        a: hexValue & 255,
+        hex: "#" + hexCode.slice(0, 6).join("")
+      };
+    }
+    exports.getOptions = function getOptions(options) {
+      if (!options)
+        options = {};
+      if (!options.color)
+        options.color = {};
+      const margin = typeof options.margin === "undefined" || options.margin === null || options.margin < 0 ? 4 : options.margin;
+      const width = options.width && options.width >= 21 ? options.width : void 0;
+      const scale = options.scale || 4;
+      return {
+        width,
+        scale: width ? 4 : scale,
+        margin,
+        color: {
+          dark: hex2rgba(options.color.dark || "#000000ff"),
+          light: hex2rgba(options.color.light || "#ffffffff")
+        },
+        type: options.type,
+        rendererOpts: options.rendererOpts || {}
+      };
+    };
+    exports.getScale = function getScale(qrSize, opts) {
+      return opts.width && opts.width >= qrSize + opts.margin * 2 ? opts.width / (qrSize + opts.margin * 2) : opts.scale;
+    };
+    exports.getImageWidth = function getImageWidth(qrSize, opts) {
+      const scale = exports.getScale(qrSize, opts);
+      return Math.floor((qrSize + opts.margin * 2) * scale);
+    };
+    exports.qrToImageData = function qrToImageData(imgData, qr, opts) {
+      const size = qr.modules.size;
+      const data2 = qr.modules.data;
+      const scale = exports.getScale(size, opts);
+      const symbolSize = Math.floor((size + opts.margin * 2) * scale);
+      const scaledMargin = opts.margin * scale;
+      const palette = [opts.color.light, opts.color.dark];
+      for (let i = 0; i < symbolSize; i++) {
+        for (let j = 0; j < symbolSize; j++) {
+          let posDst = (i * symbolSize + j) * 4;
+          let pxColor = opts.color.light;
+          if (i >= scaledMargin && j >= scaledMargin && i < symbolSize - scaledMargin && j < symbolSize - scaledMargin) {
+            const iSrc = Math.floor((i - scaledMargin) / scale);
+            const jSrc = Math.floor((j - scaledMargin) / scale);
+            pxColor = palette[data2[iSrc * size + jSrc] ? 1 : 0];
+          }
+          imgData[posDst++] = pxColor.r;
+          imgData[posDst++] = pxColor.g;
+          imgData[posDst++] = pxColor.b;
+          imgData[posDst] = pxColor.a;
+        }
+      }
+    };
+  }
+});
+
+// node_modules/qrcode/lib/renderer/canvas.js
+var require_canvas = __commonJS({
+  "node_modules/qrcode/lib/renderer/canvas.js"(exports) {
+    var Utils = require_utils2();
+    function clearCanvas(ctx, canvas, size) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!canvas.style)
+        canvas.style = {};
+      canvas.height = size;
+      canvas.width = size;
+      canvas.style.height = size + "px";
+      canvas.style.width = size + "px";
+    }
+    function getCanvasElement() {
+      try {
+        return document.createElement("canvas");
+      } catch (e) {
+        throw new Error("You need to specify a canvas element");
+      }
+    }
+    exports.render = function render3(qrData, canvas, options) {
+      let opts = options;
+      let canvasEl = canvas;
+      if (typeof opts === "undefined" && (!canvas || !canvas.getContext)) {
+        opts = canvas;
+        canvas = void 0;
+      }
+      if (!canvas) {
+        canvasEl = getCanvasElement();
+      }
+      opts = Utils.getOptions(opts);
+      const size = Utils.getImageWidth(qrData.modules.size, opts);
+      const ctx = canvasEl.getContext("2d");
+      const image = ctx.createImageData(size, size);
+      Utils.qrToImageData(image.data, qrData, opts);
+      clearCanvas(ctx, canvasEl, size);
+      ctx.putImageData(image, 0, 0);
+      return canvasEl;
+    };
+    exports.renderToDataURL = function renderToDataURL(qrData, canvas, options) {
+      let opts = options;
+      if (typeof opts === "undefined" && (!canvas || !canvas.getContext)) {
+        opts = canvas;
+        canvas = void 0;
+      }
+      if (!opts)
+        opts = {};
+      const canvasEl = exports.render(qrData, canvas, opts);
+      const type = opts.type || "image/png";
+      const rendererOpts = opts.rendererOpts || {};
+      return canvasEl.toDataURL(type, rendererOpts.quality);
+    };
+  }
+});
+
+// node_modules/qrcode/lib/renderer/svg-tag.js
+var require_svg_tag = __commonJS({
+  "node_modules/qrcode/lib/renderer/svg-tag.js"(exports) {
+    var Utils = require_utils2();
+    function getColorAttrib(color, attrib) {
+      const alpha = color.a / 255;
+      const str = attrib + '="' + color.hex + '"';
+      return alpha < 1 ? str + " " + attrib + '-opacity="' + alpha.toFixed(2).slice(1) + '"' : str;
+    }
+    function svgCmd(cmd, x, y) {
+      let str = cmd + x;
+      if (typeof y !== "undefined")
+        str += " " + y;
+      return str;
+    }
+    function qrToPath(data2, size, margin) {
+      let path = "";
+      let moveBy = 0;
+      let newRow = false;
+      let lineLength = 0;
+      for (let i = 0; i < data2.length; i++) {
+        const col = Math.floor(i % size);
+        const row = Math.floor(i / size);
+        if (!col && !newRow)
+          newRow = true;
+        if (data2[i]) {
+          lineLength++;
+          if (!(i > 0 && col > 0 && data2[i - 1])) {
+            path += newRow ? svgCmd("M", col + margin, 0.5 + row + margin) : svgCmd("m", moveBy, 0);
+            moveBy = 0;
+            newRow = false;
+          }
+          if (!(col + 1 < size && data2[i + 1])) {
+            path += svgCmd("h", lineLength);
+            lineLength = 0;
+          }
+        } else {
+          moveBy++;
+        }
+      }
+      return path;
+    }
+    exports.render = function render3(qrData, options, cb) {
+      const opts = Utils.getOptions(options);
+      const size = qrData.modules.size;
+      const data2 = qrData.modules.data;
+      const qrcodesize = size + opts.margin * 2;
+      const bg = !opts.color.light.a ? "" : "<path " + getColorAttrib(opts.color.light, "fill") + ' d="M0 0h' + qrcodesize + "v" + qrcodesize + 'H0z"/>';
+      const path = "<path " + getColorAttrib(opts.color.dark, "stroke") + ' d="' + qrToPath(data2, size, opts.margin) + '"/>';
+      const viewBox = 'viewBox="0 0 ' + qrcodesize + " " + qrcodesize + '"';
+      const width = !opts.width ? "" : 'width="' + opts.width + '" height="' + opts.width + '" ';
+      const svgTag = '<svg xmlns="http://www.w3.org/2000/svg" ' + width + viewBox + ' shape-rendering="crispEdges">' + bg + path + "</svg>\n";
+      if (typeof cb === "function") {
+        cb(null, svgTag);
+      }
+      return svgTag;
+    };
+  }
+});
+
+// node_modules/qrcode/lib/browser.js
+var require_browser2 = __commonJS({
+  "node_modules/qrcode/lib/browser.js"(exports) {
+    var canPromise = require_can_promise();
+    var QRCode2 = require_qrcode();
+    var CanvasRenderer = require_canvas();
+    var SvgRenderer = require_svg_tag();
+    function renderCanvas(renderFunc, canvas, text3, opts, cb) {
+      const args = [].slice.call(arguments, 1);
+      const argsNum = args.length;
+      const isLastArgCb = typeof args[argsNum - 1] === "function";
+      if (!isLastArgCb && !canPromise()) {
+        throw new Error("Callback required as last argument");
+      }
+      if (isLastArgCb) {
+        if (argsNum < 2) {
+          throw new Error("Too few arguments provided");
+        }
+        if (argsNum === 2) {
+          cb = text3;
+          text3 = canvas;
+          canvas = opts = void 0;
+        } else if (argsNum === 3) {
+          if (canvas.getContext && typeof cb === "undefined") {
+            cb = opts;
+            opts = void 0;
+          } else {
+            cb = opts;
+            opts = text3;
+            text3 = canvas;
+            canvas = void 0;
+          }
+        }
+      } else {
+        if (argsNum < 1) {
+          throw new Error("Too few arguments provided");
+        }
+        if (argsNum === 1) {
+          text3 = canvas;
+          canvas = opts = void 0;
+        } else if (argsNum === 2 && !canvas.getContext) {
+          opts = text3;
+          text3 = canvas;
+          canvas = void 0;
+        }
+        return new Promise(function(resolve, reject) {
+          try {
+            const data2 = QRCode2.create(text3, opts);
+            resolve(renderFunc(data2, canvas, opts));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+      try {
+        const data2 = QRCode2.create(text3, opts);
+        cb(null, renderFunc(data2, canvas, opts));
+      } catch (e) {
+        cb(e);
+      }
+    }
+    exports.create = QRCode2.create;
+    exports.toCanvas = renderCanvas.bind(null, CanvasRenderer.render);
+    exports.toDataURL = renderCanvas.bind(null, CanvasRenderer.renderToDataURL);
+    exports.toString = renderCanvas.bind(null, function(data2, _, opts) {
+      return SvgRenderer.render(data2, opts);
+    });
+  }
+});
+
 // src/org/wanxp/main.ts
 __export(exports, {
   default: () => DoubanPlugin
@@ -2265,6 +4351,20 @@ PS: This file could be delete if you want to.
   "100139": `Tutorial`,
   "100138": `get Cookie and input to text area bellow`,
   "100132": `Load Douban Login Page Failed`,
+  "100140": `QR code login`,
+  "100141": `Douban QR code login`,
+  "100142": `Open the Douban app on another device, scan the QR code below, and confirm the login.`,
+  "100143": `Loading QR code...`,
+  "100144": `Waiting to be scanned...`,
+  "100145": `QR code scanned. Confirm the login in the Douban app.`,
+  "100146": `Douban login successful`,
+  "100147": `The QR code has expired. Refresh it to try again.`,
+  "100148": `Login was cancelled. Refresh the QR code to try again.`,
+  "100149": `QR code login temporarily failed. Refresh it and try again.`,
+  "100150": `Refresh QR code`,
+  "100152": `QR login confirmed. Saving your login...`,
+  "100153": `The scan was confirmed, but no Douban login credential was received. Refresh the QR code and try again.`,
+  "100154": `The QR login credential was saved. User details will be verified on the next connection.`,
   "1210": `Basic`,
   "1203": `Template`,
   "1220": `Output`,
@@ -2348,6 +4448,8 @@ PS: This file could be delete if you want to.
   "121306": `{{genre}}, {{aliases}}, {{developer}}, {{platform}}`,
   "121801": `Teleplay`,
   "121802": `This template will be used when creating new notes for Teleplay from Obsidian-Douban.`,
+  "121803": `Theater`,
+  "theaterVariablesDesc": `Theater variables: originalTitle, genre, score, datePublished, director, actor, author, publisher, aliases, language.`,
   "120501": `Date Format`,
   "120502": `Time Format`,
   "120503": `This format will be used when available template variables contain date.`,
@@ -2356,6 +4458,17 @@ PS: This file could be delete if you want to.
   "120507": `Your current syntax looks like this`,
   "120508": `format reference`,
   "120601": `Array`,
+  "1270": `Array field length limits`,
+  "1271": `Limit how many actor, director, author, alias, and other array values are written to notes.`,
+  "1272": `When both all-types and a specific type match, the smaller limit wins. A limit of 0 disables truncation.`,
+  "1273": `Add an array field length limit.`,
+  "127401": `Add array limit`,
+  "127402": `Applies to`,
+  "127403": `Field`,
+  "127404": `e.g. actor / director`,
+  "127405": `Maximum count (0 means unlimited)`,
+  "127406": `e.g. 5`,
+  "127407": `Delete this limit`,
   "120602": `string to join between array type, start\u3001end string for array, such as authors, actors. 
     support 
  (enter)`,
@@ -2412,6 +4525,25 @@ PS: This file could be delete if you want to.
   "121901": `Copy default template content to clipboard`,
   "121902": `Reset to default value`,
   "121903": `Copy default template content (that your state in object) to clipboard`,
+  "showAfterCreateName": `Open note after creation`,
+  "showAfterCreateDesc": `Open a note automatically after search import. Sync jobs continue in the background.`,
+  "imageNameDesc": `Local cover filename including its extension, without directories`,
+  "popularCommentsDesc": `Up to five popular book comments (array)`,
+  "batchImportCommand": `Import notes from Douban URLs`,
+  "batchImportTitle": `Batch import Douban URLs`,
+  "batchImportDesc": `Enter one Douban subject URL per line. Invalid, duplicate, or failed lines are skipped.`,
+  "batchImportStart": `Start import`,
+  "batchImportStop": `Stop`,
+  "batchImportStopping": `Stopping...`,
+  "batchImportProgress": `Importing {0}/{1}`,
+  "batchImportSummary": `Batch import finished: {0} succeeded, {1} failed or skipped.
+{2}`,
+  "batchImportInvalidUrl": `Unsupported Douban URL`,
+  "batchImportDuplicateUrl": `Duplicate URL, skipped`,
+  "batchImportFailed": `Import failed`,
+  "batchImportCancelled": `Import cancelled. Unprocessed entries are counted as skipped.`,
+  "batchImportFailures": `Failure and skip details`,
+  "batchImportRemaining": `Not processed because of cancellation: {0}`,
   "121907": `Built-in template copied`,
   "121908": `Built-in preset`,
   "121909": `Choose a built-in preset, then copy it or write it to a template file`,
@@ -2584,6 +4716,9 @@ PS: This file could be delete if you want to.
   "122002": `Extra Variables`,
   "122003": `Basic Variables must has value, Extra Variables can be empty`,
   "122004": `To use the template variables, you need to wrap them in double curly brackets. For example, {{title}} will be replaced with the title of the note.`,
+  "122011": `Click to copy the template variable`,
+  "122012": `Copied {0}`,
+  "122013": `Copy failed. Please try again.`,
   "122010": `My State Variables`,
   "410101": `Unknown`,
   "410200": `\u8BC4\u5206\u2B50`,
@@ -2958,6 +5093,20 @@ var zh_cn_default = {
   "100139": `[\u6559\u7A0B]`,
   "100138": `\u83B7\u53D6Cookie,\u5E76\u5C06Cookie\u590D\u5236\u5230\u4E0B\u9762\u8F93\u5165\u6846\u4E2D,\u6700\u540E\u70B9\u51FB\u2714\uFE0F`,
   "100132": `\u52A0\u8F7D\u8C46\u74E3\u767B\u5F55\u9875\u9762\u5931\u8D25`,
+  "100140": `\u4E8C\u7EF4\u7801\u767B\u5F55`,
+  "100141": `\u8C46\u74E3\u4E8C\u7EF4\u7801\u767B\u5F55`,
+  "100142": `\u8BF7\u4F7F\u7528\u53E6\u4E00\u53F0\u8BBE\u5907\u6253\u5F00\u8C46\u74E3App\uFF0C\u626B\u63CF\u4E0B\u65B9\u4E8C\u7EF4\u7801\u5E76\u786E\u8BA4\u767B\u5F55\u3002`,
+  "100143": `\u6B63\u5728\u83B7\u53D6\u4E8C\u7EF4\u7801...`,
+  "100144": `\u7B49\u5F85\u626B\u7801...`,
+  "100145": `\u5DF2\u626B\u7801\uFF0C\u8BF7\u5728\u8C46\u74E3App\u4E2D\u786E\u8BA4\u767B\u5F55\u3002`,
+  "100146": `\u8C46\u74E3\u767B\u5F55\u6210\u529F`,
+  "100147": `\u4E8C\u7EF4\u7801\u5DF2\u5931\u6548\uFF0C\u8BF7\u70B9\u51FB\u5237\u65B0\u4E8C\u7EF4\u7801\u3002`,
+  "100148": `\u5DF2\u53D6\u6D88\u767B\u5F55\uFF0C\u8BF7\u70B9\u51FB\u5237\u65B0\u4E8C\u7EF4\u7801\u91CD\u8BD5\u3002`,
+  "100149": `\u4E8C\u7EF4\u7801\u767B\u5F55\u6682\u65F6\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u5237\u65B0\u91CD\u8BD5\u3002`,
+  "100150": `\u5237\u65B0\u4E8C\u7EF4\u7801`,
+  "100152": `\u626B\u7801\u786E\u8BA4\u6210\u529F\uFF0C\u6B63\u5728\u4FDD\u5B58\u767B\u5F55\u4FE1\u606F...`,
+  "100153": `\u626B\u7801\u5DF2\u786E\u8BA4\uFF0C\u4F46\u63D2\u4EF6\u6CA1\u6709\u6536\u5230\u8C46\u74E3\u767B\u5F55\u51ED\u8BC1\uFF0C\u8BF7\u5237\u65B0\u4E8C\u7EF4\u7801\u91CD\u8BD5\u3002`,
+  "100154": `\u626B\u7801\u51ED\u8BC1\u5DF2\u4FDD\u5B58\uFF0C\u7528\u6237\u8D44\u6599\u5C06\u5728\u4E0B\u6B21\u8054\u7F51\u65F6\u9A8C\u8BC1\u3002`,
   "1201": `Obsidian-\u8C46\u74E3`,
   "120001": `\u8C46\u74E3\u641C\u7D22\u5730\u5740`,
   "120002": `\u8C46\u74E3\u641C\u7D22\u9875\u9762\u8BF7\u6C42\u5730\u5740, \u901A\u5E38\u662F\u7F51\u9875\u641C\u7D22\u7684\u5730\u5740. `,
@@ -3058,6 +5207,8 @@ var zh_cn_default = {
   "121306": `{{genre}}, {{aliases}}, {{developer}}, {{platform}}`,
   "121801": `\u7535\u89C6\u5267`,
   "121802": `\u5BFC\u5165\u7535\u89C6\u5267\u6240\u4F7F\u7528\u7684\u6A21\u677F, \u8BF7\u8F93\u5165\u5E76\u9009\u62E9\u5BF9\u5E94\u7684\u6587\u4EF6\u8DEF\u5F84`,
+  "121803": `\u821E\u53F0\u5267`,
+  "theaterVariablesDesc": `\u821E\u53F0\u5267\u6269\u5C55\u53D8\u91CF\uFF1AoriginalTitle\u3001genre\u3001score\u3001datePublished\u3001director\u3001actor\u3001author\u3001publisher\u3001aliases\u3001language\u3002`,
   "120501": `\u65E5\u671F\u683C\u5F0F`,
   "120503": `\u8FD9\u4E2A\u683C\u5F0F\u662F\u7ED9\u4E0B\u9762\u83B7\u53D6\u5230\u7684\u53C2\u6570\u8FDB\u884C\u683C\u5F0F\u5316\u65E5\u671F\u65F6\u663E\u793A\u7684\u5185\u5BB9 .`,
   "120502": `\u65F6\u95F4\u683C\u5F0F`,
@@ -3066,6 +5217,17 @@ var zh_cn_default = {
   "120507": `\u65F6\u95F4\u53C2\u6570\u65F6\u95F4\u683C\u5F0F\u9884\u89C8`,
   "120508": `\u683C\u5F0F\u53C2\u8003`,
   "120601": `\u6570\u7EC4\u663E\u793A`,
+  "1270": `\u6570\u7EC4\u5B57\u6BB5\u957F\u5EA6\u9650\u5236`,
+  "1271": `\u9650\u5236\u6F14\u5458\u3001\u5BFC\u6F14\u3001\u4F5C\u8005\u3001\u522B\u540D\u7B49\u6570\u7EC4\u5B57\u6BB5\u5199\u5165\u7B14\u8BB0\u65F6\u7684\u6700\u5927\u6761\u76EE\u6570\u3002`,
+  "1272": `\u540C\u4E00\u5B57\u6BB5\u540C\u65F6\u5339\u914D\u201C\u5168\u90E8\u7C7B\u578B\u201D\u548C\u5177\u4F53\u7C7B\u578B\u65F6\uFF0C\u91C7\u7528\u66F4\u5C0F\u7684\u4E0A\u9650\uFF1B\u4E0A\u9650\u4E3A 0 \u65F6\u4E0D\u542F\u7528\u9650\u5236\u3002`,
+  "1273": `\u6DFB\u52A0\u4E00\u6761\u6570\u7EC4\u5B57\u6BB5\u957F\u5EA6\u9650\u5236\u3002`,
+  "127401": `\u65B0\u589E\u6570\u7EC4\u9650\u5236`,
+  "127402": `\u9002\u7528\u7C7B\u578B`,
+  "127403": `\u5B57\u6BB5\u540D`,
+  "127404": `\u5982 actor / director`,
+  "127405": `\u6700\u5927\u6570\u91CF\uFF080 \u8868\u793A\u4E0D\u9650\u5236\uFF09`,
+  "127406": `\u5982 5`,
+  "127407": `\u5220\u9664\u8BE5\u9650\u5236`,
   "120602": `\u5F53\u6A21\u677F\u4E2D\u7684\u53D8\u91CF\u5B58\u5728\u6570\u7EC4, \u5219\u9700\u8981\u8BBE\u5B9A\u6570\u7EC4\u5143\u7D20\u4E2D\u7684\u5206\u5272\u7B26\u53F7\u4EE5\u53CA\u8D77\u59CB\u4E0E\u7ED3\u675F\u7B26\u53F7, \u6BD4\u5982\u6F14\u5458\u5217\u8868,
 	\u652F\u6301\u8F6C\u4E49\u5B57\u7B26\\n(\u56DE\u8F66)\u3002\u5E76\u4E14\u540C\u65F6\u652F\u6301\u591A\u79CD\u65B9\u5F0F\u8F93\u51FA\u5185\u5BB9\uFF0C\u70B9\u51FB[+]\u65B0\u589E\u4E0D\u540C\u8F93\u51FA\u5F62\u5F0F\uFF0C\u9884\u89C8\u6548\u679C\u5728\u4E0B\u65B9`,
   "124109": `\u9996:`,
@@ -3134,6 +5296,25 @@ var zh_cn_default = {
   "121701": `\u9009\u62E9\u6A21\u677F\u6587\u4EF6`,
   "121901": `\u590D\u5236\u57FA\u7840\u6A21\u677F\u5185\u5BB9`,
   "121903": `\u590D\u5236\u542B\u6709\u6211\u7684\u8BC4\u5206\u7684\u6A21\u677F\u5185\u5BB9. \u6A21\u677F\u4E2D\u6709\u767B\u5F55\u540E\u53EF\u4EE5\u7528\u7684\u53C2\u6570,\u5982\u6211\u7684\u8BC4\u5206, \u6211\u7684\u9605\u8BFB\u72B6\u6001\u7B49`,
+  "showAfterCreateName": `\u521B\u5EFA\u540E\u6253\u5F00\u7B14\u8BB0`,
+  "showAfterCreateDesc": `\u641C\u7D22\u5BFC\u5165\u521B\u5EFA\u7B14\u8BB0\u540E\u81EA\u52A8\u6253\u5F00\uFF1B\u540C\u6B65\u4EFB\u52A1\u4ECD\u4F1A\u5728\u540E\u53F0\u8FDE\u7EED\u5904\u7406\u3002`,
+  "imageNameDesc": `\u672C\u5730\u5C01\u9762\u6587\u4EF6\u540D\uFF08\u542B\u6269\u5C55\u540D\uFF0C\u4E0D\u542B\u76EE\u5F55\uFF09`,
+  "popularCommentsDesc": `\u56FE\u4E66\u70ED\u95E8\u77ED\u8BC4\uFF0C\u6700\u591A\u4E94\u6761\uFF08\u6570\u7EC4\uFF09`,
+  "batchImportCommand": `\u6309\u8C46\u74E3 URL \u6279\u91CF\u5BFC\u5165`,
+  "batchImportTitle": `\u6279\u91CF\u5BFC\u5165\u8C46\u74E3\u6761\u76EE`,
+  "batchImportDesc": `\u6BCF\u884C\u8F93\u5165\u4E00\u4E2A\u8C46\u74E3\u6761\u76EE URL\u3002\u65E0\u6548\u3001\u91CD\u590D\u6216\u5931\u8D25\u7684\u6761\u76EE\u4F1A\u8DF3\u8FC7\u5E76\u7EE7\u7EED\u3002`,
+  "batchImportStart": `\u5F00\u59CB\u5BFC\u5165`,
+  "batchImportStop": `\u505C\u6B62`,
+  "batchImportStopping": `\u6B63\u5728\u505C\u6B62...`,
+  "batchImportProgress": `\u6B63\u5728\u5BFC\u5165 {0}/{1}`,
+  "batchImportSummary": `\u6279\u91CF\u5BFC\u5165\u5B8C\u6210\uFF1A\u6210\u529F {0} \u6761\uFF0C\u5931\u8D25\u6216\u8DF3\u8FC7 {1} \u6761\u3002
+{2}`,
+  "batchImportInvalidUrl": `\u4E0D\u652F\u6301\u7684\u8C46\u74E3\u94FE\u63A5`,
+  "batchImportDuplicateUrl": `\u91CD\u590D\u94FE\u63A5\uFF0C\u5DF2\u8DF3\u8FC7`,
+  "batchImportFailed": `\u5BFC\u5165\u5931\u8D25`,
+  "batchImportCancelled": `\u5BFC\u5165\u5DF2\u53D6\u6D88\uFF0C\u672A\u5904\u7406\u6761\u76EE\u8BA1\u5165\u8DF3\u8FC7\u3002`,
+  "batchImportFailures": `\u5931\u8D25\u4E0E\u8DF3\u8FC7\u660E\u7EC6`,
+  "batchImportRemaining": `\u56E0\u53D6\u6D88\u800C\u672A\u5904\u7406\uFF1A{0} \u6761`,
   "121907": `\u5DF2\u590D\u5236\u5185\u7F6E\u6A21\u677F\u5185\u5BB9`,
   "121908": `\u5185\u7F6E\u6A21\u677F\u9884\u8BBE`,
   "121909": `\u9009\u62E9\u5185\u7F6E\u6A21\u677F\u540E\uFF0C\u53EF\u76F4\u63A5\u590D\u5236\u5185\u5BB9\u6216\u4E00\u952E\u5199\u5165\u6A21\u677F\u6587\u4EF6`,
@@ -3281,6 +5462,9 @@ var zh_cn_default = {
   "122002": `\u6269\u5C55\u53C2\u6570`,
   "122003": `\u901A\u7528\u53C2\u6570\u4E00\u5B9A\u6709\u503C\u4E0D\u4E3A\u7A7A, \u6269\u5C55\u53C2\u6570\u53EF\u80FD\u4E3A\u7A7A`,
   "122004": `\u4EE5\u4E0B\u53C2\u6570\u4F7F\u7528\u65F6\u8BF7\u7528'{{}}'\u5305\u88F9, \u4E3E\u4F8B: \u53C2\u6570title, \u5219\u4F7F\u7528\u65F6\u4E3A{{title}}. `,
+  "122011": `\u70B9\u51FB\u590D\u5236\u6A21\u677F\u53D8\u91CF`,
+  "122012": `\u5DF2\u590D\u5236 {0}`,
+  "122013": `\u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5`,
   "122010": `\u6211\u7684\u72B6\u6001\u53C2\u6570`,
   "410101": ``,
   "410102": `\u672A\u77E5`,
@@ -3530,20 +5714,18 @@ var zh_cn_default = {
 // src/org/wanxp/lang/helper.ts
 var import_obsidian = __toModule(require("obsidian"));
 function getObsidianLocale() {
-  let lang2 = "en";
+  let lang = "en";
   const momentLocale = import_obsidian.moment.locale();
   if (momentLocale) {
-    lang2 = momentLocale;
-    console.log("[Obsidian-Douban] Detected language from moment.locale():", lang2);
+    lang = momentLocale;
   }
-  if (lang2 === "en" && typeof window !== "undefined" && window.localStorage) {
+  if (lang === "en" && typeof window !== "undefined" && window.localStorage) {
     const localStorageLang = window.localStorage.getItem("language");
     if (localStorageLang) {
-      lang2 = localStorageLang;
-      console.log("[Obsidian-Douban] Detected language from localStorage:", lang2);
+      lang = localStorageLang;
     }
   }
-  if (lang2 === "zh" || lang2 === "zh-cn" || lang2 === "zh-CN" || lang2 === "zh-tw" || lang2 === "zh-TW" || lang2.startsWith("zh")) {
+  if (lang === "zh" || lang === "zh-cn" || lang === "zh-CN" || lang === "zh-tw" || lang === "zh-TW" || lang.startsWith("zh")) {
     return "zh-cn";
   }
   return "en";
@@ -3552,10 +5734,10 @@ var localeMap = {
   en: en_default,
   "zh-cn": zh_cn_default
 };
-var lang = getObsidianLocale();
-var locale = localeMap[lang] || localeMap["en"];
 var I18nHelper = class {
   getMessage(str, ...params) {
+    const lang = getObsidianLocale();
+    const locale = localeMap[lang] || localeMap["en"];
     if (!locale) {
       console.error("Error: obsidian douban locale not found", lang);
     }
@@ -3738,6 +5920,7 @@ var TemplateKey;
   TemplateKey5["noteTemplateFile"] = "noteTemplateFile";
   TemplateKey5["gameTemplateFile"] = "gameTemplateFile";
   TemplateKey5["teleplayTemplateFile"] = "teleplayTemplateFile";
+  TemplateKey5["theaterTemplateFile"] = "theaterTemplateFile";
 })(TemplateKey || (TemplateKey = {}));
 var SupportType;
 (function(SupportType6) {
@@ -4085,7 +6268,7 @@ var DoubanSearchResultSubject_TIP_EMPTY = {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian47 = __toModule(require("obsidian"));
+var import_obsidian51 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/types.ts
 var DOUBAN_FIELDS = new Set([
@@ -4172,12 +6355,14 @@ var DEFAULT_SETTINGS = {
   noteTemplateFile: ``,
   gameTemplateFile: ``,
   teleplayTemplateFile: ``,
+  theaterTemplateFile: ``,
   movieTemplateConfig: { source: "builtin" },
   bookTemplateConfig: { source: "builtin" },
   musicTemplateConfig: { source: "builtin" },
   noteTemplateConfig: { source: "builtin" },
   gameTemplateConfig: { source: "builtin" },
   teleplayTemplateConfig: { source: "builtin" },
+  theaterTemplateConfig: { source: "builtin" },
   searchUrl: "https://www.douban.com/search?q=",
   dateFormat: "yyyy-MM-DD",
   timeFormat: "HH:mm:ss",
@@ -4205,6 +6390,7 @@ var DEFAULT_SETTINGS = {
   cacheImage: true,
   cacheHighQuantityImage: true,
   overwriteCoverImage: false,
+  showAfterCreate: true,
   attachmentPath: "assets",
   attachmentFileName: "{{title}}",
   syncHandledDataArray: [],
@@ -4232,11 +6418,12 @@ title: {{title}}
   dataProtection: DEFAULT_DATA_PROTECTION_SETTINGS,
   syncBackupBeforeReplace: true,
   syncBackupFolder: ".tmp/obsidian-douban/backups",
-  includeSensitiveInSettingExport: false
+  includeSensitiveInSettingExport: false,
+  arrayLengthLimits: []
 };
 
 // src/org/wanxp/douban/data/search/DoubanSearchFuzzySuggestModal.ts
-var import_obsidian7 = __toModule(require("obsidian"));
+var import_obsidian8 = __toModule(require("obsidian"));
 
 // src/org/wanxp/utils/Logutil.ts
 var import_obsidian2 = __toModule(require("obsidian"));
@@ -4289,7 +6476,7 @@ var Logger = class {
 var log = new Logger();
 
 // src/org/wanxp/utils/HttpUtil.ts
-var import_obsidian6 = __toModule(require("obsidian"));
+var import_obsidian5 = __toModule(require("obsidian"));
 
 // src/org/wanxp/utils/model/HttpResponse.ts
 var import_obsidian3 = __toModule(require("obsidian"));
@@ -4339,304 +6526,465 @@ var HttpResponse = class {
   }
 };
 
+// src/org/wanxp/utils/HttpRequestPolicy.ts
+var DEFAULT_HTTP_TIMEOUT_MS = 3e4;
+var MAX_HTTP_RETRIES = 2;
+var MAX_HTTP_REDIRECTS = 5;
+var HttpRequestErrorKind;
+(function(HttpRequestErrorKind2) {
+  HttpRequestErrorKind2["timeout"] = "timeout";
+  HttpRequestErrorKind2["network"] = "network";
+  HttpRequestErrorKind2["httpStatus"] = "http-status";
+  HttpRequestErrorKind2["redirect"] = "redirect";
+})(HttpRequestErrorKind || (HttpRequestErrorKind = {}));
+var HttpRequestError = class extends Error {
+  constructor(kind, message, options = {}) {
+    super(message);
+    this.name = "HttpRequestError";
+    this.kind = kind;
+    this.status = options.status;
+    this.attempts = options.attempts;
+  }
+};
+function normalizeHttpMethod(method) {
+  return String(method || "GET").toUpperCase();
+}
+function isIdempotentHttpMethod(method) {
+  const normalized = normalizeHttpMethod(method);
+  return normalized === "GET" || normalized === "HEAD";
+}
+function isRetryableHttpStatus(status) {
+  return status === 429 || status >= 500 && status <= 599;
+}
+function isRetryableHttpError(error) {
+  if (error instanceof HttpRequestError) {
+    return error.kind === HttpRequestErrorKind.timeout || error.kind === HttpRequestErrorKind.network;
+  }
+  const code = String((error == null ? void 0 : error.code) || "");
+  return [
+    "ECONNRESET",
+    "ECONNREFUSED",
+    "ENETUNREACH",
+    "ENOTFOUND",
+    "EAI_AGAIN",
+    "ETIMEDOUT"
+  ].includes(code);
+}
+function getHttpRetryDelay(attempt) {
+  return Math.min(2e3, 300 * Math.max(1, attempt));
+}
+function withHttpTimeout(promise, timeoutMs = DEFAULT_HTTP_TIMEOUT_MS, operation = "HTTP request") {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new HttpRequestError(HttpRequestErrorKind.timeout, `${operation} timed out after ${timeoutMs}ms`));
+    }, Math.max(1, timeoutMs));
+    promise.then((value) => {
+      clearTimeout(timer);
+      resolve(value);
+    }, (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+  });
+}
+function describeHttpError(error) {
+  if (error instanceof HttpRequestError) {
+    const attempts = error.attempts ? ` after ${error.attempts} attempt(s)` : "";
+    return `${error.message}${attempts}`;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+function sanitizeHttpUrlForLog(url) {
+  return String(url || "").replace(/([?&](?:code|token|ticket|auth|password|session)=)[^&\s]*/gi, "$1<redacted>");
+}
+function isDoubanHost(hostname) {
+  const normalized = hostname.toLowerCase();
+  return normalized === "douban.com" || normalized.endsWith(".douban.com");
+}
+function sanitizeRedirectHeaders(headers, fromUrl, toUrl) {
+  const result = {};
+  Object.entries(headers || {}).forEach(([key, value]) => {
+    if (value != null && value !== "") {
+      result[key] = String(value);
+    }
+  });
+  let fromHost = "";
+  let toHost = "";
+  try {
+    fromHost = new URL(fromUrl).hostname;
+    toHost = new URL(toUrl).hostname;
+  } catch (_) {
+  }
+  const sameTrustedDoubanOrigin = isDoubanHost(fromHost) && isDoubanHost(toHost);
+  if (sameTrustedDoubanOrigin) {
+    return result;
+  }
+  Object.keys(result).forEach((key) => {
+    const lowerKey = key.toLowerCase();
+    if (lowerKey === "cookie" || lowerKey === "authorization" || lowerKey === "proxy-authorization") {
+      delete result[key];
+    }
+  });
+  return result;
+}
+
 // src/org/wanxp/utils/desktop/DesktopHttpUtil.ts
-var https = null;
-var http = null;
+var httpsClient = null;
+var httpClient = null;
 var DesktopHttpUtil = class {
-  static request(url, headers, settingsManager, options) {
-    const _a5 = headers, { ["Accept-Encoding"]: acceptEncoding } = _a5, headersInner = __objRest(_a5, ["Accept-Encoding"]);
-    const optionsInner = __spreadValues({
-      headers: headersInner
-    }, options);
-    return new Promise((resolve, rejects) => {
-      this.httpRequest(url, optionsInner, 0, resolve, rejects, settingsManager);
+  static request(url, headers, settingsManager, options = {}) {
+    return this.requestWithRetry(url, headers, settingsManager, options, false);
+  }
+  static requestBuffer(url, headers, settingsManager, options = {}) {
+    return this.requestWithRetry(url, headers, settingsManager, options, true);
+  }
+  static requestWithRetry(url, headers, settingsManager, options, asBuffer) {
+    return __async(this, null, function* () {
+      const requestHeaders = {};
+      Object.entries(headers || {}).forEach(([key, value]) => {
+        const lowerKey = key.toLowerCase();
+        if (value != null && value !== "" && lowerKey !== "accept-encoding" && lowerKey !== "host" && lowerKey !== "content-length") {
+          requestHeaders[key] = String(value);
+        }
+      });
+      const _a5 = options || {}, {
+        timeoutMs = DEFAULT_HTTP_TIMEOUT_MS,
+        retryCount
+      } = _a5, nativeOptions = __objRest(_a5, [
+        "timeoutMs",
+        "retryCount"
+      ]);
+      const method = normalizeHttpMethod(nativeOptions.method);
+      const maxRetries = isIdempotentHttpMethod(method) ? Math.max(0, retryCount == null ? MAX_HTTP_RETRIES : retryCount) : 0;
+      const requestOptions = __spreadProps(__spreadValues({}, nativeOptions), {
+        method,
+        headers: requestHeaders
+      });
+      let lastError;
+      for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+        settingsManager == null ? void 0 : settingsManager.debug(`Obsidian-Douban:HTTP ${method} ${sanitizeHttpUrlForLog(url)} (attempt ${attempt}/${maxRetries + 1})`);
+        try {
+          const response = yield this.requestOnce(url, requestOptions, Math.max(1, timeoutMs), asBuffer);
+          if (isRetryableHttpStatus(response.status)) {
+            if (attempt <= maxRetries) {
+              yield this.delay(getHttpRetryDelay(attempt));
+              continue;
+            }
+            throw new HttpRequestError(HttpRequestErrorKind.httpStatus, `HTTP ${response.status}`, { status: response.status, attempts: attempt });
+          }
+          return response;
+        } catch (error) {
+          lastError = this.toRequestError(error);
+          const canRetry = attempt <= maxRetries && isIdempotentHttpMethod(method) && isRetryableHttpError(lastError);
+          if (canRetry) {
+            yield this.delay(getHttpRetryDelay(attempt));
+            continue;
+          }
+          if (lastError instanceof HttpRequestError) {
+            throw lastError;
+          }
+          throw new HttpRequestError(HttpRequestErrorKind.network, String(lastError), { attempts: attempt, cause: lastError });
+        }
+      }
+      throw this.toRequestError(lastError);
     });
   }
-  static httpRequest(url, options, times, resolve, rejects, settingsManager) {
-    settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6json\u5F00\u59CB:
-url:${url}
-headers:${JSON.stringify(options)}`);
-    var method = options.method;
-    if (method == null) {
-      method = "GET";
-    }
-    if (method.toUpperCase() == "POST") {
-      const { protocol, host, port, path } = HttpUtil.parse(url);
-      const optionsInner = {
-        hostname: host,
-        port,
-        path,
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
+  static requestOnce(url, options, timeoutMs, asBuffer) {
+    return new Promise((resolve, reject) => {
+      const _a5 = options, { body } = _a5, requestOptions = __objRest(_a5, ["body"]);
+      const headers = __spreadValues({}, requestOptions.headers || {});
+      if (body && !this.findHeader(headers, "content-length")) {
+        this.setHeader(headers, "Content-Length", String(Buffer.byteLength(body)));
+      }
+      let currentUrl = url;
+      let currentCookie = this.findHeader(headers, "cookie");
+      requestOptions.headers = headers;
+      requestOptions.maxRedirects = MAX_HTTP_REDIRECTS;
+      requestOptions.beforeRedirect = (redirectOptions, response) => {
+        const nextHeaders = __spreadValues({}, redirectOptions.headers || {});
+        const nextUrl = this.buildRedirectUrl(redirectOptions);
+        const setCookie = this.findHeader((response == null ? void 0 : response.headers) || {}, "set-cookie");
+        if (setCookie && this.isDoubanUrl(currentUrl) && this.isDoubanUrl(nextUrl)) {
+          currentCookie = this.mergeCookies(currentCookie, this.toArray(setCookie));
+          this.setHeader(nextHeaders, "Cookie", currentCookie);
+        }
+        redirectOptions.headers = sanitizeRedirectHeaders(nextHeaders, currentUrl, nextUrl);
+        currentUrl = nextUrl;
+      };
+      let settled = false;
+      let timer;
+      const finishResolve = (response) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(response);
         }
       };
-      let req = null;
-      try {
-        req = DesktopHttpUtil.getHttpClient(url).request(optionsInner, function(response) {
-          let chunks = [], size = 0;
-          if (settingsManager) {
-            settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6JSON\u5B8C\u6210${times}:url:
-${url}`);
-            settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6JSON\u5B8C\u6210${times}:header:
-${JSON.stringify(response.headers)}`);
-            settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6JSON\u5B8C\u6210${times}:body:
-${response.text}`);
-          }
-          response.on("data", function(chunk) {
-            chunks.push(chunk);
-            size += chunk.length;
-          });
-          response.on("end", function() {
-            const data2 = Buffer.concat(chunks, size);
-            const html3 = data2.toString();
-            resolve(new HttpResponse(response.statusCode, response.headers, html3));
-          });
-        });
-      } catch (e) {
-        rejects(e);
-      }
-      if (req) {
-        const body = options.body;
-        if (body) {
-          req.write(body);
-        } else {
-          req.write("");
+      const finishReject = (error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(this.toRequestError(error));
         }
-        req.end();
-      }
-    } else {
+      };
+      let request2;
+      timer = setTimeout(() => {
+        const timeoutError = new HttpRequestError(HttpRequestErrorKind.timeout, `\u8BF7\u6C42\u5728 ${timeoutMs}ms \u540E\u8D85\u65F6`);
+        finishReject(timeoutError);
+        request2 == null ? void 0 : request2.destroy(timeoutError);
+      }, timeoutMs);
       try {
-        this.getHttpClient(url).get(url, __spreadValues({}, options), function(response) {
-          let chunks = [], size = 0;
-          if (settingsManager) {
-            settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6JSON\u5B8C\u6210${times}:url:
-${url}`);
-            settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6JSON\u5B8C\u6210${times}:header:
-${JSON.stringify(response.headers)}`);
-            settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6JSON\u5B8C\u6210${times}:body:
-${response.text}`);
-          }
-          response.on("data", function(chunk) {
-            chunks.push(chunk);
-            size += chunk.length;
+        request2 = this.getHttpClient(url).request(url, requestOptions, (response) => {
+          const chunks = [];
+          let size = 0;
+          response.on("data", (chunk) => {
+            const buffer = Buffer.from(chunk);
+            chunks.push(buffer);
+            size += buffer.length;
           });
-          response.on("end", function() {
+          response.on("aborted", () => finishReject(new HttpRequestError(HttpRequestErrorKind.network, "\u54CD\u5E94\u8FDE\u63A5\u88AB\u4E2D\u65AD")));
+          response.on("error", finishReject);
+          response.on("end", () => {
+            if (settled) {
+              return;
+            }
             const data2 = Buffer.concat(chunks, size);
-            const html3 = data2.toString();
-            resolve(new HttpResponse(response.statusCode, response.headers, html3));
+            finishResolve(new HttpResponse(response.statusCode, response.headers, asBuffer ? data2 : data2.toString()));
           });
         });
-      } catch (e) {
-        rejects(e);
+        request2.on("error", finishReject);
+        if (body) {
+          request2.write(body);
+        }
+        request2.end();
+      } catch (error) {
+        finishReject(error);
       }
+    });
+  }
+  static toRequestError(error) {
+    if (error instanceof HttpRequestError) {
+      return error;
     }
+    const code = String((error == null ? void 0 : error.code) || "");
+    if (code === "ETIMEDOUT" || /timed?\s*out/i.test(String(error))) {
+      return new HttpRequestError(HttpRequestErrorKind.timeout, "\u8BF7\u6C42\u8D85\u65F6", { cause: error });
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    return new HttpRequestError(HttpRequestErrorKind.network, message || "\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25", { cause: error });
+  }
+  static buildRedirectUrl(options) {
+    if (options == null ? void 0 : options.href) {
+      return String(options.href);
+    }
+    const protocol = (options == null ? void 0 : options.protocol) || "https:";
+    const hostname = (options == null ? void 0 : options.hostname) || (options == null ? void 0 : options.host) || "";
+    const port = (options == null ? void 0 : options.port) ? `:${options.port}` : "";
+    const path = (options == null ? void 0 : options.path) || "/";
+    return `${protocol}//${hostname}${port}${path}`;
+  }
+  static isDoubanUrl(url) {
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      return hostname === "douban.com" || hostname.endsWith(".douban.com");
+    } catch (_) {
+      return false;
+    }
+  }
+  static findHeader(headers, target) {
+    const key = Object.keys(headers || {}).find((item) => item.toLowerCase() === target);
+    return key ? String(headers[key]) : "";
+  }
+  static setHeader(headers, name, value) {
+    Object.keys(headers).forEach((key) => {
+      if (key.toLowerCase() === name.toLowerCase()) {
+        delete headers[key];
+      }
+    });
+    if (value) {
+      headers[name] = value;
+    }
+  }
+  static mergeCookies(existingCookie, setCookies) {
+    const cookies = new Map();
+    const addCookie = (cookie) => {
+      const pair = String(cookie || "").split(";", 1)[0].trim();
+      const separator = pair.indexOf("=");
+      if (separator > 0) {
+        cookies.set(pair.substring(0, separator).trim(), pair.substring(separator + 1).trim());
+      }
+    };
+    String(existingCookie || "").split(";").forEach(addCookie);
+    setCookies.forEach(addCookie);
+    return Array.from(cookies.entries()).map(([name, value]) => `${name}=${value}`).join("; ");
+  }
+  static toArray(value) {
+    return Array.isArray(value) ? value.map((item) => String(item)) : [String(value)];
+  }
+  static delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
   static getHttpClient(url) {
     if (url && url.startsWith("https")) {
-      if (!https) {
-        https = require_follow_redirects().https;
+      if (!httpsClient) {
+        httpsClient = require_follow_redirects().https;
       }
-      return https;
-    } else {
-      if (!http) {
-        http = require_follow_redirects().http;
-      }
-      return http;
+      return httpsClient;
     }
-  }
-  static requestBuffer(url, headers, settingsManager) {
-    let options = {
-      headers
-    };
-    return new Promise((resolve, rejects) => {
-      this.httpRequestGetBufferInner(url, options, 0, resolve, rejects, settingsManager);
-    });
-  }
-  static httpRequestGetBufferInner(url, options, times, resolve, rejects, settingsManager) {
-    if (settingsManager) {
-      settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6\u6587\u4EF6\u5F00\u59CB:
-${url}
-headers:${JSON.stringify(options)}`);
-      this.getHttpClient(url).get(url, __spreadValues({}, options), function(response) {
-        let chunks = [], size = 0;
-        if (settingsManager) {
-          settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6\u6587\u4EF6\u5B8C\u6210${times}:url:
-${url}`);
-          settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6\u6587\u4EF6\u5B8C\u6210${times}:header:
-${JSON.stringify(response.headers)}`);
-        }
-        response.on("data", function(chunk) {
-          chunks.push(chunk);
-          size += chunk.length;
-        });
-        response.on("end", function() {
-          const data2 = Buffer.concat(chunks, size);
-          resolve(new HttpResponse(response.statusCode, response.headers, data2));
-        });
-      });
+    if (!httpClient) {
+      httpClient = require_follow_redirects().http;
     }
+    return httpClient;
   }
 };
 
 // src/org/wanxp/utils/mobile/MobileHttpUtil.ts
-var import_obsidian5 = __toModule(require("obsidian"));
-
-// src/org/wanxp/douban/component/DoubanHumanCheckModel.ts
 var import_obsidian4 = __toModule(require("obsidian"));
-var DoubanHumanCheckModel = class {
-  constructor(url) {
-    this.url = url;
-    const { remote } = require("electron");
-    const { BrowserWindow: RemoteBrowserWindow } = remote;
-    this.modal = new RemoteBrowserWindow({
-      parent: remote.getCurrentWindow(),
-      width: 960,
-      height: 540,
-      show: false
-    });
-    this.modal.once("ready-to-show", () => {
-      this.modal.setTitle(i18nHelper.getMessage("100102"));
-      this.modal.show();
-    });
-    const session = this.modal.webContents.session;
-    const filter4 = {
-      urls: [this.url]
-    };
-    session.webRequest.onSendHeaders(filter4, (details) => __async(this, null, function* () {
-      const cookies = details.requestHeaders["Cookie"];
-      const cookieArr = this.parseCookies(cookies);
-      if (cookieArr) {
-        this.onClose();
-      } else {
-        this.onReload();
-      }
-    }));
-  }
-  parseCookies(cookies) {
-    return cookies;
-  }
-  load() {
-    return __async(this, null, function* () {
-      try {
-        yield this.modal.loadURL(this.url);
-      } catch (error) {
-        log.error(i18nHelper.getMessage("100101"), error);
-      }
-    });
-  }
-  loadUrl(url) {
-    return __async(this, null, function* () {
-      try {
-        yield this.modal.loadURL(url);
-      } catch (error) {
-        log.error(i18nHelper.getMessage("100101"), error);
-      }
-    });
-  }
-  loadHtml(html3) {
-    return __async(this, null, function* () {
-      try {
-        yield this.modal.loadURL(`data:text/html;charset=utf-8,${html3}`);
-      } catch (error) {
-        log.error(i18nHelper.getMessage("100101"), error);
-      }
-    });
-  }
-  onClose() {
-    this.modal.close();
-    new import_obsidian4.Notice(i18nHelper.getMessage("100103"));
-  }
-  onReload() {
-    this.modal.reload();
-  }
-};
-
-// src/org/wanxp/utils/DoubanHttpUtil.ts
-var DoubanHttpUtil = class {
-  static httpRequestGet(url, headers, settingsManager) {
-    return __async(this, null, function* () {
-      settingsManager.debug(`\u8BF7\u6C42\u5730\u5740:${url}`);
-      const _a5 = headers, { ["Accept-Encoding"]: acceptEncoding } = _a5, headersInner = __objRest(_a5, ["Accept-Encoding"]);
-      settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6\u7F51\u9875\u5F00\u59CB:
-url:${url}
-headers:${JSON.stringify(headers)}`);
-      const response = yield HttpUtil.getText(url, headers, settingsManager);
-      if (response.status == 403) {
-        throw new Error(i18nHelper.getMessage("130106"));
-      }
-      const html3 = response.textString;
-      return yield this.humanCheck(html3, url);
-    });
-  }
-  constructor(fileHandler) {
-    this.fileHandler = fileHandler;
-  }
-  static humanCheck(html3, url, settingsManager) {
-    return __async(this, null, function* () {
-      if (!html3) {
-        return html3;
-      }
-      if (settingsManager) {
-        settingsManager.debug(html3);
-      }
-      if (html3 && html3.toString().indexOf("<title>\u7981\u6B62\u8BBF\u95EE</title>") != -1) {
-        const loginModel = new DoubanHumanCheckModel(url);
-        yield loginModel.load();
-        return "";
-      } else {
-        return html3;
-      }
-    });
-  }
-};
-
-// src/org/wanxp/utils/mobile/MobileHttpUtil.ts
 var MobileHttpUtil = class {
   static httpRequestGet(url, headers, settingsManager) {
-    return this.httpRequestGetInner(url, headers, 0, settingsManager);
+    return this.request(url, headers, settingsManager, { method: "GET" });
   }
-  static httpRequestGetInner(url, headers, times, settingsManager) {
-    return __async(this, null, function* () {
-      const _a5 = headers, { Cookie } = _a5, headersInner = __objRest(_a5, ["Cookie"]);
-      let requestUrlParam = {
-        url,
-        method: "GET",
-        headers: { "Cookie": Cookie },
-        throw: true
-      };
-      return yield (0, import_obsidian5.requestUrl)(requestUrlParam).then((response) => {
-        if (response && response.text.indexOf("https://sec.douban.com/a") > 0) {
-          log.notice(i18nHelper.getMessage("130105"));
-          if (settingsManager) {
-            settingsManager.debug(`Obsidian-Douban:\u83B7\u53D6\u5F02\u5E38\u7F51\u9875\u5982\u4E0B:
-${response}`);
+  static request(_0, _1, _2) {
+    return __async(this, arguments, function* (url, headers, settingsManager, options = {}) {
+      const method = normalizeHttpMethod(options.method);
+      const timeoutMs = Math.max(1, options.timeoutMs || DEFAULT_HTTP_TIMEOUT_MS);
+      const maxRetries = isIdempotentHttpMethod(method) ? Math.max(0, options.retryCount == null ? MAX_HTTP_RETRIES : options.retryCount) : 0;
+      const deadline = Date.now() + timeoutMs;
+      let lastError;
+      for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+        settingsManager == null ? void 0 : settingsManager.debug(`Obsidian-Douban:HTTP ${method} ${sanitizeHttpUrlForLog(url)} (attempt ${attempt}/${maxRetries + 1})`);
+        try {
+          const remaining = Math.max(1, deadline - Date.now());
+          const response = yield this.requestWithRedirects(url, headers, __spreadProps(__spreadValues({}, options), { method }), deadline, 0);
+          if (isRetryableHttpStatus(response.status)) {
+            if (attempt <= maxRetries) {
+              yield this.delay(this.getRemainingDelay(attempt, deadline));
+              continue;
+            }
+            throw new HttpRequestError(HttpRequestErrorKind.httpStatus, `HTTP ${response.status}`, { status: response.status, attempts: attempt });
           }
-        }
-        if (response.status == 301 || response.status == 302 || response.status == 303 || response.status == 307) {
-          if (times > 2) {
-            throw new Error("\u91CD\u5B9A\u5411\u6B21\u6570\u8FC7\u591A");
+          return response;
+        } catch (error) {
+          lastError = this.toRequestError(error);
+          const canRetry = attempt <= maxRetries && isIdempotentHttpMethod(method) && isRetryableHttpError(lastError);
+          if (canRetry && Date.now() < deadline) {
+            yield this.delay(this.getRemainingDelay(attempt, deadline));
+            continue;
           }
-          let location = response.headers["location"];
-          settingsManager.debug(`Obsidian-Douban:\u83B7\u53D6\u91CD\u5B9A\u5411\u5730\u5740\u5982\u4E0B:
-${location}`);
-          if (location.indexOf("http") != 0) {
-            return this.httpRequestGetInner(location, headers, times + 1, settingsManager);
-          } else {
-            throw new Error("\u91CD\u5B9A\u5730\u5740\u9519\u8BEF");
+          if (lastError instanceof HttpRequestError) {
+            throw lastError;
           }
+          throw new HttpRequestError(HttpRequestErrorKind.network, String(lastError), { attempts: attempt, cause: lastError });
         }
-        settingsManager.debug(`Obsidian-Douban:\u83B7\u53D6\u7F51\u9875\u5982\u4E0B:
-${response}`);
-        return response;
-      }).then((s) => DoubanHttpUtil.humanCheck(s, url, settingsManager)).catch((e) => {
-        if (e.toString().indexOf("403") > 0) {
-          throw log.error(i18nHelper.getMessage("130105"), e);
-        } else {
-          throw log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e);
-        }
-      });
+      }
+      throw this.toRequestError(lastError);
     });
+  }
+  static requestWithRedirects(url, headers, options, deadline, redirectCount) {
+    return __async(this, null, function* () {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        throw new HttpRequestError(HttpRequestErrorKind.timeout, `\u8BF7\u6C42\u5728 ${DEFAULT_HTTP_TIMEOUT_MS}ms \u540E\u8D85\u65F6`);
+      }
+      const requestHeaders = this.buildHeaders(headers);
+      const requestParam = {
+        url,
+        method: normalizeHttpMethod(options.method),
+        headers: requestHeaders,
+        body: options.body,
+        throw: false
+      };
+      const response = yield withHttpTimeout((0, import_obsidian4.requestUrl)(requestParam), remaining, `\u8BF7\u6C42 ${url}`);
+      if (![301, 302, 303, 307, 308].includes(response.status)) {
+        return response;
+      }
+      if (redirectCount >= MAX_HTTP_REDIRECTS) {
+        throw new HttpRequestError(HttpRequestErrorKind.redirect, `\u91CD\u5B9A\u5411\u6B21\u6570\u8D85\u8FC7\u4E0A\u9650 ${MAX_HTTP_REDIRECTS}`);
+      }
+      const location = this.findHeader(response.headers, "location");
+      if (!location) {
+        throw new HttpRequestError(HttpRequestErrorKind.redirect, "\u91CD\u5B9A\u5411\u54CD\u5E94\u7F3A\u5C11 Location");
+      }
+      let nextUrl;
+      try {
+        nextUrl = new URL(location, url).toString();
+      } catch (error) {
+        throw new HttpRequestError(HttpRequestErrorKind.redirect, "\u91CD\u5B9A\u5411\u5730\u5740\u65E0\u6548", { cause: error });
+      }
+      let nextHeaders = __spreadValues({}, headers);
+      const setCookie = this.findHeader(response.headers, "set-cookie");
+      if (setCookie && this.isDoubanUrl(url) && this.isDoubanUrl(nextUrl)) {
+        nextHeaders = this.mergeResponseCookies(nextHeaders, setCookie);
+      }
+      nextHeaders = sanitizeRedirectHeaders(nextHeaders, url, nextUrl);
+      const nextOptions = __spreadValues({}, options);
+      if ([301, 302, 303].includes(response.status)) {
+        nextOptions.method = "GET";
+        delete nextOptions.body;
+      }
+      return this.requestWithRedirects(nextUrl, nextHeaders, nextOptions, deadline, redirectCount + 1);
+    });
+  }
+  static buildHeaders(headers) {
+    const result = {};
+    Object.entries(headers || {}).forEach(([key, value]) => {
+      const lowerKey = key.toLowerCase();
+      if (value != null && value !== "" && lowerKey !== "host" && lowerKey !== "content-length") {
+        result[key] = String(value);
+      }
+    });
+    return result;
+  }
+  static mergeResponseCookies(headers, setCookie) {
+    const result = __spreadValues({}, headers || {});
+    const cookieKey = Object.keys(result).find((key) => key.toLowerCase() === "cookie");
+    const existingCookie = cookieKey ? String(result[cookieKey]) : "";
+    const cookies = new Map();
+    const addCookie = (cookie) => {
+      const pair = String(cookie || "").split(";", 1)[0].trim();
+      const separator = pair.indexOf("=");
+      if (separator > 0) {
+        cookies.set(pair.substring(0, separator).trim(), pair.substring(separator + 1).trim());
+      }
+    };
+    existingCookie.split(";").forEach(addCookie);
+    addCookie(setCookie);
+    if (cookieKey) {
+      delete result[cookieKey];
+    }
+    result.Cookie = Array.from(cookies.entries()).map(([name, value]) => `${name}=${value}`).join("; ");
+    return result;
+  }
+  static findHeader(headers, target) {
+    const key = Object.keys(headers || {}).find((item) => item.toLowerCase() === target.toLowerCase());
+    return key ? String(headers[key]) : "";
+  }
+  static isDoubanUrl(url) {
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      return hostname === "douban.com" || hostname.endsWith(".douban.com");
+    } catch (_) {
+      return false;
+    }
+  }
+  static getRemainingDelay(attempt, deadline) {
+    return Math.max(1, Math.min(getHttpRetryDelay(attempt), deadline - Date.now()));
+  }
+  static toRequestError(error) {
+    if (error instanceof HttpRequestError) {
+      return error;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    if (/timed?\s*out|timeout/i.test(message)) {
+      return new HttpRequestError(HttpRequestErrorKind.timeout, "\u8BF7\u6C42\u8D85\u65F6", { cause: error });
+    }
+    return new HttpRequestError(HttpRequestErrorKind.network, message || "\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25", { cause: error });
+  }
+  static delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 };
 
@@ -4644,25 +6992,20 @@ ${response}`);
 var HttpUtil = class {
   static httpRequest(url, headers, settingsManager, options) {
     return __async(this, null, function* () {
-      const _a5 = headers, { ["Accept-Encoding"]: acceptEncoding } = _a5, headersInner = __objRest(_a5, ["Accept-Encoding"]);
-      settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6json\u5F00\u59CB:
-url:${url}
-headers:${JSON.stringify(headers)}`);
-      if (import_obsidian6.Platform.isDesktopApp) {
+      const method = String((options == null ? void 0 : options.method) || "GET").toUpperCase();
+      settingsManager == null ? void 0 : settingsManager.debug(`Obsidian-Douban:HTTP ${method} ${sanitizeHttpUrlForLog(url)}`);
+      if (import_obsidian5.Platform.isDesktopApp) {
         return DesktopHttpUtil.request(url, headers, settingsManager, options);
       } else {
-        const response = yield MobileHttpUtil.httpRequestGet(url, headers, settingsManager);
+        const response = yield MobileHttpUtil.request(url, headers, settingsManager, options);
         return new HttpResponse(response.status, response.headers, response.text);
       }
     });
   }
   static getText(url, headers, settingsManager) {
     return __async(this, null, function* () {
-      const _a5 = headers, { ["Accept-Encoding"]: acceptEncoding } = _a5, headersInner = __objRest(_a5, ["Accept-Encoding"]);
-      settingsManager.debug(`Obsidian-Douban:\u4ECE\u7F51\u7EDC\u83B7\u53D6json\u5F00\u59CB:
-url:${url}
-headers:${JSON.stringify(headers)}`);
-      if (import_obsidian6.Platform.isDesktopApp) {
+      settingsManager == null ? void 0 : settingsManager.debug(`Obsidian-Douban:HTTP GET ${sanitizeHttpUrlForLog(url)}`);
+      if (import_obsidian5.Platform.isDesktopApp) {
         return DesktopHttpUtil.request(url, headers, settingsManager, { method: "GET" });
       } else {
         const response = yield MobileHttpUtil.httpRequestGet(url, headers, settingsManager);
@@ -4671,10 +7014,10 @@ headers:${JSON.stringify(headers)}`);
     });
   }
   static httpRequestBuffer(url, headers, settingsManager) {
-    if (import_obsidian6.Platform.isDesktopApp) {
+    if (import_obsidian5.Platform.isDesktopApp) {
       return DesktopHttpUtil.requestBuffer(url, headers, settingsManager);
     } else {
-      return MobileHttpUtil.httpRequestGet(url, headers, settingsManager).then((response) => {
+      return MobileHttpUtil.request(url, headers, settingsManager, { method: "GET" }).then((response) => {
         return new HttpResponse(response.status, response.headers, response.arrayBuffer);
       });
     }
@@ -4736,10 +7079,13 @@ headers:${JSON.stringify(headers)}`);
 };
 HttpUtil.IMAGE_REQUEST_HEADERS_TO_DROP = new Set([
   "authority",
+  "authorization",
   "content-length",
   "content-type",
+  "cookie",
   "host",
   "origin",
+  "proxy-authorization",
   "referer",
   "sec-fetch-dest",
   "sec-fetch-mode",
@@ -4747,217 +7093,178 @@ HttpUtil.IMAGE_REQUEST_HEADERS_TO_DROP = new Set([
   "sec-fetch-user"
 ]);
 
-// src/org/wanxp/douban/data/search/searcher/AbstractSearchPageFetcher.ts
-var AbstractSearchPageFetcher = class {
-  constructor(settingsManager) {
-    this.settingsManager = settingsManager;
+// src/org/wanxp/utils/DoubanHttpUtil.ts
+var import_obsidian7 = __toModule(require("obsidian"));
+
+// src/org/wanxp/douban/component/DoubanHumanCheckModel.ts
+var import_obsidian6 = __toModule(require("obsidian"));
+var DoubanHumanCheckModel = class {
+  constructor(url) {
+    this.url = url;
+    const { remote } = require("electron");
+    const { BrowserWindow: RemoteBrowserWindow } = remote;
+    this.modal = new RemoteBrowserWindow({
+      parent: remote.getCurrentWindow(),
+      width: 960,
+      height: 540,
+      show: false
+    });
+    this.modal.once("ready-to-show", () => {
+      this.modal.setTitle(i18nHelper.getMessage("100102"));
+      this.modal.show();
+    });
+    const session = this.modal.webContents.session;
+    const filter4 = {
+      urls: [this.url]
+    };
+    session.webRequest.onSendHeaders(filter4, (details) => __async(this, null, function* () {
+      const cookies = details.requestHeaders["Cookie"];
+      const cookieArr = this.parseCookies(cookies);
+      if (cookieArr) {
+        this.onClose();
+      } else {
+        this.onReload();
+      }
+    }));
   }
-  support(type, pageNum) {
-    throw new Error("Method not implemented.");
+  parseCookies(cookies) {
+    return cookies;
   }
-  fetch(keyword, pageNum, pageSize) {
-    const start2 = Math.floor((pageNum - 1) * pageSize);
-    const url = this.getSearchUrl(keyword, start2, pageSize);
-    if (!url) {
-      return Promise.resolve("");
-    }
-    return DoubanHttpUtil.httpRequestGet(url, this.settingsManager.getHeaders(), this.settingsManager).catch((e) => {
-      throw log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e);
+  load() {
+    return __async(this, null, function* () {
+      try {
+        yield this.modal.loadURL(this.url);
+      } catch (error) {
+        log.error(i18nHelper.getMessage("100101"), error);
+      }
     });
   }
-  getSearchUrl(keyword, start2, pageSize) {
-    keyword = keyword.trim();
-    if (keyword.length == 0) {
-      return "";
-    }
-    keyword = HttpUtil.encodeUrl(keyword);
-    return this.getUrl(keyword, start2, pageSize);
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/AllPageSearchPageFetcher.ts
-var AllPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}`;
-  }
-  support(type) {
-    return type == SupportType.all;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/MoviePageSearchPageFetcher.ts
-var MoviePageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1002`;
-  }
-  support(type) {
-    return type == SupportType.movie;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/BookPageSearchPageFetcher.ts
-var BookPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1001`;
-  }
-  support(type) {
-    return type == SupportType.book;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/GamePageSearchPageFetcher.ts
-var GamePageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=3114`;
-  }
-  support(type) {
-    return type == SupportType.game;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/MusicPageSearchPageFetcher.ts
-var MusicPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1003`;
-  }
-  support(type) {
-    return type == SupportType.music;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/TheaterPageSearchPageFetcher.ts
-var TheaterPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=3069`;
-  }
-  support(type) {
-    return type == SupportType.theater;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/NotePageSearchPageFetcher.ts
-var NotePageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1015`;
-  }
-  support(type, pageNum) {
-    return type == SupportType.note && pageNum > 1;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/NoteFirstPageSearchPageFetcher.ts
-var NoteFirstPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
-  getUrl(keyword, start2, pageSize) {
-    return `https://www.douban.com/search?cat=1015&q=${keyword}`;
-  }
-  support(type, pageNum) {
-    return type == SupportType.note && pageNum == 1;
-  }
-};
-
-// src/org/wanxp/douban/data/search/searcher/SearchPageFetcher.ts
-var SearchPageFetcher = class {
-  constructor(settingsManager) {
-    this.fetchers = [];
-    this.fetchers.push(new AllPageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new MoviePageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new BookPageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new GamePageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new MusicPageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new TheaterPageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new NotePageSearchPageFetcher(settingsManager));
-    this.fetchers.push(new NoteFirstPageSearchPageFetcher(settingsManager));
-  }
-  fetch(keyword, type, pageNum, pageSize) {
-    for (const fetcher of this.fetchers) {
-      if (fetcher.support(type, pageNum)) {
-        return fetcher.fetch(keyword, pageNum, pageSize);
+  loadUrl(url) {
+    return __async(this, null, function* () {
+      try {
+        yield this.modal.loadURL(url);
+      } catch (error) {
+        log.error(i18nHelper.getMessage("100101"), error);
       }
-    }
-    throw new Error(`not support type:${type} pageNum:${pageNum}`);
+    });
+  }
+  loadHtml(html3) {
+    return __async(this, null, function* () {
+      try {
+        yield this.modal.loadURL(`data:text/html;charset=utf-8,${html3}`);
+      } catch (error) {
+        log.error(i18nHelper.getMessage("100101"), error);
+      }
+    });
+  }
+  onClose() {
+    this.modal.close();
+    new import_obsidian6.Notice(i18nHelper.getMessage("100103"));
+  }
+  onReload() {
+    this.modal.reload();
   }
 };
 
-// src/org/wanxp/douban/data/model/SearchPageInfo.ts
-var SearchPageInfo = class {
-  constructor(total, pageNum, pageSize, type) {
-    this._total = total;
-    this._pageNum = pageNum;
-    this._pageSize = pageSize;
-    this._hasNext = pageNum * pageSize < total;
-    this._type = type;
-  }
-  nextPage() {
-    if (!this._hasNext) {
-      return this;
-    }
-    return new SearchPageInfo(this.total, this._pageNum + 1, this._pageSize, this._type);
-  }
-  previousPage() {
-    if (this._pageNum == 0) {
-      return this;
-    }
-    return new SearchPageInfo(this.total, this._pageNum - 1, this._pageSize, this._type);
-  }
-  typePage(type) {
-    return new SearchPageInfo(this.total, 0, this._pageSize, this._type);
-  }
-  get hasNext() {
-    return this._hasNext;
-  }
-  get hasPrevious() {
-    return this._pageNum > 1;
-  }
-  get start() {
-    return (this._pageNum - 1) * this._pageSize + 1;
-  }
-  get total() {
-    return this._total;
-  }
-  set total(total) {
-    this._total = total;
-  }
-  get pageSize() {
-    return this._pageSize;
-  }
-  get pageNum() {
-    return this._pageNum;
-  }
-  get type() {
-    return this._type;
-  }
-  allPage() {
-    if (this._pageNum == 0) {
-      return this;
-    }
-    return new SearchPageInfo(this.total, this._pageNum - 1, this._pageSize, SupportType.all);
+// src/org/wanxp/utils/DoubanPageGuard.ts
+var DoubanPageProblem;
+(function(DoubanPageProblem2) {
+  DoubanPageProblem2["empty"] = "empty";
+  DoubanPageProblem2["loginRequired"] = "login-required";
+  DoubanPageProblem2["accessDenied"] = "access-denied";
+  DoubanPageProblem2["challengeRequired"] = "challenge-required";
+  DoubanPageProblem2["unexpectedHtml"] = "unexpected-html";
+  DoubanPageProblem2["invalidSubject"] = "invalid-subject";
+})(DoubanPageProblem || (DoubanPageProblem = {}));
+var DoubanPageGuardError = class extends Error {
+  constructor(problem, stage, message) {
+    super(message);
+    this.name = "DoubanPageGuardError";
+    this.problem = problem;
+    this.stage = stage;
   }
 };
-
-// src/org/wanxp/douban/data/model/SearchPageTypeOf.ts
-var SearchPageTypeOf = class extends SearchPageInfo {
-  constructor(total, pageNum, pageSize, type, list) {
-    super(total, pageNum, pageSize, type);
-    this._list = list;
-  }
-  get list() {
-    return this._list;
-  }
-  static empty(type) {
-    return new SearchPageTypeOf(0, 1, 0, type, []);
-  }
-  static emptyWithNoType() {
-    return new SearchPageTypeOf(0, 1, 0, null, []);
-  }
+var PROBLEM_MESSAGES = {
+  [DoubanPageProblem.empty]: "\u8C46\u74E3\u8FD4\u56DE\u4E86\u7A7A\u54CD\u5E94",
+  [DoubanPageProblem.loginRequired]: "\u8C46\u74E3\u8FD4\u56DE\u767B\u5F55\u9875\u9762\uFF0C\u8BF7\u5148\u767B\u5F55\u6216\u66F4\u65B0 Cookie",
+  [DoubanPageProblem.accessDenied]: "\u8C46\u74E3\u62D2\u7EDD\u8BBF\u95EE\u8BE5\u9875\u9762",
+  [DoubanPageProblem.challengeRequired]: "\u8C46\u74E3\u8981\u6C42\u5B8C\u6210\u4EBA\u673A\u9A8C\u8BC1\uFF0C\u8BF7\u5B8C\u6210\u9A8C\u8BC1\u540E\u91CD\u8BD5",
+  [DoubanPageProblem.unexpectedHtml]: "\u54CD\u5E94\u4E0D\u662F\u53EF\u8BC6\u522B\u7684\u8C46\u74E3\u8BE6\u60C5\u9875",
+  [DoubanPageProblem.invalidSubject]: "\u8BE6\u60C5\u9875\u7F3A\u5C11\u5FC5\u8981\u7684\u8C46\u74E3 ID\u3001\u6807\u9898\u6216\u7C7B\u578B"
 };
-
-// src/org/wanxp/douban/data/model/SearchPage.ts
-var SearchPage = class extends SearchPageTypeOf {
-  static empty(type) {
-    return new SearchPage(0, 1, 0, type, []);
+var DoubanPageGuard = class {
+  static inspect(html3, options = {}) {
+    const page = typeof html3 === "string" ? html3 : "";
+    if (!page.trim()) {
+      return this.failure(DoubanPageProblem.empty);
+    }
+    const title = this.extractTitle(page);
+    const hasDetailMetadata = /application\/ld\+json|property\s*=\s*["']og:title["']/i.test(page);
+    if (/^禁止访问$/i.test(title) || /^403(?:\s+forbidden)?$/i.test(title) || /\/misc\/sorry/i.test(page)) {
+      return this.failure(DoubanPageProblem.accessDenied);
+    }
+    const hasLoginUrl = /accounts\.douban\.com\/passport\/login/i.test(page) && !hasDetailMetadata;
+    const hasLoginForm = /<form[^>]+action\s*=\s*["'][^"']*login/i.test(page);
+    const isLoginTitle = /^(?:登录豆瓣|豆瓣\s*-\s*登录跳转页)$/i.test(title);
+    if (hasLoginUrl || hasLoginForm || isLoginTitle) {
+      return this.failure(DoubanPageProblem.loginRequired);
+    }
+    const isChallengeUrl = /https?:\/\/sec\.douban\.com\/a/i.test(page) && !hasDetailMetadata;
+    const isChallengeTitle = /(?:安全验证|人机验证|验证码|captcha)/i.test(title);
+    if (isChallengeUrl || isChallengeTitle) {
+      return this.failure(DoubanPageProblem.challengeRequired);
+    }
+    const hasHtmlDocument = /<html(?:\s|>)/i.test(page) || /<body(?:\s|>)/i.test(page);
+    if (!hasHtmlDocument && !options.allowFragment) {
+      return this.failure(DoubanPageProblem.unexpectedHtml);
+    }
+    return { ok: true };
   }
-  static emptyWithNoType() {
-    return new SearchPage(0, 1, 0, null, []);
+  static assertCanParse(html3, options = {}) {
+    const inspection = this.inspect(html3, options);
+    if (!inspection.ok && inspection.problem) {
+      throw this.createError(inspection.problem, "response");
+    }
+  }
+  static assertValidSubject(subject, expectedType) {
+    const id = String((subject == null ? void 0 : subject.id) || "").trim();
+    const title = String((subject == null ? void 0 : subject.title) || "").trim();
+    const type = String((subject == null ? void 0 : subject.type) || "").trim();
+    const typeMatches = !expectedType || type.toLowerCase() === expectedType.toLowerCase();
+    if (!id || !/^\d+$/.test(id) || !title || !type || !typeMatches) {
+      throw this.createError(DoubanPageProblem.invalidSubject, "validation");
+    }
+  }
+  static describeError(error) {
+    if (error instanceof DoubanPageGuardError) {
+      const stageNames = {
+        response: "\u9875\u9762\u68C0\u67E5",
+        parse: "\u9875\u9762\u89E3\u6790",
+        validation: "\u5B57\u6BB5\u6821\u9A8C"
+      };
+      return `${stageNames[error.stage]}\u5931\u8D25\uFF1A${error.message}`;
+    }
+    if (error instanceof HttpRequestError) {
+      return `\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25\uFF1A${describeHttpError(error)}`;
+    }
+    if (error instanceof Error) {
+      return `\u5904\u7406\u5931\u8D25\uFF1A${error.message}`;
+    }
+    return String(error);
+  }
+  static failure(problem) {
+    return {
+      ok: false,
+      problem,
+      reason: PROBLEM_MESSAGES[problem]
+    };
+  }
+  static createError(problem, stage) {
+    return new DoubanPageGuardError(problem, stage, PROBLEM_MESSAGES[problem]);
+  }
+  static extractTitle(html3) {
+    const match = html3.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    return match ? match[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : "";
   }
 };
 
@@ -18786,6 +21093,350 @@ function renderWithParse5(dom) {
 var parse5 = getParse((content, options, isDocument2, context) => options._useHtmlParser2 ? parseDocument(content, options) : parseWithParse5(content, options, isDocument2, context));
 var load = getLoad(parse5, (dom, options) => options._useHtmlParser2 ? esm_default(dom, options) : renderWithParse5(dom));
 
+// src/org/wanxp/utils/DoubanChallengeUtil.ts
+var DoubanChallengeUtil = class {
+  static parse(html3) {
+    if (!html3 || !html3.includes('name="cha"') || !html3.includes('name="sol"')) {
+      return null;
+    }
+    const document2 = load(html3);
+    const form = document2('form#sec, form[action="/c"]').first();
+    if (form.length === 0) {
+      return null;
+    }
+    const token = form.find('input[name="tok"]').attr("value") || "";
+    const challenge = form.find('input[name="cha"]').attr("value") || "";
+    const redirectUrl = form.find('input[name="red"]').attr("value") || "";
+    if (!token || !challenge || !redirectUrl) {
+      return null;
+    }
+    const difficultyMatch = html3.match(/difficulty\s*=\s*(\d+)/);
+    const parsedDifficulty = difficultyMatch ? Number(difficultyMatch[1]) : this.DEFAULT_DIFFICULTY;
+    const difficulty = Number.isInteger(parsedDifficulty) && parsedDifficulty > 0 ? Math.min(parsedDifficulty, this.MAX_DIFFICULTY) : this.DEFAULT_DIFFICULTY;
+    return { token, challenge, redirectUrl, difficulty };
+  }
+  static solve(challenge) {
+    return __async(this, null, function* () {
+      const targetPrefix = "0".repeat(challenge.difficulty);
+      for (let nonce = 1; nonce <= this.MAX_NONCE; nonce++) {
+        const hash3 = yield this.sha512(challenge.challenge + nonce);
+        if (hash3.startsWith(targetPrefix)) {
+          return nonce;
+        }
+        if (nonce % 500 === 0) {
+          yield new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+      throw new Error("\u8C46\u74E3\u9A8C\u8BC1\u8BA1\u7B97\u8D85\u8FC7\u6700\u5927\u5C1D\u8BD5\u6B21\u6570");
+    });
+  }
+  static buildRequestBody(challenge, solution) {
+    return new URLSearchParams({
+      tok: challenge.token,
+      cha: challenge.challenge,
+      sol: String(solution),
+      red: challenge.redirectUrl
+    }).toString();
+  }
+  static sha512(value) {
+    return __async(this, null, function* () {
+      try {
+        const nodeCrypto = require("crypto");
+        return nodeCrypto.createHash("sha512").update(value).digest("hex");
+      } catch (_) {
+        if (typeof crypto === "undefined" || !crypto.subtle) {
+          throw new Error("\u5F53\u524D\u73AF\u5883\u4E0D\u652F\u6301 SHA-512 \u9A8C\u8BC1");
+        }
+        const digest = yield crypto.subtle.digest("SHA-512", new TextEncoder().encode(value));
+        return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      }
+    });
+  }
+};
+DoubanChallengeUtil.VERIFY_URL = "https://sec.douban.com/c";
+DoubanChallengeUtil.DEFAULT_DIFFICULTY = 4;
+DoubanChallengeUtil.MAX_DIFFICULTY = 6;
+DoubanChallengeUtil.MAX_NONCE = 5e6;
+
+// src/org/wanxp/utils/DoubanHttpUtil.ts
+var DoubanHttpUtil = class {
+  static httpRequestGet(url, headers, settingsManager) {
+    return __async(this, null, function* () {
+      settingsManager == null ? void 0 : settingsManager.debug(`Obsidian-Douban:\u83B7\u53D6\u8C46\u74E3\u9875\u9762 ${sanitizeHttpUrlForLog(url)}`);
+      const response = yield HttpUtil.getText(url, headers, settingsManager);
+      if (response.status == 403) {
+        throw new Error(i18nHelper.getMessage("130106"));
+      }
+      let html3 = response.textString;
+      const challenge = DoubanChallengeUtil.parse(html3);
+      if (challenge) {
+        settingsManager == null ? void 0 : settingsManager.debug("Obsidian-Douban:\u68C0\u6D4B\u5230\u53D7\u652F\u6301\u7684\u8C46\u74E3\u9A8C\u8BC1\u9875\u9762");
+        const solution = yield DoubanChallengeUtil.solve(challenge);
+        const challengeResponse = yield HttpUtil.httpRequest(DoubanChallengeUtil.VERIFY_URL, this.buildChallengeHeaders(headers), settingsManager, {
+          method: "POST",
+          body: DoubanChallengeUtil.buildRequestBody(challenge, solution),
+          timeoutMs: 3e4
+        });
+        html3 = challengeResponse.textString;
+        if (challengeResponse.status >= 400 || DoubanChallengeUtil.parse(html3)) {
+          throw new Error(`\u8C46\u74E3\u9A8C\u8BC1\u5931\u8D25\uFF1AHTTP ${challengeResponse.status}`);
+        }
+      }
+      return yield this.humanCheck(html3, url, settingsManager);
+    });
+  }
+  static buildChallengeHeaders(headers = {}) {
+    const result = {};
+    Object.entries(headers).forEach(([key, value]) => {
+      const lowerKey = key.toLowerCase();
+      if (value != null && value !== "" && lowerKey !== "host" && lowerKey !== "content-length" && lowerKey !== "content-type") {
+        result[key] = String(value);
+      }
+    });
+    result["Content-Type"] = "application/x-www-form-urlencoded";
+    result["Origin"] = "https://sec.douban.com";
+    result["Referer"] = "https://sec.douban.com/";
+    return result;
+  }
+  constructor(fileHandler) {
+    this.fileHandler = fileHandler;
+  }
+  static humanCheck(html3, url, settingsManager) {
+    return __async(this, null, function* () {
+      if (!html3) {
+        return html3;
+      }
+      if (html3 && html3.toString().indexOf("<title>\u7981\u6B62\u8BBF\u95EE</title>") != -1) {
+        if (import_obsidian7.Platform.isDesktopApp) {
+          const loginModel = new DoubanHumanCheckModel(url);
+          yield loginModel.load();
+        }
+        throw new DoubanPageGuardError(DoubanPageProblem.accessDenied, "response", "\u8C46\u74E3\u62D2\u7EDD\u8BBF\u95EE\u8BE5\u9875\u9762");
+      } else {
+        return html3;
+      }
+    });
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/AbstractSearchPageFetcher.ts
+var AbstractSearchPageFetcher = class {
+  constructor(settingsManager) {
+    this.settingsManager = settingsManager;
+  }
+  support(type, pageNum) {
+    throw new Error("Method not implemented.");
+  }
+  fetch(keyword, pageNum, pageSize) {
+    const start2 = Math.floor((pageNum - 1) * pageSize);
+    const url = this.getSearchUrl(keyword, start2, pageSize);
+    if (!url) {
+      return Promise.resolve("");
+    }
+    return DoubanHttpUtil.httpRequestGet(url, this.settingsManager.getHeaders(), this.settingsManager).then((html3) => {
+      DoubanPageGuard.assertCanParse(html3, { allowFragment: true });
+      return html3;
+    }).catch((e) => {
+      const detail = DoubanPageGuard.describeError(e);
+      throw log.error(i18nHelper.getMessage("130101").replace("{0}", detail), e);
+    });
+  }
+  getSearchUrl(keyword, start2, pageSize) {
+    keyword = keyword.trim();
+    if (keyword.length == 0) {
+      return "";
+    }
+    keyword = HttpUtil.encodeUrl(keyword);
+    return this.getUrl(keyword, start2, pageSize);
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/AllPageSearchPageFetcher.ts
+var AllPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}`;
+  }
+  support(type) {
+    return type == SupportType.all;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/MoviePageSearchPageFetcher.ts
+var MoviePageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1002`;
+  }
+  support(type) {
+    return type == SupportType.movie;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/BookPageSearchPageFetcher.ts
+var BookPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1001`;
+  }
+  support(type) {
+    return type == SupportType.book;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/GamePageSearchPageFetcher.ts
+var GamePageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=3114`;
+  }
+  support(type) {
+    return type == SupportType.game;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/MusicPageSearchPageFetcher.ts
+var MusicPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1003`;
+  }
+  support(type) {
+    return type == SupportType.music;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/TheaterPageSearchPageFetcher.ts
+var TheaterPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=3069`;
+  }
+  support(type) {
+    return type == SupportType.theater;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/NotePageSearchPageFetcher.ts
+var NotePageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/j/search?q=${keyword}&start=${start2}&cat=1015`;
+  }
+  support(type, pageNum) {
+    return type == SupportType.note && pageNum > 1;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/NoteFirstPageSearchPageFetcher.ts
+var NoteFirstPageSearchPageFetcher = class extends AbstractSearchPageFetcher {
+  getUrl(keyword, start2, pageSize) {
+    return `https://www.douban.com/search?cat=1015&q=${keyword}`;
+  }
+  support(type, pageNum) {
+    return type == SupportType.note && pageNum == 1;
+  }
+};
+
+// src/org/wanxp/douban/data/search/searcher/SearchPageFetcher.ts
+var SearchPageFetcher = class {
+  constructor(settingsManager) {
+    this.fetchers = [];
+    this.fetchers.push(new AllPageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new MoviePageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new BookPageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new GamePageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new MusicPageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new TheaterPageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new NotePageSearchPageFetcher(settingsManager));
+    this.fetchers.push(new NoteFirstPageSearchPageFetcher(settingsManager));
+  }
+  fetch(keyword, type, pageNum, pageSize) {
+    for (const fetcher of this.fetchers) {
+      if (fetcher.support(type, pageNum)) {
+        return fetcher.fetch(keyword, pageNum, pageSize);
+      }
+    }
+    throw new Error(`not support type:${type} pageNum:${pageNum}`);
+  }
+};
+
+// src/org/wanxp/douban/data/model/SearchPageInfo.ts
+var SearchPageInfo = class {
+  constructor(total, pageNum, pageSize, type) {
+    this._total = total;
+    this._pageNum = pageNum;
+    this._pageSize = pageSize;
+    this._hasNext = pageNum * pageSize < total;
+    this._type = type;
+  }
+  nextPage() {
+    if (!this._hasNext) {
+      return this;
+    }
+    return new SearchPageInfo(this.total, this._pageNum + 1, this._pageSize, this._type);
+  }
+  previousPage() {
+    if (this._pageNum == 0) {
+      return this;
+    }
+    return new SearchPageInfo(this.total, this._pageNum - 1, this._pageSize, this._type);
+  }
+  typePage(type) {
+    return new SearchPageInfo(this.total, 0, this._pageSize, this._type);
+  }
+  get hasNext() {
+    return this._hasNext;
+  }
+  get hasPrevious() {
+    return this._pageNum > 1;
+  }
+  get start() {
+    return (this._pageNum - 1) * this._pageSize + 1;
+  }
+  get total() {
+    return this._total;
+  }
+  set total(total) {
+    this._total = total;
+  }
+  get pageSize() {
+    return this._pageSize;
+  }
+  get pageNum() {
+    return this._pageNum;
+  }
+  get type() {
+    return this._type;
+  }
+  allPage() {
+    if (this._pageNum == 0) {
+      return this;
+    }
+    return new SearchPageInfo(this.total, this._pageNum - 1, this._pageSize, SupportType.all);
+  }
+};
+
+// src/org/wanxp/douban/data/model/SearchPageTypeOf.ts
+var SearchPageTypeOf = class extends SearchPageInfo {
+  constructor(total, pageNum, pageSize, type, list) {
+    super(total, pageNum, pageSize, type);
+    this._list = list;
+  }
+  get list() {
+    return this._list;
+  }
+  static empty(type) {
+    return new SearchPageTypeOf(0, 1, 0, type, []);
+  }
+  static emptyWithNoType() {
+    return new SearchPageTypeOf(0, 1, 0, null, []);
+  }
+};
+
+// src/org/wanxp/douban/data/model/SearchPage.ts
+var SearchPage = class extends SearchPageTypeOf {
+  static empty(type) {
+    return new SearchPage(0, 1, 0, type, []);
+  }
+  static emptyWithNoType() {
+    return new SearchPage(0, 1, 0, null, []);
+  }
+};
+
 // src/org/wanxp/douban/data/search/SearchParser.ts
 var SearchParserHandler = class {
   static parseSearch(dataHtml) {
@@ -18932,7 +21583,7 @@ var SearcherV2 = class {
 };
 
 // src/org/wanxp/douban/data/search/DoubanSearchFuzzySuggestModal.ts
-var DoubanFuzzySuggester = class extends import_obsidian7.FuzzySuggestModal {
+var DoubanFuzzySuggester = class extends import_obsidian8.FuzzySuggestModal {
   constructor(plugin, context, searchItem) {
     super(plugin.app);
     this.plugin = plugin;
@@ -19041,11 +21692,6 @@ var DoubanFuzzySuggester = class extends import_obsidian7.FuzzySuggestModal {
 };
 
 // src/org/wanxp/douban/data/model/DoubanSubject.ts
-var DoubanSubject = class {
-  constructor() {
-    this.handledStatus = SubjectHandledStatus.init;
-  }
-};
 var ParameterMap = new Map([
   ["id", ""]
 ]);
@@ -19056,6 +21702,7 @@ var DoubanParameterName = {
   SCORE: "score",
   SCORE_STAR: "scoreStar",
   IMAGE: "image",
+  IMAGE_NAME: "imageName",
   IMAGE_URL: "imageData.url",
   URL: "url",
   DESC: "desc",
@@ -19069,7 +21716,7 @@ var DoubanParameterName = {
 };
 
 // src/org/wanxp/douban/data/handler/DoubanAbstractLoadHandler.ts
-var import_obsidian9 = __toModule(require("obsidian"));
+var import_obsidian10 = __toModule(require("obsidian"));
 
 // src/org/wanxp/constant/DefaultTemplateContent.ts
 function syncify(basic, syncTable, basicTable) {
@@ -19362,13 +22009,62 @@ ${teleplayTable}
 
 ## \u611F\u60F3
 `;
+var theaterTable = `> | \u6F14\u51FA\u65E5\u671F | {{datePublished}} |
+> | \u7C7B\u578B | \`= this.genre\` |
+> | \u5BFC\u6F14 | \`= this.director\` |
+> | \u4E3B\u6F14 | \`= this.actor\` |
+> | \u6F14\u51FA\u56E2\u4F53 | {{publisher}} |`;
+var theaterSyncTable = `> | \u72B6\u6001 | \`= this.state\` |
+> | \u7C7B\u578B | \`= this.genre\` |
+> | \u6807\u7B7E | \`= this.tags\` |
+> | \u8BC4\u5206 | \`= this.myRatingStar\` |
+> | \u77ED\u8BC4 | \`= this.\u77ED\u8BC4\` |
+> | \u5BFC\u6F14 | \`= this.director\` |
+> | \u4E3B\u6F14 | \`= this.actor\` |
+> | \u6F14\u51FA\u56E2\u4F53 | {{publisher}} |
+> | \u6F14\u51FA\u65E5\u671F | {{datePublished}} |`;
+var theaterBasic = `---
+title: {{title}}
+originalTitle: {{originalTitle}}
+type: {{type}}
+genre: {{genre}}
+score: {{score}}
+datePublished: {{datePublished}}
+director: "[[{{director}}]]"
+actor: {{actor}}
+author: {{author}}
+publisher: {{publisher}}
+aliases: {{aliases}}
+language: {{language}}
+doubanId: {{id}}
+url: {{url}}
+image: {{image}}
+createTime: {{currentDate}}
+---
+
+> [!douban-info]+ \u{1F3AD} **{{title}}**
+>
+> ![cover|400]({{image}})
+>
+> | | |
+> |:------:|:------------------------------------------:|
+${theaterTable}
+
+> [!abstract]- **\u7B80\u4ECB**
+> {{desc}}
+
+## \u8BB0\u5F55
+
+## \u611F\u60F3
+`;
 var DEFAULT_TEMPLATE_CONTENT = {
   movieTemplateFileContent: movieBasic,
   bookTemplateFileContent: bookBasic,
   musicTemplateFileContent: musicBasic,
   noteTemplateFileContent: noteBasic,
   gameTemplateFileContent: gameBasic,
-  teleplayTemplateFileContent: teleplayBasic
+  teleplayTemplateFileContent: teleplayBasic,
+  theaterTemplateFileContent: theaterBasic
 };
 var DEFAULT_TEMPLATE_CONTENT_WITH_STATE = {
   movieTemplateFileContent: syncify(movieBasic, movieSyncTable, movieTable),
@@ -19376,7 +22072,8 @@ var DEFAULT_TEMPLATE_CONTENT_WITH_STATE = {
   musicTemplateFileContent: syncify(musicBasic, musicSyncTable, musicTable),
   noteTemplateFileContent: noteBasic,
   gameTemplateFileContent: syncify(gameBasic, gameSyncTable, gameTable),
-  teleplayTemplateFileContent: syncify(teleplayBasic, teleplaySyncTable, teleplayTable)
+  teleplayTemplateFileContent: syncify(teleplayBasic, teleplaySyncTable, teleplayTable),
+  theaterTemplateFileContent: syncify(theaterBasic, theaterSyncTable, theaterTable)
 };
 function getDefaultTemplateContent(key, useStateTemplate = true) {
   var _a5;
@@ -19625,7 +22322,7 @@ var FieldVariable = class {
 };
 
 // src/org/wanxp/utils/FileUtil.ts
-var import_obsidian8 = __toModule(require("obsidian"));
+var import_obsidian9 = __toModule(require("obsidian"));
 var FileUtil = {
   parse(pathString) {
     const regex = /(?<dir>([^/\\]+[/\\])*)(?<name>[^/\\]*$)/;
@@ -19636,16 +22333,23 @@ var FileUtil = {
   },
   join(...strings) {
     const parts = strings.map((s) => String(s).trim()).filter((s) => s != null);
-    return (0, import_obsidian8.normalizePath)(parts.join("/"));
+    return (0, import_obsidian9.normalizePath)(parts.join("/"));
   },
   replaceSpecialCharactersForFileName(fileNameInput) {
-    let fileName = fileNameInput.replaceAll(/[\\/:*?"<>|]/g, "_");
-    fileName = fileName.replaceAll(/[\n\r\t]/g, "_");
-    fileName = fileName.replaceAll(/\s+/g, "_");
+    let fileName = String(fileNameInput || "").trim();
+    fileName = fileName.replaceAll(/[\\/:*?"<>|\u0000-\u001F\u007F]/g, "_");
     fileName = fileName.replaceAll(/^\.+/g, "_");
     fileName = fileName.replaceAll(/\.+$/g, "_");
-    fileName = fileName.replaceAll(/_+/g, "_");
     return fileName;
+  },
+  toMarkdownLinkPath(pathInput) {
+    const path = String(pathInput || "").replace(/\\/g, "/");
+    if (!path || /^(?:https?:|data:|mailto:)/i.test(path)) {
+      return path;
+    }
+    return path.split("/").map((part) => {
+      return part.split(/(%[0-9A-Fa-f]{2})/g).map((segment) => /^%[0-9A-Fa-f]{2}$/.test(segment) ? segment : encodeURIComponent(segment)).join("");
+    }).join("/");
   }
 };
 
@@ -19660,6 +22364,7 @@ var VariableUtil = class {
       return content;
     }
     const map2 = obj instanceof Map ? obj : this.objToMap(obj);
+    this.applyArrayLengthLimits(subjectType, map2, settingManager);
     this.handleCustomVariable(subjectType, map2, settingManager, "text");
     content = this.replaceMap(map2, allVariables, content, settingManager, targetType);
     return content;
@@ -19755,6 +22460,9 @@ var VariableUtil = class {
     if (content.includes(wikiLinkPattern)) {
       return content.replaceAll(wikiLinkPattern, `[[${strValue}]]`);
     }
+    if (targetType === "text" && variable.key === "image" && strValue) {
+      content = this.replaceMarkdownImagePaths(content, variable.variable, strValue);
+    }
     return content.replaceAll(variable.variable, this.handleText(strValue, targetType, valueField));
   }
   static getAllVariables(content, settingManager) {
@@ -19846,10 +22554,58 @@ var VariableUtil = class {
         content = this.replaceArray(variable, value.value, content, settingManager, targetType);
         break;
       default:
+        if (targetType === "text" && variable.key === "image" && value.value) {
+          content = this.replaceMarkdownImagePaths(content, variableStr, String(value.value));
+        }
         content = content.replaceAll(variableStr, this.handleText(value.value, targetType, value));
         break;
     }
     return content;
+  }
+  static replaceMarkdownImagePaths(content, variable, value) {
+    const escapedVariable = variable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const imageTargetRegex = new RegExp(`(\\]\\(\\s*<?)${escapedVariable}(>?\\s*(?:"[^"]*"|'[^']*')?\\s*\\))`, "g");
+    const encodedPath = FileUtil.toMarkdownLinkPath(value);
+    return content.replace(imageTargetRegex, `$1${encodedPath}$2`);
+  }
+  static applyArrayLengthLimits(subjectType, variableMap, settingManager) {
+    if (!(variableMap == null ? void 0 : variableMap.size)) {
+      return;
+    }
+    const limits = settingManager.getSetting("arrayLengthLimits");
+    if (!Array.isArray(limits) || limits.length === 0) {
+      return;
+    }
+    const currentType = String(subjectType || "").toLowerCase();
+    const effectiveLimits = new Map();
+    limits.forEach((limit) => {
+      const field = String((limit == null ? void 0 : limit.field) || "").trim().toLowerCase();
+      const type = String((limit == null ? void 0 : limit.type) || "").toLowerCase();
+      const value = Number(limit == null ? void 0 : limit.limit);
+      if (!field || !Number.isInteger(value) || value <= 0) {
+        return;
+      }
+      if (type !== SupportType.all && type !== currentType) {
+        return;
+      }
+      const existing = effectiveLimits.get(field);
+      if (existing == null || value < existing) {
+        effectiveLimits.set(field, value);
+      }
+    });
+    if (effectiveLimits.size === 0) {
+      return;
+    }
+    variableMap.forEach((dataField, key) => {
+      if (!(dataField instanceof DataField) || !Array.isArray(dataField.value)) {
+        return;
+      }
+      const limit = effectiveLimits.get(key.toLowerCase());
+      if (limit == null || dataField.value.length <= limit) {
+        return;
+      }
+      variableMap.set(key, new DataField(dataField.name, dataField.type, dataField.origin, dataField.value.slice(0, limit)));
+    });
   }
   static handleCustomVariable(subjectType, variableMap, settingMananger, targetType) {
     const customProperties = settingMananger.getSetting("customProperties");
@@ -20005,10 +22761,28 @@ var DoubanAbstractLoadHandler = class {
   }
   handle(id, context) {
     return __async(this, null, function* () {
+      var _a5;
       const url = this.getSubjectUrl(id);
       context.plugin.settingsManager.debug(`\u5F00\u59CB\u8BF7\u6C42\u5730\u5740:${url}`);
-      context.plugin.settingsManager.debug(`(\u6CE8\u610F:\u8BF7\u52FF\u5411\u4EFB\u4F55\u4EBA\u900F\u9732\u4F60\u7684Cookie,\u6B64\u5904\u82E5\u9700\u8981\u622A\u56FE\u8BF7**\u6253\u7801**)\u8BF7\u6C42header:${context.settings.loginHeadersContent}`);
-      return yield DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager).then(load).then((data2) => this.analysisUserState(data2, context)).then(({ data: data2, userState }) => {
+      try {
+        const html3 = yield DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager);
+        return yield this.handleHtml(id, html3, context);
+      } catch (e) {
+        const detail = DoubanPageGuard.describeError(e);
+        context.importError = detail;
+        log.error(i18nHelper.getMessage("130101", detail), e);
+        (_a5 = context.syncStatusHolder) == null ? void 0 : _a5.syncStatus.fail(id, "", detail);
+        return void 0;
+      }
+    });
+  }
+  handleHtml(id, html3, context) {
+    return __async(this, null, function* () {
+      const url = this.getSubjectUrl(id);
+      return yield Promise.resolve(html3).then((page) => {
+        DoubanPageGuard.assertCanParse(page);
+        return load(page);
+      }).then((data2) => this.analysisUserState(data2, context)).then(({ data: data2, userState }) => {
         var _a5, _b, _c;
         let guessType = this.getSupportType();
         if (context.syncActive) {
@@ -20018,23 +22792,29 @@ var DoubanAbstractLoadHandler = class {
         if (!sub) {
           if (context.syncActive && guessType && guessType !== this.getSupportType()) {
             const id2 = StringUtil.analyzeIdByUrl(url);
-            (_a5 = context.syncStatusHolder) == null ? void 0 : _a5.syncStatus.failByDiffType(id2, "", `${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`);
-            return void 0;
+            const detail = `${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`;
+            context.importError = detail;
+            (_a5 = context.syncStatusHolder) == null ? void 0 : _a5.syncStatus.failByDiffType(id2, "", detail);
+            return null;
           }
           throw new Error("parseSubjectFromHtml returned null");
         }
         sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
         sub.title = (_c = (_b = sub.title) == null ? void 0 : _b.replace(/[""“”＂«»‘’「」『』]/g, "")) != null ? _c : sub.title;
+        DoubanPageGuard.assertValidSubject(sub, this.getSupportType());
         sub.userState = userState;
         sub.guessType = guessType;
         return sub;
-      }).then((content) => this.toEditor(context, content)).catch((e) => {
-        log.error(i18nHelper.getMessage("130101", e.toString()), e);
+      }).then((content) => content ? this.toEditor(context, content) : null).catch((e) => {
+        var _a5, _b;
+        const detail = DoubanPageGuard.describeError(e);
+        context.importError = detail;
+        log.error(i18nHelper.getMessage("130101", detail), e);
         if (url) {
           const id2 = StringUtil.analyzeIdByUrl(url);
-          context.syncStatusHolder ? context.syncStatusHolder.syncStatus.fail(id2, "") : null;
+          (_a5 = context.syncStatusHolder) == null ? void 0 : _a5.syncStatus.fail(id2, "", detail);
         } else {
-          context.syncStatusHolder ? context.syncStatusHolder.syncStatus.handled(1) : null;
+          (_b = context.syncStatusHolder) == null ? void 0 : _b.syncStatus.handled(1);
         }
         return void 0;
       });
@@ -20107,8 +22887,8 @@ var DoubanAbstractLoadHandler = class {
   }
   toEditor(context, extract3) {
     return __async(this, null, function* () {
-      yield this.doubanPlugin.putToObsidian(context, extract3);
-      return extract3;
+      const saved = yield this.doubanPlugin.putToObsidian(context, extract3);
+      return saved ? extract3 : void 0;
     });
   }
   getPersonName(name, context) {
@@ -20158,19 +22938,31 @@ var DoubanAbstractLoadHandler = class {
     return resultName.trim();
   }
   getTitleNameByMode(name, personNameMode, context) {
+    var _a5, _b;
     if (!name || !personNameMode) {
       return "";
     }
-    if (context.listItem) {
-      const newName = context.listItem.title.trim().replaceAll(" ", "");
-      switch (personNameMode) {
-        case PersonNameMode.CH_NAME:
-          return newName;
-          break;
-        case PersonNameMode.EN_NAME:
-          return name.trim().replaceAll(" ", "").replaceAll(newName, "");
-          break;
+    const normalizedName = name.trim();
+    const listTitle = ((_b = (_a5 = context.listItem) == null ? void 0 : _a5.title) == null ? void 0 : _b.trim()) || "";
+    if (listTitle) {
+      const listTitleHasChinese = /[\u4e00-\u9fff]/.test(listTitle);
+      const listTitleHasLatin = /[A-Za-z]/.test(listTitle);
+      if (personNameMode === PersonNameMode.CH_NAME && listTitleHasChinese) {
+        return listTitle;
       }
+      if (personNameMode === PersonNameMode.EN_NAME && listTitleHasLatin && !listTitleHasChinese) {
+        return listTitle;
+      }
+      const remainder = normalizedName.replace(listTitle, "").trim();
+      if (remainder && remainder !== normalizedName) {
+        return remainder;
+      }
+      return listTitle;
+    }
+    if (personNameMode === PersonNameMode.EN_NAME) {
+      const chineseName = this.getPersonNameByMode(normalizedName, PersonNameMode.CH_NAME);
+      const remainder = chineseName && chineseName !== normalizedName ? normalizedName.replace(chineseName, "").trim() : normalizedName;
+      return remainder || normalizedName;
     }
     return this.getPersonNameByMode(name, personNameMode);
   }
@@ -20209,12 +23001,14 @@ var DoubanAbstractLoadHandler = class {
       variableMap.set(key, new DataField(key, type, value, value));
     }
     variableMap.set(DoubanParameterName.IMAGE_URL, new DataField(DoubanParameterName.IMAGE_URL, DataValueType.url, extract3.imageUrl, extract3.imageUrl));
-    variableMap.set(DoubanParameterName.YEAR_PUBLISHED, new DataField(DoubanParameterName.YEAR_PUBLISHED, DataValueType.date, extract3.datePublished, extract3.datePublished ? (0, import_obsidian9.moment)(extract3.datePublished).format("yyyy") : ""));
-    variableMap.set(DoubanParameterName.DATE_PUBLISHED, new DataField(DoubanParameterName.DATE_PUBLISHED, DataValueType.date, extract3.datePublished, extract3.datePublished ? (0, import_obsidian9.moment)(extract3.datePublished).format(context.settings.dateFormat) : ""));
-    variableMap.set(DoubanParameterName.TIME_PUBLISHED, new DataField(DoubanParameterName.TIME_PUBLISHED, DataValueType.date, extract3.datePublished, extract3.datePublished ? (0, import_obsidian9.moment)(extract3.datePublished).format(context.settings.timeFormat) : ""));
+    const imageName = this.getImageBasename(extract3.image);
+    variableMap.set(DoubanParameterName.IMAGE_NAME, new DataField(DoubanParameterName.IMAGE_NAME, DataValueType.string, imageName, imageName));
+    variableMap.set(DoubanParameterName.YEAR_PUBLISHED, new DataField(DoubanParameterName.YEAR_PUBLISHED, DataValueType.date, extract3.datePublished, extract3.datePublished ? (0, import_obsidian10.moment)(extract3.datePublished).format("yyyy") : ""));
+    variableMap.set(DoubanParameterName.DATE_PUBLISHED, new DataField(DoubanParameterName.DATE_PUBLISHED, DataValueType.date, extract3.datePublished, extract3.datePublished ? (0, import_obsidian10.moment)(extract3.datePublished).format(context.settings.dateFormat) : ""));
+    variableMap.set(DoubanParameterName.TIME_PUBLISHED, new DataField(DoubanParameterName.TIME_PUBLISHED, DataValueType.date, extract3.datePublished, extract3.datePublished ? (0, import_obsidian10.moment)(extract3.datePublished).format(context.settings.timeFormat) : ""));
     const currentDate = new Date();
-    variableMap.set(DoubanParameterName.CURRENT_DATE, new DataField(DoubanParameterName.CURRENT_DATE, DataValueType.date, currentDate, (0, import_obsidian9.moment)(currentDate).format(context.settings.dateFormat)));
-    variableMap.set(DoubanParameterName.CURRENT_TIME, new DataField(DoubanParameterName.CURRENT_TIME, DataValueType.date, currentDate, (0, import_obsidian9.moment)(currentDate).format(context.settings.timeFormat)));
+    variableMap.set(DoubanParameterName.CURRENT_DATE, new DataField(DoubanParameterName.CURRENT_DATE, DataValueType.date, currentDate, (0, import_obsidian10.moment)(currentDate).format(context.settings.dateFormat)));
+    variableMap.set(DoubanParameterName.CURRENT_TIME, new DataField(DoubanParameterName.CURRENT_TIME, DataValueType.date, currentDate, (0, import_obsidian10.moment)(currentDate).format(context.settings.timeFormat)));
     return variableMap;
   }
   parseUserInfo(resultContent, variableMap, extract3, context) {
@@ -20248,7 +23042,7 @@ var DoubanAbstractLoadHandler = class {
       variableMap.set(DoubanUserParameterName.MY_RATING_STAR, new DataField(DoubanUserParameterName.MY_RATING_STAR, DataValueType.string, userState.rate, NumberUtil.getRateStar(userState.rate, 5, { scoreSetting: context.settings.scoreSetting })));
     }
     if (userState.collectionDate) {
-      variableMap.set(DoubanUserParameterName.MY_COLLECTION_DATE, new DataField(DoubanUserParameterName.MY_COLLECTION_DATE, DataValueType.date, userState.collectionDate, userState.collectionDate ? (0, import_obsidian9.moment)(userState.collectionDate).format(context.settings.dateFormat) : ""));
+      variableMap.set(DoubanUserParameterName.MY_COLLECTION_DATE, new DataField(DoubanUserParameterName.MY_COLLECTION_DATE, DataValueType.date, userState.collectionDate, userState.collectionDate ? (0, import_obsidian10.moment)(userState.collectionDate).format(context.settings.dateFormat) : ""));
     }
   }
   getTemplateKeys() {
@@ -20265,6 +23059,8 @@ var DoubanAbstractLoadHandler = class {
         return { templateKey: TemplateKey.gameTemplateFile, configKey: "gameTemplateConfig" };
       case SupportType.note:
         return { templateKey: TemplateKey.noteTemplateFile, configKey: "noteTemplateConfig" };
+      case SupportType.theater:
+        return { templateKey: TemplateKey.theaterTemplateFile, configKey: "theaterTemplateConfig" };
       default:
         return { templateKey: null, configKey: null };
     }
@@ -20379,7 +23175,7 @@ var DoubanAbstractLoadHandler = class {
       if (!overwriteCoverImage) {
         const existingPath = folder.replace(/\\/g, "/") + "/" + fileName;
         const existing = context.plugin.app.vault.getAbstractFileByPath(existingPath);
-        if (existing instanceof import_obsidian9.TFile) {
+        if (existing instanceof import_obsidian10.TFile) {
           extract3.image = existingPath;
           extract3.imageUrl = image;
           this.initImageVariableMap(extract3, context, variableMap);
@@ -20419,13 +23215,22 @@ var DoubanAbstractLoadHandler = class {
     const imageUrl = image.split("?").first() || image;
     return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
   }
+  getImageBasename(image) {
+    if (!image) {
+      return "";
+    }
+    const cleanPath = image.split(/[?#]/, 1)[0].replace(/\\/g, "/");
+    return cleanPath.substring(cleanPath.lastIndexOf("/") + 1);
+  }
   initImageVariableMap(extract3, context, variableMap) {
     variableMap.set(DoubanParameterName.IMAGE_URL, new DataField(DoubanParameterName.IMAGE_URL, DataValueType.url, extract3.imageUrl, extract3.imageUrl));
     variableMap.set(DoubanParameterName.IMAGE, new DataField(DoubanParameterName.IMAGE, DataValueType.path, extract3.image, extract3.image));
+    const imageName = this.getImageBasename(extract3.image);
+    variableMap.set(DoubanParameterName.IMAGE_NAME, new DataField(DoubanParameterName.IMAGE_NAME, DataValueType.string, imageName, imageName));
   }
   handleImage(image, folder, filename, context, showError, headers, overwrite = false) {
     return __async(this, null, function* () {
-      if (context.settings.pictureBedFlag && import_obsidian9.Platform.isDesktopApp) {
+      if (context.settings.pictureBedFlag && import_obsidian10.Platform.isDesktopApp) {
         const checked = yield context.netFileHandler.downloadDBUploadPicGoByClipboardBefore(context);
         if (!checked) {
           log.notice("\u8FDE\u63A5PicGo\u8F6F\u4EF6\u5931\u8D25, \u8BF7\u68C0\u67E5\u662F\u5426\u5DF2\u5F00\u542FPicGo\u7684Server\u670D\u52A1 \u6216 \u68C0\u67E5\u63D2\u4EF6\u4E2D\u914D\u7F6E\u5730\u5740\u662F\u5426\u6B63\u786E\uFF0C\u73B0\u4F7F\u7528\u9ED8\u8BA4\u7684\u4E0B\u8F7D\u5230\u672C\u5730\u7684\u65B9\u5F0F");
@@ -20492,11 +23297,172 @@ var DoubanBookParameter = {
   menu: "menu",
   price: "price",
   binding: "binding",
-  producer: "producer"
+  producer: "producer",
+  popularComments: "popularComments"
 };
 
 // src/org/wanxp/douban/data/handler/DoubanBookLoadHandler.ts
-var import_obsidian10 = __toModule(require("obsidian"));
+var import_obsidian11 = __toModule(require("obsidian"));
+
+// src/org/wanxp/utils/DoubanPageParser.ts
+var DoubanPageParser = class {
+  static normalizeText(value) {
+    if (!value) {
+      return "";
+    }
+    const lines = String(value).replace(/\r\n?/g, "\n").split("\n").map((line) => line.replace(/[\t\f\v ]+/g, " ").trim());
+    const compact = [];
+    lines.forEach((line) => {
+      if (line || compact.length > 0 && compact[compact.length - 1] !== "") {
+        compact.push(line);
+      }
+    });
+    while (compact.length > 0 && compact[compact.length - 1] === "") {
+      compact.pop();
+    }
+    return compact.join("\n").trim();
+  }
+  static extractText(html3, selectors) {
+    for (const selector of selectors) {
+      const values = html3(selector).get().map((element) => this.extractElementText(html3, element)).filter(Boolean);
+      const uniqueValues = Array.from(new Set(values));
+      if (uniqueValues.length > 0) {
+        return uniqueValues.join("\n\n");
+      }
+    }
+    return "";
+  }
+  static extractLongestText(html3, selectors) {
+    let longest = "";
+    for (const selector of selectors) {
+      html3(selector).each((_index, element) => {
+        const value = this.extractElementText(html3, element);
+        if (value.length > longest.length) {
+          longest = value;
+        }
+      });
+    }
+    return longest;
+  }
+  static parseUserTags(html3) {
+    const labeled = this.findLabeledElement(html3, /^标签\s*[:：]/);
+    if (!labeled) {
+      return null;
+    }
+    let text3 = this.normalizeText(html3(labeled).text()).replace(/^标签\s*[:：]\s*/, "");
+    if (!text3 && labeled.parent) {
+      text3 = this.normalizeText(html3(labeled.parent).text()).replace(/^标签\s*[:：]\s*/, "");
+    }
+    const tags = text3.split(/\s+/).map((tag) => tag.trim()).filter(Boolean);
+    return tags.length > 0 ? tags : null;
+  }
+  static parseUserComment(html3, fallbackSelectors = []) {
+    const tags = this.parseUserTags(html3);
+    const explicit = this.extractText(html3, [
+      ...this.USER_SCOPES.flatMap((scope) => [
+        `${scope} textarea[name='comment']`,
+        `${scope} [data-field='comment']`,
+        `${scope} .comment-text`,
+        `${scope} .comment-content`
+      ]),
+      ...fallbackSelectors
+    ]);
+    if (explicit && this.isCommentCandidate(explicit) && !this.isTagValueCandidate(explicit, tags)) {
+      return explicit;
+    }
+    const tagElement = this.findLabeledElement(html3, /^标签\s*[:：]/);
+    if (tagElement) {
+      let sibling = tagElement.nextSibling;
+      while (sibling) {
+        const candidate = this.normalizeText(html3(sibling).text());
+        if (this.isCommentCandidate(candidate) && !this.isTagValueCandidate(candidate, tags)) {
+          return candidate;
+        }
+        sibling = sibling.nextSibling;
+      }
+    }
+    const candidates = [];
+    for (const scope of this.USER_SCOPES) {
+      html3(`${scope} span, ${scope} p, ${scope} div`).each((_index, element) => {
+        if (html3(element).children().length > 0) {
+          return;
+        }
+        const candidate = this.normalizeText(html3(element).text());
+        if (this.isCommentCandidate(candidate) && !this.isTagValueCandidate(candidate, tags)) {
+          candidates.push(candidate);
+        }
+      });
+      if (candidates.length > 0) {
+        break;
+      }
+    }
+    return candidates.length > 0 ? candidates[candidates.length - 1] : "";
+  }
+  static collectFollowingFieldText(html3, labelElement) {
+    const values = [];
+    let sibling = labelElement.nextSibling;
+    while (sibling) {
+      if (sibling.type === "tag" && sibling.name === "br") {
+        break;
+      }
+      const value = this.normalizeText(html3(sibling).text());
+      if (value && !/^[\/、,，;；]+$/.test(value)) {
+        values.push(value);
+      }
+      sibling = sibling.nextSibling;
+    }
+    return Array.from(new Set(values)).join(" / ");
+  }
+  static extractElementText(html3, element) {
+    const fragment = html3(element).html();
+    const value = fragment == null ? html3(element).text() : load(`<div>${fragment.replace(/<br\s*\/?\s*>/gi, "\n")}</div>`)("div").text();
+    return this.normalizeText(value);
+  }
+  static findLabeledElement(html3, label) {
+    for (const scope of this.USER_SCOPES) {
+      const matching = html3(`${scope} span, ${scope} div, ${scope} p`).get().map((element) => ({ element, text: this.normalizeText(html3(element).text()) })).filter((item) => label.test(item.text)).sort((a, b) => a.text.length - b.text.length);
+      if (matching.length > 0) {
+        return matching[0].element;
+      }
+    }
+    return null;
+  }
+  static isCommentCandidate(text3) {
+    if (!text3 || text3.length < 2) {
+      return false;
+    }
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(text3) || /^\d+(?:\.\d+)?$/.test(text3)) {
+      return false;
+    }
+    if (/^标签\s*[:：]/.test(text3) || /^(我的)?评价\s*[:：]?$/.test(text3)) {
+      return false;
+    }
+    if (/^(想看|看过|在看|想读|读过|在读|想听|听过|在听|想玩|玩过|在玩)/.test(text3)) {
+      return false;
+    }
+    if (/^(修改|删除|评分|暂无评价)$/.test(text3)) {
+      return false;
+    }
+    if (/^[一二三四五1-5]星$/.test(text3) || /^(很差|较差|还行|推荐|力荐)$/.test(text3)) {
+      return false;
+    }
+    return true;
+  }
+  static isTagValueCandidate(text3, tags) {
+    if (!text3 || !tags || tags.length === 0) {
+      return false;
+    }
+    const tokens = text3.split(/\s+/).filter(Boolean);
+    return tokens.length > 0 && tokens.every((token) => tags.includes(token));
+  }
+};
+DoubanPageParser.USER_SCOPES = [
+  "#interest_sect_level",
+  ".collection-section",
+  "#interest_section"
+];
+
+// src/org/wanxp/douban/data/handler/DoubanBookLoadHandler.ts
 var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
   constructor(doubanPlugin) {
     super(doubanPlugin);
@@ -20522,7 +23488,7 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   analysisUser(html3, context) {
     const rate = html3("input#n_rating").val();
-    const tags = this.getTags(html3);
+    const tags = DoubanPageParser.parseUserTags(html3);
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10").next().text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
@@ -20533,18 +23499,10 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
       rate: rate ? Number(rate) : null,
       state: userState1,
       stateName,
-      collectionDate: collectionDateStr ? (0, import_obsidian10.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
+      collectionDate: collectionDateStr ? (0, import_obsidian11.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
       comment
     };
     return { data: html3, userState };
-  }
-  getTags(html3) {
-    const tagsText = html3("#interest_sect_level span.color_gray").get().map((span) => html3(span).text().trim()).find((text3) => /^标签[:：]/.test(text3));
-    if (!tagsText) {
-      return null;
-    }
-    const tags = tagsText.replace(/^标签[:：]/, "").trim().split(/\s+/).filter((tag) => tag);
-    return tags.length > 0 ? tags : null;
   }
   getBookStateName(stateWord) {
     if (!stateWord) {
@@ -20562,55 +23520,16 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
     return "";
   }
   parseSubjectFromHtml(html3, context) {
-    let desc = "";
-    const contentIntro = html3("h2:contains('\u5185\u5BB9\u7B80\u4ECB')").parent().find(".indent").first();
-    if (contentIntro.length > 0) {
-      contentIntro.find("style").remove();
-      const hiddenContent = contentIntro.find("span.all.hidden").text().trim();
-      if (hiddenContent) {
-        desc = hiddenContent;
-      } else {
-        const paragraphs = contentIntro.find("p").get();
-        let fullText = "";
-        for (const p of paragraphs) {
-          const text3 = html3(p).text().trim();
-          if (text3) {
-            fullText += (fullText ? "\n" : "") + text3;
-          }
-        }
-        if (fullText) {
-          desc = fullText;
-        } else {
-          desc = contentIntro.text().trim();
-        }
-      }
-    }
-    if (!desc) {
-      const linkReport = html3("#link-report .intro").first();
-      if (linkReport.length > 0) {
-        linkReport.find("style").remove();
-        const hiddenContent = linkReport.find("span.all.hidden").text().trim();
-        if (hiddenContent) {
-          desc = hiddenContent;
-        } else {
-          const paragraphs = linkReport.find("p").get();
-          let fullText = "";
-          for (const p of paragraphs) {
-            const text3 = html3(p).text().trim();
-            if (text3) {
-              fullText += (fullText ? "\n" : "") + text3;
-            }
-          }
-          if (fullText) {
-            desc = fullText;
-          }
-        }
-      }
-    }
+    let desc = DoubanPageParser.extractText(html3, [
+      "#link-report > .intro > span.all.hidden",
+      "#link-report .intro > span.all.hidden",
+      "#link-report .intro p",
+      ".related_info .intro p"
+    ]);
     if (!desc) {
       const metaDesc = html3("head > meta[property='og:description']").attr("content");
       if (metaDesc) {
-        desc = metaDesc;
+        desc = DoubanPageParser.normalizeText(metaDesc);
       }
     }
     const image = html3(html3("head > meta[property= 'og:image']").get(0)).attr("content");
@@ -20679,35 +23598,14 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
       url,
       genre: [],
       binding: valueMap.has("binding") ? valueMap.get("binding") : "",
-      producer: valueMap.has("producer") ? valueMap.get("producer") : ""
+      producer: valueMap.has("producer") ? valueMap.get("producer") : "",
+      popularComments: Array.from(new Set(html3("#hot-comments .comment-item .short, #comments .comment-item .short, .comment-item .short").get().map((element) => DoubanPageParser.normalizeText(html3(element).text())).filter(Boolean))).slice(0, 5)
     };
     return result;
   }
   getComment(html3) {
-    let comment = html3("#interest_sect_level span").get().map((span) => html3(span).text().trim()).filter((text3) => this.isCommentCandidate(text3)).pop();
-    if (comment) {
-      return comment;
-    }
-    const fallback = this.getPropertyValue(html3, PropertyName.comment);
-    return this.isCommentCandidate(fallback) ? fallback : "";
-  }
-  isCommentCandidate(text3) {
-    if (!text3) {
-      return false;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(text3)) {
-      return false;
-    }
-    if (/^标签[:：]/.test(text3)) {
-      return false;
-    }
-    if (/^(我的)?评价[:：]?$/.test(text3)) {
-      return false;
-    }
-    if (text3.indexOf("\u6211\u8BFB\u8FC7\u8FD9\u672C\u4E66") >= 0 || text3.indexOf("\u6211\u60F3\u8BFB\u8FD9\u672C\u4E66") >= 0 || text3.indexOf("\u6211\u5728\u8BFB\u8FD9\u672C\u4E66") >= 0) {
-      return false;
-    }
-    return true;
+    const comment = DoubanPageParser.parseUserComment(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment));
+    return this.filterCommentText(comment);
   }
 };
 var BookKeyValueMap = new Map([
@@ -20744,7 +23642,7 @@ function getProperty(o, name) {
 }
 
 // src/org/wanxp/douban/data/handler/DoubanMovieLoadHandler.ts
-var import_obsidian11 = __toModule(require("obsidian"));
+var import_obsidian12 = __toModule(require("obsidian"));
 var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
   constructor(doubanPlugin) {
     super(doubanPlugin);
@@ -20769,8 +23667,7 @@ var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   analysisUser(html3, context) {
     let rate = html3("input#n_rating").val();
-    let tagsStr = html3("div#interest_sect_level > div.a_stars > span.color_gray").text().trim();
-    let tags = tagsStr ? tagsStr.replace("\u6807\u7B7E:", "").trim().split(" ") : null;
+    let tags = DoubanPageParser.parseUserTags(html3);
     let stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     let collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
     let userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
@@ -20779,19 +23676,14 @@ var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
       tags,
       rate: rate ? Number(rate) : null,
       state: userState1,
-      collectionDate: collectionDateStr ? (0, import_obsidian11.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
+      collectionDate: collectionDateStr ? (0, import_obsidian12.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
       comment: component
     };
     return { data: html3, userState };
   }
   getComment(html3, context) {
-    let component = html3("div#interest_sect_level > div.a_stars > span.color_gray").next().next().text().trim();
-    component = this.filterCommentText(component);
-    if (component) {
-      return component;
-    }
-    const fallback = this.getPropertyValue(html3, PropertyName.comment);
-    return this.filterCommentText(fallback);
+    const comment = DoubanPageParser.parseUserComment(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment));
+    return this.filterCommentText(comment);
   }
   parseSubjectFromHtml(html3, context) {
     let movie = html3("script").get().filter((scd) => html3(scd).attr("type") == "application/ld+json").map((i) => {
@@ -20865,14 +23757,11 @@ var DoubanMovieLoadHandler = class extends DoubanAbstractLoadHandler {
     }
     this.handlePersonNameByMeta(html3, movie, context, "video:actor", "actor");
     this.handlePersonNameByMeta(html3, movie, context, "video:director", "director");
-    const summaries = html3("span[property='v:summary']").get();
-    let desc = "";
-    for (const s of summaries) {
-      const text3 = html3(s).text().trim();
-      if (text3.length > desc.length) {
-        desc = text3;
-      }
-    }
+    const desc = DoubanPageParser.extractLongestText(html3, [
+      "[id^='link-report'] span.all.hidden",
+      "#link-report .all.hidden",
+      "span[property='v:summary']"
+    ]);
     if (desc) {
       movie.desc = desc;
     }
@@ -20909,7 +23798,7 @@ var MovieKeyValueMap = new Map([
 ]);
 
 // src/org/wanxp/douban/data/handler/DoubanMusicLoadHandler.ts
-var import_obsidian12 = __toModule(require("obsidian"));
+var import_obsidian13 = __toModule(require("obsidian"));
 var DoubanMusicLoadHandler = class extends DoubanAbstractLoadHandler {
   constructor(doubanPlugin) {
     super(doubanPlugin);
@@ -20930,37 +23819,28 @@ var DoubanMusicLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   analysisUser(html3, context) {
     const rate = html3("input#n_rating").val();
-    const tagsStr = html3("span#rating").next().next().text().trim();
-    const tags = tagsStr ? tagsStr.replace("\u6807\u7B7E:", "").trim().split(" ") : null;
+    const tags = DoubanPageParser.parseUserTags(html3);
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10").next().text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    let component = html3("span#rating").next().next().next().next().text().trim();
-    component = this.filterCommentText(component);
+    const component = DoubanPageParser.parseUserComment(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment));
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
       state: userState1,
-      collectionDate: collectionDateStr ? (0, import_obsidian12.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
+      collectionDate: collectionDateStr ? (0, import_obsidian13.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
       comment: component
     };
     return { data: html3, userState };
   }
   parseSubjectFromHtml(html3, context) {
     const title = html3(html3("head > meta[property= 'og:title']").get(0)).attr("content");
-    let desc = "";
-    const fullDesc = html3("span.all.hidden").text().trim();
-    if (fullDesc) {
-      desc = fullDesc;
-    } else {
-      const summaries = html3("span[property='v:summary']").get();
-      for (const s of summaries) {
-        const text3 = html3(s).text().trim();
-        if (text3.length > desc.length) {
-          desc = text3;
-        }
-      }
-    }
+    let desc = DoubanPageParser.extractLongestText(html3, [
+      "#link-report span.all.hidden",
+      "#link-report .intro",
+      "span[property='v:summary']",
+      ".related_info .intro"
+    ]);
     if (!desc) {
       desc = html3(html3("head > meta[property= 'og:description']").get(0)).attr("content");
     }
@@ -21101,7 +23981,7 @@ var DoubanOtherLoadHandler = class extends DoubanAbstractLoadHandler {
 };
 
 // src/org/wanxp/douban/data/handler/DoubanTeleplayLoadHandler.ts
-var import_obsidian13 = __toModule(require("obsidian"));
+var import_obsidian14 = __toModule(require("obsidian"));
 var DoubanTeleplayLoadHandler = class extends DoubanAbstractLoadHandler {
   constructor(doubanPlugin) {
     super(doubanPlugin);
@@ -21126,19 +24006,16 @@ var DoubanTeleplayLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   analysisUser(html3, context) {
     const rate = html3("input#n_rating").val();
-    const rating = html3("span#rating");
-    const tagsStr = rating.next().next().text().trim();
-    const tags = tagsStr ? tagsStr.replace("\u6807\u7B7E:", "").trim().split(" ") : null;
+    const tags = DoubanPageParser.parseUserTags(html3);
     const stateWord = html3("div#interest_sect_level > div.a_stars > span.mr10").text().trim();
     const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    let component = rating.next().next().next().next().text().trim();
-    component = this.filterCommentText(component);
+    const component = DoubanPageParser.parseUserComment(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment));
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
       state: userState1,
-      collectionDate: collectionDateStr ? (0, import_obsidian13.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
+      collectionDate: collectionDateStr ? (0, import_obsidian14.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
       comment: component
     };
     return { data: html3, userState };
@@ -21217,14 +24094,11 @@ var DoubanTeleplayLoadHandler = class extends DoubanAbstractLoadHandler {
     }
     this.handlePersonNameByMeta(html3, teleplay, context, "video:actor", "actor");
     this.handlePersonNameByMeta(html3, teleplay, context, "video:director", "director");
-    const summaries = html3("span[property='v:summary']").get();
-    let desc = "";
-    for (const s of summaries) {
-      const text3 = html3(s).text().trim();
-      if (text3.length > desc.length) {
-        desc = text3;
-      }
-    }
+    const desc = DoubanPageParser.extractLongestText(html3, [
+      "[id^='link-report'] span.all.hidden",
+      "#link-report .all.hidden",
+      "span[property='v:summary']"
+    ]);
     if (desc) {
       teleplay.desc = desc;
     }
@@ -21261,7 +24135,7 @@ var TeleplayKeyValueMap = new Map([
 ]);
 
 // src/org/wanxp/douban/data/handler/DoubanGameLoadHandler.ts
-var import_obsidian14 = __toModule(require("obsidian"));
+var import_obsidian15 = __toModule(require("obsidian"));
 var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
   constructor(doubanPlugin) {
     super(doubanPlugin);
@@ -21283,20 +24157,17 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   analysisUser(html3, context) {
     let rate = html3("input#n_rating").val();
-    const rating = html3("span#rating");
-    const tagsStr = rating.parent().next().text().trim();
-    const tags = tagsStr ? tagsStr.replace("\u6807\u7B7E:", "").trim().split(" ") : null;
+    const tags = DoubanPageParser.parseUserTags(html3);
     const collected = html3("div.collection-section > div.collection-rating-stars > div.collection-collected");
     const stateWord = collected.find("span.collection-result").text().trim();
     const collectionDateStr = collected.find("span.color_gray").text().trim();
     const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    let component = rating.parent().next().next().text().trim();
-    component = this.filterCommentText(component);
+    const component = DoubanPageParser.parseUserComment(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment));
     const userState = {
       tags,
       rate: rate ? Number(rate) : null,
       state: userState1,
-      collectionDate: collectionDateStr ? (0, import_obsidian14.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
+      collectionDate: collectionDateStr ? (0, import_obsidian15.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
       comment: component
     };
     return { data: html3, userState };
@@ -21312,18 +24183,15 @@ var DoubanGameLoadHandler = class extends DoubanAbstractLoadHandler {
     let detailDom = html3(html3("dl.thing-attr").get(0));
     let dt = detailDom.find("dt");
     let image = html3(html3("#content > div > div.article > div.mod.item-subject > div.item-subject-info > div > a > img").get(0)).attr("src");
-    const descElements = html3("#link-report > p").get();
-    let desc = "";
-    for (const p of descElements) {
-      const text3 = html3(p).text().trim();
-      if (text3) {
-        desc += (desc ? "\n" : "") + text3;
-      }
-    }
+    let desc = DoubanPageParser.extractText(html3, [
+      "#link-report > p",
+      "#link-report p",
+      ".mod.item-subject .indent p"
+    ]);
     if (!desc) {
       const metaDesc = html3("head > meta[property='og:description']").get(0);
       if (metaDesc) {
-        desc = html3(metaDesc).attr("content") || "";
+        desc = DoubanPageParser.normalizeText(html3(metaDesc).attr("content") || "");
       }
     }
     let url = `https://www.douban.com/game/${id}/`;
@@ -21373,13 +24241,18 @@ var GameKeyValueMap = new Map([
 ]);
 
 // src/org/wanxp/douban/data/handler/DoubanTheaterLoadHandler.ts
-var import_obsidian15 = __toModule(require("obsidian"));
-
-// src/org/wanxp/douban/data/model/DoubanTheaterSubject.ts
-var DoubanTheaterSubject = class extends DoubanSubject {
+var import_obsidian16 = __toModule(require("obsidian"));
+var THEATER_FIELD_ALIASES = {
+  genre: ["\u7C7B\u578B", "\u5267\u76EE\u7C7B\u578B"],
+  director: ["\u5BFC\u6F14"],
+  author: ["\u7F16\u5267"],
+  actor: ["\u4E3B\u6F14", "\u6F14\u5458"],
+  publisher: ["\u6F14\u51FA\u56E2\u4F53", "\u6F14\u51FA\u5267\u9662", "\u51FA\u54C1\u65B9"],
+  language: ["\u8BED\u8A00"],
+  originalTitle: ["\u539F\u540D"],
+  aliases: ["\u53C8\u540D", "\u522B\u540D"],
+  datePublished: ["\u6F14\u51FA\u65E5\u671F", "\u6F14\u51FA\u65F6\u95F4", "\u9996\u6F14\u65E5\u671F"]
 };
-
-// src/org/wanxp/douban/data/handler/DoubanTheaterLoadHandler.ts
 var DoubanTheaterLoadHandler = class extends DoubanAbstractLoadHandler {
   constructor(doubanPlugin) {
     super(doubanPlugin);
@@ -21388,42 +24261,191 @@ var DoubanTheaterLoadHandler = class extends DoubanAbstractLoadHandler {
     return SupportType.theater;
   }
   getHighQuantityImageUrl(fileName) {
-    return `https://img9.doubanio.com/view/photo/l/public/${fileName}`;
+    return `https://img9.doubanio.com/pview/drama_subject_poster/large/public/${fileName}`;
   }
   getSubjectUrl(id) {
     return `https://www.douban.com/location/drama/${id}/`;
   }
-  parseVariable(beforeContent, variableMap, extract3, context) {
-    variableMap.set("director", new DataField("director", DataValueType.array, extract3.director, (extract3.director || []).map(SchemaOrg.getPersonName).filter((c) => c)));
-    variableMap.set("actor", new DataField("actor", DataValueType.array, extract3.actor, (extract3.actor || []).map(SchemaOrg.getPersonName).filter((c) => c)));
-    variableMap.set("author", new DataField("author", DataValueType.array, extract3.author, (extract3.author || []).map(SchemaOrg.getPersonName).map((name) => super.getPersonName(name, context)).filter((c) => c)));
-    variableMap.set("aliases", new DataField("aliases", DataValueType.array, extract3.aliases, (extract3.aliases || []).map((a) => a.trim().replace(TITLE_ALIASES_SPECIAL_CHAR_REG_G, "_").replace(/_+/g, "_").replace(/^_/, "").replace(/_$/, ""))));
+  parseVariable(_beforeContent, variableMap, extract3, context) {
+    variableMap.set("director", new DataField("director", DataValueType.array, extract3.director, (extract3.director || []).map(SchemaOrg.getPersonName).filter(Boolean)));
+    variableMap.set("actor", new DataField("actor", DataValueType.array, extract3.actor, (extract3.actor || []).map(SchemaOrg.getPersonName).filter(Boolean)));
+    variableMap.set("author", new DataField("author", DataValueType.array, extract3.author, (extract3.author || []).map(SchemaOrg.getPersonName).map((name) => super.getPersonName(name, context)).filter(Boolean)));
+    variableMap.set("aliases", new DataField("aliases", DataValueType.array, extract3.aliases, (extract3.aliases || []).map((alias) => alias.trim().replace(TITLE_ALIASES_SPECIAL_CHAR_REG_G, "_").replace(/_+/g, "_").replace(/^_/, "").replace(/_$/, ""))));
   }
   support(extract3) {
-    return extract3 && extract3.type && (extract3.type.contains("\u821E\u53F0\u5267") || extract3.type.contains("\u821E\u5267") || extract3.type.contains("Theater") || extract3.type.contains("theater"));
+    var _a5;
+    return !!extract3 && (((_a5 = extract3.url) == null ? void 0 : _a5.includes("/location/drama/")) || extract3.type === SupportType.theater || /舞台剧|音乐剧|话剧|舞剧|歌剧|戏曲|脱口秀|Theater/i.test(extract3.type || ""));
   }
   analysisUser(html3, context) {
     const rate = html3("input#n_rating").val();
-    const tagsStr = html3("div#interest_sect_level > div.a_stars > span.color_gray").text().trim();
-    const tags = tagsStr ? tagsStr.replace("\u6807\u7B7E:", "").trim().split(" ") : null;
-    const stateWord = html3("#interest_sect_level > h2").text().trim();
-    const collectionDateStr = html3("div#interest_sect_level > div.a_stars > span.mr10 > span.collection_date").text().trim();
-    const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-    let component = this.getPropertyValue(html3, PropertyName.comment);
-    component = this.filterCommentText(component);
-    const userState = {
-      tags,
-      rate: rate ? Number(rate) : null,
-      state: userState1,
-      collectionDate: collectionDateStr ? (0, import_obsidian15.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
-      comment: component
+    const tags = DoubanPageParser.parseUserTags(html3);
+    const stateWord = html3("#interest_sect_level .mr10").first().text().trim() || html3("#interest_sect_level > h2").text().trim();
+    const collectionDateStr = html3("#interest_sect_level .collection_date").first().text().trim();
+    const comment = DoubanPageParser.parseUserComment(html3, this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment));
+    return {
+      data: html3,
+      userState: {
+        tags,
+        rate: rate ? Number(rate) : null,
+        state: DoubanAbstractLoadHandler.getUserState(stateWord),
+        collectionDate: collectionDateStr ? (0, import_obsidian16.moment)(collectionDateStr, "YYYY-MM-DD").toDate() : null,
+        comment: this.filterCommentText(comment)
+      }
     };
-    return { data: html3, userState };
   }
   parseSubjectFromHtml(html3, context) {
-    const obj = new DoubanTheaterSubject();
-    obj.id = this.getPropertyValue(html3, PropertyName.id);
-    return obj;
+    var _a5, _b, _c;
+    const canonicalUrl = this.firstAttribute(html3, [
+      "link[rel='canonical']",
+      "meta[property='og:url']"
+    ], "href", "content");
+    const pageId = this.firstAttribute(html3, [
+      "[data-object_id]",
+      "[share-id]",
+      "[data-url*='/location/drama/']"
+    ], "data-object_id", "share-id") || this.findIdInScripts(html3);
+    const url = canonicalUrl || html3("[data-url*='/location/drama/']").first().attr("data-url") || ((_a5 = context.listItem) == null ? void 0 : _a5.url) || "";
+    const id = StringUtil.analyzeIdByUrl(url) || pageId || StringUtil.analyzeIdByUrl(((_b = context.listItem) == null ? void 0 : _b.url) || "");
+    const values = this.collectFields(html3);
+    const title = DoubanPageParser.normalizeText(html3(".drama-info [itemprop='name']").first().text() || html3(".drama-info h1").first().text() || html3("h1").first().text() || html3("meta[property='og:title']").attr("content") || ((_c = context.listItem) == null ? void 0 : _c.title) || "");
+    const image = html3(".drama-info [itemprop='image']").attr("src") || html3(".drama-info .poster img, .drama-info img, .poster img").first().attr("src") || html3("meta[property='og:image']").attr("content") || "";
+    const dateText = this.firstField(values, "datePublished");
+    const dateMatch = dateText.match(/\d{4}[-./年]\d{1,2}(?:[-./月]\d{1,2}日?)?/);
+    const normalizedDate = dateMatch ? dateMatch[0].replace(/年/g, "-").replace(/月/g, "-").replace(/日/g, "").replace(/\./g, "-").replace(/\/+/g, "-") : "";
+    const scoreText = html3(".drama-info [itemprop='ratingValue']").first().text() || html3("#interest_sectl strong[property='v:average']").first().text();
+    const desc = DoubanPageParser.extractText(html3, [
+      ".drama-info .intro p",
+      ".drama-info .intro",
+      ".drama-info .pure-text",
+      ".article .mod .pure-text",
+      "#link-report .intro p",
+      ".subject-intro p"
+    ]) || DoubanPageParser.normalizeText(html3("meta[property='og:description']").attr("content") || "");
+    return {
+      id,
+      title,
+      type: this.getSupportType(),
+      score: Number(scoreText) || null,
+      image,
+      imageUrl: image,
+      url: url || (id ? this.getSubjectUrl(id) : ""),
+      desc,
+      publisher: (values.get("publisher") || []).join(" / "),
+      datePublished: normalizedDate ? new Date(normalizedDate) : void 0,
+      genre: values.get("genre") || [],
+      director: values.get("director") || [],
+      author: values.get("author") || [],
+      actor: values.get("actor") || [],
+      aggregateRating: void 0,
+      originalTitle: this.firstField(values, "originalTitle"),
+      aliases: values.get("aliases") || [],
+      language: values.get("language") || []
+    };
+  }
+  collectFields(html3) {
+    const result = new Map();
+    html3(".drama-info .meta dl dt, .drama-info dl dt, .mod dl dt, #info dt").each((_index, element) => {
+      var _a5;
+      const rawLabel = DoubanPageParser.normalizeText(html3(element).text()).replace(/[：:]$/, "");
+      const field = (_a5 = Object.entries(THEATER_FIELD_ALIASES).find(([, aliases2]) => aliases2.includes(rawLabel))) == null ? void 0 : _a5[0];
+      if (!field) {
+        return;
+      }
+      const valueElement = html3(element).next("dd");
+      const linkedValues = valueElement.find("[itemprop='name'], a").get().map((item) => DoubanPageParser.normalizeText(html3(item).text())).filter(Boolean);
+      const rawValue = DoubanPageParser.normalizeText(valueElement.text());
+      const parsedValues = linkedValues.length > 0 ? linkedValues : rawValue.split(/\s*\/\s*/).filter(Boolean);
+      result.set(field, Array.from(new Set([
+        ...result.get(field) || [],
+        ...parsedValues
+      ])));
+    });
+    return result;
+  }
+  firstField(values, key) {
+    var _a5;
+    return ((_a5 = values.get(key)) == null ? void 0 : _a5[0]) || "";
+  }
+  firstAttribute(html3, selectors, ...attributes2) {
+    for (const selector of selectors) {
+      const element = html3(selector).first();
+      for (const attribute of attributes2) {
+        const value = element.attr(attribute);
+        if (value) {
+          return value;
+        }
+      }
+    }
+    return "";
+  }
+  findIdInScripts(html3) {
+    for (const element of html3("script").get()) {
+      const match = html3(element).text().match(/_subject_\s*=\s*\{[^}]*\bid\s*:\s*["'](\d+)["']/);
+      if (match == null ? void 0 : match[1]) {
+        return match[1];
+      }
+    }
+    return "";
+  }
+};
+
+// src/org/wanxp/utils/DoubanPageTypeDetector.ts
+var DoubanPageTypeDetector = class {
+  static detect(html3, fallback) {
+    if (!html3) {
+      return fallback || null;
+    }
+    const document2 = load(html3);
+    const jsonLdType = this.detectJsonLdType(document2);
+    if (jsonLdType) {
+      return jsonLdType;
+    }
+    const openGraphType = this.detectOpenGraphType(document2);
+    if (openGraphType) {
+      return openGraphType;
+    }
+    const hasEpisode = document2("#info span.pl").get().some((element) => /集数|单集片长/.test(document2(element).text()));
+    if (hasEpisode) {
+      return SupportType.teleplay;
+    }
+    const pageText = document2("body").text();
+    if (/我看过的电视剧|我看过这部剧|在看这部剧/.test(pageText)) {
+      return SupportType.teleplay;
+    }
+    return fallback || null;
+  }
+  static detectJsonLdType(document2) {
+    const typeMap = {
+      Book: SupportType.book,
+      Movie: SupportType.movie,
+      TVSeries: SupportType.teleplay,
+      MusicAlbum: SupportType.music,
+      VideoGame: SupportType.game
+    };
+    for (const script of document2('script[type="application/ld+json"]').get()) {
+      try {
+        const value = JSON.parse(document2(script).text().replace(/[\r\n\t]+/g, ""));
+        const rawTypes = Array.isArray(value == null ? void 0 : value["@type"]) ? value["@type"] : [value == null ? void 0 : value["@type"]];
+        for (const rawType of rawTypes) {
+          if (typeMap[rawType]) {
+            return typeMap[rawType];
+          }
+        }
+      } catch (_) {
+      }
+    }
+    return null;
+  }
+  static detectOpenGraphType(document2) {
+    const typeMap = {
+      "books.book": SupportType.book,
+      "video.movie": SupportType.movie,
+      "video.tv_show": SupportType.teleplay,
+      "music.album": SupportType.music,
+      "video.other": SupportType.game
+    };
+    const value = document2('meta[property="og:type"]').attr("content");
+    return value ? typeMap[value] || null : null;
   }
 };
 
@@ -21447,14 +24469,38 @@ var DoubanSearchChooseItemHandler = class {
   handle(searchExtract, context) {
     return __async(this, null, function* () {
       if (!searchExtract) {
-        return;
+        return void 0;
       }
       let doubanSubjectHandlers = this._doubanSubjectHandlers.filter((h) => h.support(searchExtract));
       if (doubanSubjectHandlers && doubanSubjectHandlers.length > 0) {
-        yield doubanSubjectHandlers[0].handle(searchExtract.id, context);
+        return yield doubanSubjectHandlers[0].handle(searchExtract.id, context);
       } else {
-        yield this._doubanSubjectHandlerDefault.handle(searchExtract.id, context);
+        return yield this._doubanSubjectHandlerDefault.handle(searchExtract.id, context);
       }
+    });
+  }
+  handleUrl(parsed, context) {
+    return __async(this, null, function* () {
+      const html3 = yield DoubanHttpUtil.httpRequestGet(parsed.url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager);
+      const type = DoubanPageTypeDetector.detect(html3, parsed.type) || parsed.type;
+      const subject = {
+        id: parsed.id,
+        type,
+        title: parsed.id,
+        url: parsed.url
+      };
+      const handlers = this._doubanSubjectHandlers.filter((handler2) => handler2.support(subject));
+      const handler = handlers[0] || this._doubanSubjectHandlerDefault;
+      if (handler.handleHtml) {
+        const handlerContext = __spreadProps(__spreadValues({}, context), {
+          listItem: type === SupportType.theater ? subject : context.listItem,
+          syncActive: false
+        });
+        const result = yield handler.handleHtml(parsed.id, html3, handlerContext);
+        context.importError = handlerContext.importError || "";
+        return result;
+      }
+      return yield handler.handle(parsed.id, context);
     });
   }
   parseText(extract3, context) {
@@ -21475,93 +24521,13 @@ var DoubanSearchChooseItemHandler = class {
 };
 
 // src/org/wanxp/douban/data/search/DoubanSearchModal.ts
-var import_obsidian16 = __toModule(require("obsidian"));
-
-// src/org/wanxp/utils/TimeUtil.ts
-var TimeUtil = class {
-  static estimateTime(needHandled, overSlowSize) {
-    if (needHandled <= 0) {
-      return 0;
-    }
-    let times = 0;
-    if (overSlowSize) {
-      if (needHandled <= BasicConst.SLOW_SIZE) {
-        times = ESTIMATE_TIME_PER_WITH_REQUEST * needHandled;
-      } else {
-        times = ESTIMATE_TIME_PER_WITH_REQUEST * BasicConst.SLOW_SIZE + ESTIMATE_TIME_PER_WITH_REQUEST_SLOW * Math.max(needHandled - BasicConst.SLOW_SIZE, 0);
-      }
-    } else {
-      times = ESTIMATE_TIME_PER_WITH_REQUEST * needHandled;
-    }
-    return times;
-  }
-  static estimateTimeMsg(needHandled, overSlowSize) {
-    const times = this.estimateTime(needHandled, overSlowSize);
-    if (times <= 0) {
-      return 0 + i18nHelper.getMessage("SECOND");
-    }
-    return this.formatDuring(times);
-  }
-  static formatDuring(mss) {
-    let show = false;
-    let message = "";
-    const days = Math.floor(mss / (1e3 * 60 * 60 * 24));
-    const hours = Math.floor(mss % (1e3 * 60 * 60 * 24) / (1e3 * 60 * 60));
-    const minutes = Math.floor(mss % (1e3 * 60 * 60) / (1e3 * 60));
-    const seconds = Math.floor(mss % (1e3 * 60) / 1e3);
-    if (days > 0) {
-      show = true;
-      message += days + i18nHelper.getMessage("DAY");
-    }
-    if (hours > 0 || show) {
-      show = true;
-      message += hours + i18nHelper.getMessage("HOUR");
-    }
-    if (minutes > 0 || show) {
-      show = true;
-      message += minutes + i18nHelper.getMessage("MINUTE");
-    }
-    if (seconds > 0 || show) {
-      message += seconds + i18nHelper.getMessage("SECOND");
-    }
-    return message;
-  }
-  static formatDate(date, format = "yyyy-MM-dd HH:mm:ss") {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
-    const second = date.getSeconds();
-    const formatMap = {
-      yyyy: year.toString(),
-      MM: month.toString().padStart(2, "0"),
-      dd: day.toString().padStart(2, "0"),
-      HH: hour.toString().padStart(2, "0"),
-      mm: minute.toString().padStart(2, "0"),
-      ss: second.toString().padStart(2, "0")
-    };
-    return format.replace(/yyyy|MM|dd|HH|mm|ss/g, (match) => formatMap[match]);
-  }
-  static getLastMonth() {
-    const date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    return date;
-  }
-};
-var sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
-var sleepRange = (msMin, msMax) => {
-  const msTime = NumberUtil.getRandomNum(msMin, msMax);
-  return new Promise((resolve) => setTimeout(resolve, msTime));
-};
-
-// src/org/wanxp/douban/data/search/DoubanSearchModal.ts
-var DoubanSearchModal = class extends import_obsidian16.Modal {
+var import_obsidian17 = __toModule(require("obsidian"));
+var DoubanSearchModal = class extends import_obsidian17.Modal {
   constructor(app, plugin, context, type) {
     super(app);
     this.searchType = SupportType.all;
+    this.submitRequested = false;
+    this.submitting = false;
     this.plugin = plugin;
     this.context = context;
     this.searchType = type != null ? type : SupportType.all;
@@ -21571,29 +24537,31 @@ var DoubanSearchModal = class extends import_obsidian16.Modal {
     contentEl.createEl("h3", { text: i18nHelper.getMessage("110003") });
     const content = contentEl.createDiv("content");
     const inputs = content.createDiv("inputs");
-    const searchInput = new import_obsidian16.TextComponent(inputs).onChange((searchTerm) => {
+    const searchInput = new import_obsidian17.TextComponent(inputs).onChange((searchTerm) => {
       this.searchTerm = searchTerm;
     });
     inputs.addClass("obsidian_douban_search_input_content");
     searchInput.inputEl.size = 40;
     searchInput.inputEl.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
-        sleep(1e3);
-        this.close();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        event.stopPropagation();
+        this.submitSearch();
       }
     });
     inputs.addClass("obsidian_douban_search_input");
     const typeSelect = content.createDiv("type-select");
-    const typeSelectInput = new import_obsidian16.DropdownComponent(typeSelect).addOptions(SearchTypeRecords).setValue(this.searchType).onChange((value) => {
+    const typeSelectInput = new import_obsidian17.DropdownComponent(typeSelect).addOptions(SearchTypeRecords).setValue(this.searchType).onChange((value) => {
       this.searchType = value;
     });
     typeSelect.addClass("obsidian_douban_search_input_type");
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian16.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110004")).setCta().onClick(() => {
-      this.close();
+    new import_obsidian17.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110004")).setCta().onClick(() => {
+      this.submitSearch();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian16.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+    new import_obsidian17.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
       this.close();
     }).setClass("obsidian_douban_cancel_button");
   }
@@ -21601,27 +24569,35 @@ var DoubanSearchModal = class extends import_obsidian16.Modal {
     return __async(this, null, function* () {
       let { contentEl } = this;
       contentEl.empty();
-      if (this.searchTerm) {
+      if (this.submitRequested && this.searchTerm) {
         yield this.plugin.search(this.searchTerm, this.searchType, this.context);
       }
     });
   }
+  submitSearch() {
+    if (this.submitting) {
+      return;
+    }
+    this.submitting = true;
+    this.submitRequested = true;
+    this.close();
+  }
 };
 
 // src/org/wanxp/douban/setting/DoubanSettingTab.ts
-var import_obsidian34 = __toModule(require("obsidian"));
+var import_obsidian37 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/OutputSettingsHelper.ts
-var import_obsidian26 = __toModule(require("obsidian"));
+var import_obsidian28 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/TemplateSettingHelper.ts
-var import_obsidian24 = __toModule(require("obsidian"));
+var import_obsidian25 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/model/FileTreeSelectSuggest.ts
-var import_obsidian18 = __toModule(require("obsidian"));
+var import_obsidian19 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/model/TextInputSuggest.ts
-var import_obsidian17 = __toModule(require("obsidian"));
+var import_obsidian18 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/model/Suggest.ts
 var wrapAround = (value, size) => {
@@ -23126,7 +26102,7 @@ var TextInputSuggest = class {
   constructor(app, inputEl) {
     this.app = app;
     this.inputEl = inputEl;
-    this.scope = new import_obsidian17.Scope();
+    this.scope = new import_obsidian18.Scope();
     this.suggestEl = createDiv("suggestion-container");
     const suggestion = this.suggestEl.createDiv("suggestion");
     this.suggest = new Suggest(this, suggestion, this.scope);
@@ -23199,11 +26175,11 @@ var FileTreeSelectSuggest = class extends TextInputSuggest {
     try {
       const testFile = this.app.vault.getAbstractFileByPath(inputStr.trim());
       if (testFile) {
-        if (testFile instanceof import_obsidian18.TFile && testFile.name.endsWith(".md")) {
+        if (testFile instanceof import_obsidian19.TFile && testFile.name.endsWith(".md")) {
           files.push(testFile);
           return files;
         }
-        if (testFile instanceof import_obsidian18.TFolder) {
+        if (testFile instanceof import_obsidian19.TFolder) {
           parentSearchPath = inputStr.trim();
           currentName = "";
         }
@@ -23241,7 +26217,7 @@ var FileTreeSelectSuggest = class extends TextInputSuggest {
   selectSuggestion(file) {
     this.inputEl.value = file.path;
     this.parentPath = file.path;
-    if (file instanceof import_obsidian18.TFolder) {
+    if (file instanceof import_obsidian19.TFolder) {
       this.inputEl.value += "/";
       this.inputEl.trigger("input");
     } else {
@@ -23255,7 +26231,7 @@ var FileTreeSelectSuggest = class extends TextInputSuggest {
 };
 
 // src/org/wanxp/douban/setting/model/FolderTreeSelectSuggest.ts
-var import_obsidian19 = __toModule(require("obsidian"));
+var import_obsidian20 = __toModule(require("obsidian"));
 var FolderTreeSelectSuggest = class extends TextInputSuggest {
   constructor() {
     super(...arguments);
@@ -23272,10 +26248,10 @@ var FolderTreeSelectSuggest = class extends TextInputSuggest {
     try {
       const testFile = this.app.vault.getAbstractFileByPath(inputStr.trim());
       if (testFile) {
-        if (testFile instanceof import_obsidian19.TFile) {
+        if (testFile instanceof import_obsidian20.TFile) {
           return files;
         }
-        if (testFile instanceof import_obsidian19.TFolder) {
+        if (testFile instanceof import_obsidian20.TFolder) {
           parentSearchPath = inputStr.trim();
           currentName = "";
         }
@@ -23301,7 +26277,7 @@ var FolderTreeSelectSuggest = class extends TextInputSuggest {
     return files;
   }
   searchFiles(folder, name, files) {
-    folder.children.filter((f) => f instanceof import_obsidian19.TFolder).forEach((file) => {
+    folder.children.filter((f) => f instanceof import_obsidian20.TFolder).forEach((file) => {
       if (file.name.toLowerCase().contains(name)) {
         files.push(file);
       }
@@ -23313,7 +26289,7 @@ var FolderTreeSelectSuggest = class extends TextInputSuggest {
   selectSuggestion(file) {
     this.inputEl.value = file.path;
     this.parentPath = file.path;
-    if (file instanceof import_obsidian19.TFolder) {
+    if (file instanceof import_obsidian20.TFolder) {
       this.inputEl.value += "/";
       this.inputEl.trigger("input");
     } else {
@@ -23323,7 +26299,7 @@ var FolderTreeSelectSuggest = class extends TextInputSuggest {
 };
 
 // src/org/wanxp/douban/setting/model/PathSuggest.ts
-var import_obsidian20 = __toModule(require("obsidian"));
+var import_obsidian21 = __toModule(require("obsidian"));
 var PathSuggest = class extends TextInputSuggest {
   constructor(app, inputEl, mode = "folder") {
     super(app, inputEl);
@@ -23335,11 +26311,11 @@ var PathSuggest = class extends TextInputSuggest {
     const lowerCaseInputStr = inputStr.toLowerCase();
     abstractFiles.forEach((file) => {
       if (this.mode === "folder") {
-        if (file instanceof import_obsidian20.TFolder && file.path.toLowerCase().contains(lowerCaseInputStr)) {
+        if (file instanceof import_obsidian21.TFolder && file.path.toLowerCase().contains(lowerCaseInputStr)) {
           results.push(file);
         }
       } else {
-        if (file instanceof import_obsidian20.TFile && file.extension === "md" && file.path.toLowerCase().contains(lowerCaseInputStr)) {
+        if (file instanceof import_obsidian21.TFile && file.extension === "md" && file.path.toLowerCase().contains(lowerCaseInputStr)) {
           results.push(file);
         }
       }
@@ -23357,14 +26333,14 @@ var PathSuggest = class extends TextInputSuggest {
 };
 
 // src/org/wanxp/douban/setting/TemplateSettingHelper.ts
-var import_obsidian25 = __toModule(require("obsidian"));
+var import_obsidian26 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/TemplateEditorModal.ts
-var import_obsidian22 = __toModule(require("obsidian"));
+var import_obsidian23 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/TemplateSaveAsModal.ts
-var import_obsidian21 = __toModule(require("obsidian"));
-var TemplateSaveAsModal = class extends import_obsidian21.Modal {
+var import_obsidian22 = __toModule(require("obsidian"));
+var TemplateSaveAsModal = class extends import_obsidian22.Modal {
   constructor(app, onSaveAs) {
     super(app);
     this.onSaveAs = onSaveAs;
@@ -23374,7 +26350,7 @@ var TemplateSaveAsModal = class extends import_obsidian21.Modal {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: i18nHelper.getMessage("121943") });
     contentEl.createEl("p", { text: i18nHelper.getMessage("121944") });
-    const input = new import_obsidian21.TextComponent(contentEl);
+    const input = new import_obsidian22.TextComponent(contentEl);
     input.setPlaceholder("Templates/douban-template.md");
     input.setValue(this.targetPath);
     input.onChange((value) => {
@@ -23387,20 +26363,20 @@ var TemplateSaveAsModal = class extends import_obsidian21.Modal {
     buttonRow.style.justifyContent = "flex-end";
     buttonRow.style.gap = "8px";
     buttonRow.style.marginTop = "12px";
-    new import_obsidian21.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
       if (!this.targetPath) {
-        new import_obsidian21.Notice(i18nHelper.getMessage("121948"));
+        new import_obsidian22.Notice(i18nHelper.getMessage("121948"));
         return;
       }
       yield this.onSaveAs(this.targetPath);
       this.close();
     }));
-    new import_obsidian21.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
+    new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
   }
 };
 
 // src/org/wanxp/douban/component/TemplateEditorModal.ts
-var TemplateEditorModal = class extends import_obsidian22.Modal {
+var TemplateEditorModal = class extends import_obsidian23.Modal {
   constructor(app, templateKey, content, options = {}) {
     super(app);
     this.templateKey = templateKey;
@@ -23444,13 +26420,13 @@ var TemplateEditorModal = class extends import_obsidian22.Modal {
     buttonRow.style.gap = "8px";
     buttonRow.style.marginTop = "12px";
     if (!this.readOnly) {
-      new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
+      new import_obsidian23.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
         var _a5;
         yield (_a5 = this.onSave) == null ? void 0 : _a5.call(this, this.content);
         this.close();
       }));
       if (this.onRestoreDefault) {
-        new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("121946")).onClick(() => __async(this, null, function* () {
+        new import_obsidian23.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("121946")).onClick(() => __async(this, null, function* () {
           var _a5;
           this.content = yield (_a5 = this.onRestoreDefault) == null ? void 0 : _a5.call(this);
           textarea.value = this.content;
@@ -23458,21 +26434,21 @@ var TemplateEditorModal = class extends import_obsidian22.Modal {
       }
     }
     if (this.onSaveAs) {
-      new import_obsidian22.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("121943")).onClick(() => {
+      new import_obsidian23.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("121943")).onClick(() => {
         new TemplateSaveAsModal(this.app, (targetPath) => __async(this, null, function* () {
           var _a5;
           yield (_a5 = this.onSaveAs) == null ? void 0 : _a5.call(this, targetPath, this.content);
         })).open();
       });
     }
-    new import_obsidian22.ButtonComponent(buttonRow).setButtonText(this.readOnly ? i18nHelper.getMessage("110005") : i18nHelper.getMessage("110005")).onClick(() => {
+    new import_obsidian23.ButtonComponent(buttonRow).setButtonText(this.readOnly ? i18nHelper.getMessage("110005") : i18nHelper.getMessage("110005")).onClick(() => {
       this.close();
     });
   }
 };
 
 // src/org/wanxp/file/FileHandler.ts
-var import_obsidian23 = __toModule(require("obsidian"));
+var import_obsidian24 = __toModule(require("obsidian"));
 var FileHandler = class {
   constructor(app) {
     this._app = app;
@@ -23484,12 +26460,12 @@ var FileHandler = class {
       const root2 = vault.getRoot().path;
       const directoryPath = FileUtil.join(dir);
       const directoryExists = yield adapter2.exists(directoryPath);
-      if (!import_obsidian23.Platform.isIosApp) {
+      if (!import_obsidian24.Platform.isIosApp) {
         if (!directoryExists) {
-          return adapter2.mkdir((0, import_obsidian23.normalizePath)(directoryPath));
+          return adapter2.mkdir((0, import_obsidian24.normalizePath)(directoryPath));
         }
       }
-      const subPaths = (0, import_obsidian23.normalizePath)(directoryPath).split("/").filter((part) => part.trim() !== "").map((_, index2, arr) => arr.slice(0, index2 + 1).join("/"));
+      const subPaths = (0, import_obsidian24.normalizePath)(directoryPath).split("/").filter((part) => part.trim() !== "").map((_, index2, arr) => arr.slice(0, index2 + 1).join("/"));
       for (const subPath of subPaths) {
         const directoryExists2 = yield adapter2.exists(FileUtil.join(root2, subPath));
         if (!directoryExists2) {
@@ -23581,7 +26557,7 @@ var FileHandler = class {
   getFileContent(filePath) {
     return __async(this, null, function* () {
       const { metadataCache, vault } = this._app;
-      const normalizedTemplatePath = (0, import_obsidian23.normalizePath)(filePath != null ? filePath : "");
+      const normalizedTemplatePath = (0, import_obsidian24.normalizePath)(filePath != null ? filePath : "");
       if (filePath === "/") {
         return Promise.resolve("");
       }
@@ -23630,7 +26606,7 @@ var FileHandler = class {
     return __async(this, null, function* () {
       const { vault } = this._app;
       const sourceFile = vault.getAbstractFileByPath(sourcePath);
-      if (!(sourceFile instanceof import_obsidian23.TFile)) {
+      if (!(sourceFile instanceof import_obsidian24.TFile)) {
         throw new Error(`Source file not found: ${sourcePath}`);
       }
       const content = yield vault.read(sourceFile);
@@ -23646,7 +26622,7 @@ var FileHandler = class {
     return __async(this, null, function* () {
       const { vault } = this._app;
       const backupFile = vault.getAbstractFileByPath(backupPath);
-      if (!(backupFile instanceof import_obsidian23.TFile)) {
+      if (!(backupFile instanceof import_obsidian24.TFile)) {
         throw new Error(`Backup file not found: ${backupPath}`);
       }
       const backupContent = yield vault.read(backupFile);
@@ -23669,29 +26645,30 @@ var TEMPLATE_TYPES = [
   { nameKey: "120301", configKey: "musicTemplateConfig", templateKey: TemplateKey.musicTemplateFile },
   { nameKey: "120401", configKey: "noteTemplateConfig", templateKey: TemplateKey.noteTemplateFile },
   { nameKey: "121301", configKey: "gameTemplateConfig", templateKey: TemplateKey.gameTemplateFile },
-  { nameKey: "121801", configKey: "teleplayTemplateConfig", templateKey: TemplateKey.teleplayTemplateFile }
+  { nameKey: "121801", configKey: "teleplayTemplateConfig", templateKey: TemplateKey.teleplayTemplateFile },
+  { nameKey: "121803", configKey: "theaterTemplateConfig", templateKey: TemplateKey.theaterTemplateFile }
 ];
 function constructTemplateUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("1204") });
-  new import_obsidian24.Setting(containerEl).setDesc(i18nHelper.getMessage("1205"));
+  new import_obsidian25.Setting(containerEl).setDesc(i18nHelper.getMessage("1205"));
   for (const { nameKey, configKey, templateKey } of TEMPLATE_TYPES) {
     createTemplateSourceSetting(containerEl, manager, nameKey, configKey, templateKey);
   }
   containerEl.createEl("h3", { text: i18nHelper.getMessage("121920") });
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121924")).setDesc(i18nHelper.getMessage("121925")).addText((text3) => {
+  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("121924")).setDesc(i18nHelper.getMessage("121925")).addText((text3) => {
     text3.setPlaceholder("\u7B14\u8BB0").setValue(manager.getSettingStr("noteDefaultFolder")).onChange((value) => __async(this, null, function* () {
       yield manager.updateSetting("noteDefaultFolder", value);
     }));
     text3.inputEl.style.width = "100%";
     new PathSuggest(manager.app, text3.inputEl, "folder");
   });
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121920")).setDesc(i18nHelper.getMessage("121921")).addText((text3) => {
+  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("121920")).setDesc(i18nHelper.getMessage("121921")).addText((text3) => {
     text3.setPlaceholder("\u7B14\u8BB0/{{type}}/{{title}}.md").setValue(manager.getSettingStr("notePathTemplate")).onChange((value) => __async(this, null, function* () {
       yield manager.updateSetting("notePathTemplate", value);
     }));
     text3.inputEl.style.width = "100%";
   });
-  new import_obsidian24.Setting(containerEl).setName(i18nHelper.getMessage("121922")).setDesc(i18nHelper.getMessage("121923")).addTextArea((text3) => {
+  new import_obsidian25.Setting(containerEl).setName(i18nHelper.getMessage("121922")).setDesc(i18nHelper.getMessage("121923")).addTextArea((text3) => {
     text3.setPlaceholder("---\ndoubanId: {{id}}\ntitle: {{title}}\n---\n\n# {{title}}\n\n## \u8BB0\u5F55\n\n## \u611F\u60F3").setValue(manager.getSettingStr("noteTemplateContent")).onChange((value) => __async(this, null, function* () {
       yield manager.updateSetting("noteTemplateContent", value);
     }));
@@ -23710,7 +26687,7 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
     }
     return { source: "builtin" };
   };
-  const setting = new import_obsidian24.Setting(containerEl);
+  const setting = new import_obsidian25.Setting(containerEl);
   setting.setName(i18nHelper.getMessage(nameKey));
   setting.controlEl.addClass("obsidian_douban_template_file_select");
   setting.addDropdown((dropdown) => {
@@ -23731,7 +26708,7 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
     const config = getConfig();
     switch (config.source) {
       case "builtin": {
-        new import_obsidian24.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => {
+        new import_obsidian25.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => {
           const content = getDefaultBuiltinContent(templateKey);
           new TemplateEditorModal(manager.app, templateKey, content, {
             readOnly: true,
@@ -23739,7 +26716,7 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
               yield saveTemplateContentAsFile(manager, targetPath, latestContent);
               yield manager.updateSetting(configKey, { source: "file", filePath: targetPath });
               refreshActionArea();
-              new import_obsidian25.Notice(i18nHelper.getMessage("121945"));
+              new import_obsidian26.Notice(i18nHelper.getMessage("121945"));
             })
           }).open();
         });
@@ -23757,20 +26734,20 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
           cfg.filePath = fileInput.value;
           yield manager.updateSetting(configKey, cfg);
         }));
-        new import_obsidian24.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => __async(this, null, function* () {
+        new import_obsidian25.ButtonComponent(actionContainer).setIcon("eye").setTooltip(i18nHelper.getMessage("121930")).onClick(() => __async(this, null, function* () {
           const content = yield resolveTemplateContent(manager, templateKey, configKey);
           new TemplateEditorModal(manager.app, templateKey, content, {
             readOnly: true,
             onSaveAs: (targetPath, latestContent) => __async(this, null, function* () {
               yield saveTemplateContentAsFile(manager, targetPath, latestContent);
-              new import_obsidian25.Notice(i18nHelper.getMessage("121945"));
+              new import_obsidian26.Notice(i18nHelper.getMessage("121945"));
             })
           }).open();
         }));
         break;
       }
       case "custom": {
-        new import_obsidian24.ButtonComponent(actionContainer).setIcon("pencil").setTooltip(i18nHelper.getMessage("121931")).onClick(() => {
+        new import_obsidian25.ButtonComponent(actionContainer).setIcon("pencil").setTooltip(i18nHelper.getMessage("121931")).onClick(() => {
           const cfg = getConfig();
           new TemplateEditorModal(manager.app, templateKey, cfg.customContent || getDefaultBuiltinContent(templateKey), {
             onSave: (newContent) => __async(this, null, function* () {
@@ -23781,7 +26758,7 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
               yield saveTemplateContentAsFile(manager, targetPath, latestContent);
               yield manager.updateSetting(configKey, { source: "file", filePath: targetPath });
               refreshActionArea();
-              new import_obsidian25.Notice(i18nHelper.getMessage("121945"));
+              new import_obsidian26.Notice(i18nHelper.getMessage("121945"));
             }),
             onRestoreDefault: () => __async(this, null, function* () {
               const defaultContent = getDefaultBuiltinContent(templateKey);
@@ -23799,14 +26776,14 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
     button.setIcon("copy").setTooltip(i18nHelper.getMessage("121903")).onClick(() => __async(this, null, function* () {
       const content = yield resolveTemplateContent(manager, templateKey, configKey);
       navigator.clipboard.writeText(content);
-      new import_obsidian25.Notice(i18nHelper.getMessage("121907"));
+      new import_obsidian26.Notice(i18nHelper.getMessage("121907"));
     }));
   });
   setting.addExtraButton((button) => {
     button.setIcon("reset").setTooltip(i18nHelper.getMessage("121946")).onClick(() => __async(this, null, function* () {
       yield manager.updateSetting(configKey, { source: "builtin" });
       refreshActionArea();
-      new import_obsidian25.Notice(i18nHelper.getMessage("121947"));
+      new import_obsidian26.Notice(i18nHelper.getMessage("121947"));
     }));
   });
   refreshActionArea();
@@ -23896,26 +26873,90 @@ function createFolderSelectionSettingInput({
   };
 }
 
+// src/org/wanxp/douban/setting/ArrayLengthLimitSettingsHelper.ts
+var import_obsidian27 = __toModule(require("obsidian"));
+var SUPPORT_TYPES = [
+  SupportType.all,
+  SupportType.movie,
+  SupportType.teleplay,
+  SupportType.book,
+  SupportType.music,
+  SupportType.game,
+  SupportType.theater,
+  SupportType.note
+];
+function constructArrayLengthLimitSettingsUI(containerEl, manager) {
+  containerEl.createEl("h3", { text: i18nHelper.getMessage("1270") });
+  containerEl.createEl("p", { text: i18nHelper.getMessage("1271") });
+  containerEl.createEl("p", { text: i18nHelper.getMessage("1272") });
+  const listEl = containerEl.createDiv("obsidian_douban_array_length_limits");
+  const render3 = () => {
+    listEl.empty();
+    const limits = manager.plugin.settings.arrayLengthLimits || [];
+    limits.forEach((limit, index2) => {
+      const setting = new import_obsidian27.Setting(listEl).setName(`${i18nHelper.getMessage("127402")} ${index2 + 1}`).addDropdown((dropdown) => {
+        SUPPORT_TYPES.forEach((type) => {
+          dropdown.addOption(type, i18nHelper.getMessage(type));
+        });
+        dropdown.setValue(limit.type || SupportType.all).onChange((value) => __async(this, null, function* () {
+          limits[index2].type = value;
+          yield manager.plugin.saveSettings();
+        }));
+      }).addText((text3) => {
+        text3.setPlaceholder(i18nHelper.getMessage("127404")).setValue(limit.field || "").onChange((value) => __async(this, null, function* () {
+          limits[index2].field = value.trim();
+          yield manager.plugin.saveSettings();
+        }));
+      }).addText((text3) => {
+        var _a5;
+        text3.setPlaceholder(i18nHelper.getMessage("127406")).setValue(String((_a5 = limit.limit) != null ? _a5 : 0)).onChange((value) => __async(this, null, function* () {
+          const parsed = Number(value);
+          if (!Number.isInteger(parsed) || parsed < 0) {
+            return;
+          }
+          limits[index2].limit = parsed;
+          yield manager.plugin.saveSettings();
+        }));
+        text3.inputEl.type = "number";
+        text3.inputEl.min = "0";
+      }).addExtraButton((button) => {
+        button.setIcon("trash").setTooltip(i18nHelper.getMessage("127407")).onClick(() => __async(this, null, function* () {
+          yield manager.removeArrayLengthLimit(index2);
+          render3();
+        }));
+      });
+      setting.setDesc(i18nHelper.getMessage("127405"));
+    });
+  };
+  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("1273")).addButton((button) => {
+    button.setButtonText(i18nHelper.getMessage("127401")).setIcon("plus").onClick(() => __async(this, null, function* () {
+      yield manager.addArrayLengthLimit();
+      render3();
+    }));
+  });
+  render3();
+}
+
 // src/org/wanxp/douban/setting/OutputSettingsHelper.ts
 function showStarExample(containerEl, manager) {
   containerEl.empty();
   const document2 = new DocumentFragment();
   document2.createDiv("score-show-title").innerHTML = `score: ${NumberUtil.getRateStar(EXAMPLE_RATE, EXAMPLE_RATE_MAX, { scoreSetting: manager.plugin.settings.scoreSetting })}`;
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
 }
 function showFileExample(containerEl, manager) {
   containerEl.empty();
   const document2 = new DocumentFragment();
   document2.createDiv("file-path-example").innerHTML = `${i18nHelper.getMessage("121604")}<a href="https://book.douban.com/subject/2253379/">\u300A\u7B80\u7231\u300B</a>: ${VariableUtil.replaceSubject(EXAMPLE_SUBJECT_MAP, FileUtil.join(manager.plugin.settings.dataFilePath, manager.plugin.settings.dataFileNamePath + ".md"), SupportType.book, manager, "path")}`;
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("120603")).setDesc(document2);
 }
 function scoreSettingDisplay(containerEl, manager) {
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("1243")).setDesc(i18nHelper.getMessage("124310", EXAMPLE_RATE, EXAMPLE_RATE_MAX));
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("1243")).setDesc(i18nHelper.getMessage("124310", EXAMPLE_RATE, EXAMPLE_RATE_MAX));
   const scoreSettingsUI = containerEl.createDiv("score-settings");
   const scoreShowUI = containerEl.createDiv("score-show");
   const scoreSetting = manager.getSetting("scoreSetting");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124120") });
-  const starFullUI = new import_obsidian26.TextComponent(scoreSettingsUI);
+  const starFullUI = new import_obsidian28.TextComponent(scoreSettingsUI);
   starFullUI.setPlaceholder(DEFAULT_SETTINGS.scoreSetting.starFull).setValue(scoreSetting.starFull).onChange((value) => __async(this, null, function* () {
     scoreSetting.starFull = value;
     yield manager.plugin.saveSettings();
@@ -23926,7 +26967,7 @@ function scoreSettingDisplay(containerEl, manager) {
   starFullEl.addClass("obsidian_douban_settings_input");
   scoreSettingsUI.appendChild(starFullEl).appendText("  ");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124121") });
-  const starEmptyUI = new import_obsidian26.TextComponent(scoreSettingsUI);
+  const starEmptyUI = new import_obsidian28.TextComponent(scoreSettingsUI);
   starEmptyUI.setPlaceholder(DEFAULT_SETTINGS.scoreSetting.starEmpty).setValue(scoreSetting.starEmpty).onChange((value) => __async(this, null, function* () {
     scoreSetting.starEmpty = value;
     yield manager.plugin.saveSettings();
@@ -23937,7 +26978,7 @@ function scoreSettingDisplay(containerEl, manager) {
   starEmptyEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   scoreSettingsUI.appendChild(starEmptyEl).appendText("  ");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124311") });
-  const maxStarUI = new import_obsidian26.TextComponent(scoreSettingsUI);
+  const maxStarUI = new import_obsidian28.TextComponent(scoreSettingsUI);
   maxStarUI.setPlaceholder(i18nHelper.getMessage("124312") + DEFAULT_SETTINGS.scoreSetting.maxStar).setValue(scoreSetting.maxStar + "").onChange((value) => __async(this, null, function* () {
     if (!NumberUtil.isInt(value) || NumberUtil.value(value) > MAX_STAR_NUMBER || NumberUtil.value(value) < 1) {
       return;
@@ -23951,7 +26992,7 @@ function scoreSettingDisplay(containerEl, manager) {
   maxStarEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   scoreSettingsUI.appendChild(maxStarEl).appendText("  ");
   scoreSettingsUI.createEl("span", { text: i18nHelper.getMessage("124122") });
-  const displayEmptyStarUI = new import_obsidian26.ToggleComponent(scoreSettingsUI);
+  const displayEmptyStarUI = new import_obsidian28.ToggleComponent(scoreSettingsUI);
   displayEmptyStarUI.setValue(scoreSetting.displayStarEmpty).onChange((value) => __async(this, null, function* () {
     scoreSetting.displayStarEmpty = value;
     yield manager.plugin.saveSettings();
@@ -23963,17 +27004,21 @@ function scoreSettingDisplay(containerEl, manager) {
   showStarExample(scoreShowUI, manager);
 }
 function constructOutUI(containerEl, manager) {
-  new import_obsidian26.Setting(containerEl);
+  new import_obsidian28.Setting(containerEl);
   const attachmentFileSetting = containerEl.createDiv({ cls: "settings-item-attachment" });
   constructAttachmentFileSettingsUI(attachmentFileSetting, manager);
-  const folder = new import_obsidian26.Setting(containerEl);
-  const folderInput = new import_obsidian26.Setting(containerEl);
+  const folder = new import_obsidian28.Setting(containerEl);
+  const folderInput = new import_obsidian28.Setting(containerEl);
   const outFolder = containerEl.createDiv({ cls: "settings-item" });
   const filePathDisplayExample = containerEl.createDiv("filePath-display-example");
   folder.then(createFolderSelectionSetting({ containerEl, name: "121501", desc: "121502", placeholder: null, key: null, manager }, filePathDisplayExample));
   folderInput.then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121503", key: "dataFilePath", manager }, filePathDisplayExample));
   constructOutputFileNameUI(outFolder, filePathDisplayExample, manager);
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121201")).then((setting) => {
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("showAfterCreateName")).setDesc(i18nHelper.getMessage("showAfterCreateDesc")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.showAfterCreate).onChange((value) => __async(this, null, function* () {
+    manager.plugin.settings.showAfterCreate = value;
+    yield manager.plugin.saveSettings();
+  })));
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("121201")).then((setting) => {
     setting.addDropdown((dropdwon) => {
       setting.descEl.appendChild(createFragment((frag) => {
         frag.appendText(i18nHelper.getMessage("121202"));
@@ -23995,10 +27040,11 @@ function constructOutUI(containerEl, manager) {
     });
   });
   scoreSettingDisplay(containerEl, manager);
+  constructArrayLengthLimitSettingsUI(containerEl, manager);
 }
 function constructOutputFileNameUI(containerEl, filePathDisplayExample, manager) {
   containerEl.empty();
-  const dataFilePathSetting = new import_obsidian26.Setting(containerEl);
+  const dataFilePathSetting = new import_obsidian28.Setting(containerEl);
   dataFilePathSetting.setName(i18nHelper.getMessage("121601")).setDesc(i18nHelper.getMessage("121602")).addText((textField) => {
     textField.setPlaceholder(DEFAULT_SETTINGS.dataFileNamePath).setValue(manager.plugin.settings.dataFileNamePath).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.dataFileNamePath = value;
@@ -24017,7 +27063,7 @@ function constructOutputFileNameUI(containerEl, filePathDisplayExample, manager)
 }
 function constructAttachmentFileSettingsUI(containerEl, manager) {
   containerEl.empty();
-  new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
+  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
     toggleComponent.setValue(manager.plugin.settings.cacheImage).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.cacheImage = value;
       yield manager.plugin.saveSettings();
@@ -24025,7 +27071,7 @@ function constructAttachmentFileSettingsUI(containerEl, manager) {
     }));
   });
   if (manager.plugin.settings.cacheImage) {
-    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121440")).setDesc(i18nHelper.getMessage("121441")).addToggle((toggleComponent) => {
+    new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("121440")).setDesc(i18nHelper.getMessage("121441")).addToggle((toggleComponent) => {
       toggleComponent.setValue(manager.plugin.settings.pictureBedFlag).onChange((value) => __async(this, null, function* () {
         manager.plugin.settings.pictureBedFlag = value;
         yield manager.plugin.saveSettings();
@@ -24035,20 +27081,20 @@ function constructAttachmentFileSettingsUI(containerEl, manager) {
     if (manager.plugin.settings.pictureBedFlag) {
       constructAttachmentFilePictureBedSettingsUI(containerEl, manager);
     } else {
-      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121432", desc: "121433", placeholder: null, key: null, manager }));
-      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121434", key: "attachmentPath", manager }));
-      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121452", desc: "121453", placeholder: null, key: null, manager }));
-      new import_obsidian26.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121454", key: "attachmentFileName", manager }));
+      new import_obsidian28.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121432", desc: "121433", placeholder: null, key: null, manager }));
+      new import_obsidian28.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121434", key: "attachmentPath", manager }));
+      new import_obsidian28.Setting(containerEl).then(createFolderSelectionSetting({ containerEl, name: "121452", desc: "121453", placeholder: null, key: null, manager }));
+      new import_obsidian28.Setting(containerEl).then(createFolderSelectionSettingInput({ containerEl, name: null, desc: null, placeholder: "121454", key: "attachmentFileName", manager }));
       ;
     }
-    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121436")).addToggle((toggleComponent) => {
+    new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121436")).addToggle((toggleComponent) => {
       toggleComponent.setTooltip(i18nHelper.getMessage("121437")).setValue(manager.plugin.settings.cacheHighQuantityImage).onChange((value) => __async(this, null, function* () {
         manager.plugin.settings.cacheHighQuantityImage = value;
         yield manager.plugin.saveSettings();
         constructAttachmentFileSettingsUI(containerEl, manager);
       }));
     });
-    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
+    new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
       toggleComponent.setValue(manager.plugin.settings.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
         manager.plugin.settings.overwriteCoverImage = value;
         yield manager.plugin.saveSettings();
@@ -24065,8 +27111,8 @@ function constructAttachmentFilePictureBedSettingsUI(containerEl, manager) {
       pictureBedSetting = PictureBedSetting_PicGo;
     }
   }
-  var pictureBedTypeSettingsUI = new import_obsidian26.Setting(containerEl);
-  var pictureBedPropertySettingsUI = new import_obsidian26.Setting(containerEl).settingEl;
+  var pictureBedTypeSettingsUI = new import_obsidian28.Setting(containerEl);
+  var pictureBedPropertySettingsUI = new import_obsidian28.Setting(containerEl).settingEl;
   pictureBedTypeSettingsUI.setName(i18nHelper.getMessage("121451")).then((setting) => {
     setting.addDropdown((dropdwon) => {
       dropdwon.addOptions(PictureBedTypeRecords);
@@ -24084,7 +27130,7 @@ function constructAttachmentFilePictureBedPropertySettingsUI(containerEl, manage
   const pictureBedSetting = manager.plugin.settings.pictureBedSetting;
   const pictureBedType = manager.plugin.settings.pictureBedType;
   if (pictureBedType == PictureBedType.PicGo) {
-    new import_obsidian26.Setting(containerEl).setName(i18nHelper.getMessage("121461")).addText((textField) => {
+    new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("121461")).addText((textField) => {
       textField.setPlaceholder(PictureBedSetting_PicGo.url).setValue(pictureBedSetting.url).onChange((value) => __async(this, null, function* () {
         pictureBedSetting.url = value;
         yield manager.plugin.saveSettings();
@@ -24095,9 +27141,9 @@ function constructAttachmentFilePictureBedPropertySettingsUI(containerEl, manage
 }
 
 // src/org/wanxp/douban/setting/BasicSettingsHelper.ts
-var import_obsidian27 = __toModule(require("obsidian"));
+var import_obsidian29 = __toModule(require("obsidian"));
 function constructBasicUI(containerEl, manager) {
-  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("120501")).then((setting) => {
+  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("120501")).then((setting) => {
     setting.addMomentFormat((mf) => {
       setting.descEl.appendChild(createFragment((frag) => {
         frag.appendText(i18nHelper.getMessage("120503"));
@@ -24122,7 +27168,7 @@ function constructBasicUI(containerEl, manager) {
       }));
     });
   });
-  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("120502")).then((setting) => {
+  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("120502")).then((setting) => {
     setting.addMomentFormat((mf) => {
       setting.descEl.appendChild(createFragment((frag) => {
         frag.appendText(i18nHelper.getMessage("120504"));
@@ -24147,13 +27193,13 @@ function constructBasicUI(containerEl, manager) {
       }));
     });
   });
-  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("121401")).setDesc(i18nHelper.getMessage("121402")).addToggle((toggleComponent) => {
+  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("121401")).setDesc(i18nHelper.getMessage("121402")).addToggle((toggleComponent) => {
     toggleComponent.setValue(manager.plugin.settings.statusBar).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.statusBar = value;
       yield manager.plugin.saveSettings();
     }));
   });
-  new import_obsidian27.Setting(containerEl).setName(i18nHelper.getMessage("121410")).setDesc(i18nHelper.getMessage("121411")).addDropdown((dropdown) => {
+  new import_obsidian29.Setting(containerEl).setName(i18nHelper.getMessage("121410")).setDesc(i18nHelper.getMessage("121411")).addDropdown((dropdown) => {
     dropdown.addOptions(SearchTypeRecords).setValue(manager.plugin.settings.searchDefaultType).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.searchDefaultType = SupportTypeMap[value];
       yield manager.plugin.saveSettings();
@@ -24162,11 +27208,12 @@ function constructBasicUI(containerEl, manager) {
 }
 
 // src/org/wanxp/douban/setting/TemplateVariableSettingsHelper.ts
-var import_obsidian28 = __toModule(require("obsidian"));
+var import_obsidian30 = __toModule(require("obsidian"));
 function constructTemplateVariablesUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("122003") });
   const basicVariablesTable = new DocumentFragment();
-  basicVariablesTable.createDiv().innerHTML = `
+  const basicVariablesContent = basicVariablesTable.createDiv();
+  basicVariablesContent.innerHTML = `
 ${i18nHelper.getMessage("122004")}
 <br>
 <br>
@@ -24240,6 +27287,10 @@ ${i18nHelper.getMessage("122004")}
 		<td>${i18nHelper.getMessage("310505")}</td>
 		<td>${i18nHelper.getMessage("310605")}</td>
 		<td>${i18nHelper.getMessage("310705")}</td>
+	</tr>
+	<tr>
+		<td>imageName</td>
+		<td colspan="7">${i18nHelper.getMessage("imageNameDesc")}</td>
 	</tr>
 	<tr>
 		<td>imageData.url</td>
@@ -24335,9 +27386,17 @@ ${i18nHelper.getMessage("122004")}
 		<td>${i18nHelper.getMessage("330102")}</td>
 	</tr>
 </table>`;
-  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("122001")).setDesc(basicVariablesTable);
+  enableVariableCopy(basicVariablesContent);
+  new import_obsidian30.Setting(containerEl).setName(i18nHelper.getMessage("122001")).setDesc(basicVariablesTable);
+  containerEl.createEl("p", {
+    text: `{{popularComments}} - ${i18nHelper.getMessage("popularCommentsDesc")}`
+  });
+  containerEl.createEl("p", {
+    text: i18nHelper.getMessage("theaterVariablesDesc")
+  });
   const extraVariablesTable = new DocumentFragment();
-  extraVariablesTable.createDiv().innerHTML = `
+  const extraVariablesContent = extraVariablesTable.createDiv();
+  extraVariablesContent.innerHTML = `
 ${i18nHelper.getMessage("122004")}
 <br>
 <br>
@@ -24465,9 +27524,11 @@ ${i18nHelper.getMessage("122004")}
 		<td>${i18nHelper.getMessage("310722")}</th>
 	</tr>
 </table>`;
-  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("122002")).setDesc(extraVariablesTable);
+  enableVariableCopy(extraVariablesContent);
+  new import_obsidian30.Setting(containerEl).setName(i18nHelper.getMessage("122002")).setDesc(extraVariablesTable);
   const userInfoVariables = new DocumentFragment();
-  userInfoVariables.createDiv().innerHTML = `
+  const userInfoContent = userInfoVariables.createDiv();
+  userInfoContent.innerHTML = `
 ${i18nHelper.getMessage("160225")}
 <br>
 <strong>myTags</strong> \u2192 ${i18nHelper.getMessage("160226")}<br>
@@ -24479,11 +27540,32 @@ ${i18nHelper.getMessage("160225")}
 
 
 `;
-  new import_obsidian28.Setting(containerEl).setName(i18nHelper.getMessage("122010")).setDesc(userInfoVariables);
+  enableVariableCopy(userInfoContent);
+  new import_obsidian30.Setting(containerEl).setName(i18nHelper.getMessage("122010")).setDesc(userInfoVariables);
+}
+function enableVariableCopy(container) {
+  container.querySelectorAll("td, th, strong").forEach((cell) => {
+    const text3 = (cell.textContent || "").trim();
+    const match = text3.match(/^([a-zA-Z][a-zA-Z0-9_.-]*)(?=[:：]|$)/);
+    if (!match) {
+      return;
+    }
+    const variable = `{{${match[1]}}}`;
+    cell.addClass("obsidian_douban_variable_copy");
+    cell.setAttr("title", i18nHelper.getMessage("122011"));
+    cell.addEventListener("click", () => __async(this, null, function* () {
+      try {
+        yield navigator.clipboard.writeText(variable);
+        new import_obsidian30.Notice(i18nHelper.getMessage("122012", variable));
+      } catch (_) {
+        new import_obsidian30.Notice(i18nHelper.getMessage("122013"));
+      }
+    }));
+  });
 }
 
 // src/org/wanxp/douban/setting/CustomPropertySettingsHelper.ts
-var import_obsidian29 = __toModule(require("obsidian"));
+var import_obsidian31 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/CustomPropertyIO.ts
 var CUSTOM_PROPERTY_EXPORT_VERSION = "1.0";
@@ -24575,7 +27657,7 @@ function constructCustomPropertySettingsUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("1242") });
   const customProperties = manager.plugin.settings.customProperties;
   const list = containerEl.createDiv("custom-property-list");
-  new import_obsidian29.Setting(containerEl).setDesc(i18nHelper.getMessage("1241")).addButton((button) => {
+  new import_obsidian31.Setting(containerEl).setDesc(i18nHelper.getMessage("1241")).addButton((button) => {
     button.setButtonText(i18nHelper.getMessage("124101"));
     button.setTooltip(i18nHelper.getMessage("124101"));
     button.setIcon("plus");
@@ -24613,7 +27695,7 @@ function constructCustomPropertyUI(containerEl, customProperties, manager) {
 function addFilterInput(data2, el, customProperties, manager, idx) {
   const item = el.createEl("li");
   item.createEl("span", { text: i18nHelper.getMessage("124102") });
-  const nameField = new import_obsidian29.TextComponent(el);
+  const nameField = new import_obsidian31.TextComponent(el);
   nameField.setPlaceholder(i18nHelper.getMessage("124103")).setValue(data2.name).onChange((value) => __async(this, null, function* () {
     customProperties[idx].name = value;
     yield manager.plugin.saveSettings();
@@ -24622,7 +27704,7 @@ function addFilterInput(data2, el, customProperties, manager, idx) {
   nameEl.addClass("obsidian_douban_settings_input");
   item.appendChild(nameEl);
   item.createEl("span", { text: i18nHelper.getMessage("124104") });
-  const valueField = new import_obsidian29.TextComponent(el);
+  const valueField = new import_obsidian31.TextComponent(el);
   valueField.setPlaceholder(i18nHelper.getMessage("124105")).setValue(data2.value).onChange((value) => __async(this, null, function* () {
     customProperties[idx].value = value;
     yield manager.plugin.saveSettings();
@@ -24630,7 +27712,7 @@ function addFilterInput(data2, el, customProperties, manager, idx) {
   const valueEl = valueField.inputEl;
   valueEl.addClass("obsidian_douban_settings_input");
   item.appendChild(valueEl);
-  const fieldsDropdown = new import_obsidian29.DropdownComponent(el);
+  const fieldsDropdown = new import_obsidian31.DropdownComponent(el);
   for (const fieldSelect in SupportType) {
     fieldsDropdown.addOption(fieldSelect, i18nHelper.getMessage(fieldSelect));
   }
@@ -24646,7 +27728,7 @@ function addFilterInput(data2, el, customProperties, manager, idx) {
   const fieldSelectEl = fieldsDropdown.selectEl;
   fieldSelectEl.addClass("obsidian_douban_settings_input");
   item.appendChild(fieldSelectEl);
-  const extractButton = new import_obsidian29.ButtonComponent(el);
+  const extractButton = new import_obsidian31.ButtonComponent(el);
   extractButton.setIcon("minus-with-circle");
   extractButton.setTooltip(i18nHelper.getMessage("124107"));
   extractButton.onClick(() => __async(this, null, function* () {
@@ -24668,7 +27750,7 @@ function exportCustomProperties(plugin, customProperties) {
     link.download = `obsidian-douban-custom-properties-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    new import_obsidian29.Notice(i18nHelper.getMessage("124207"));
+    new import_obsidian31.Notice(i18nHelper.getMessage("124207"));
   });
 }
 function importCustomPropertiesFromFile(manager, list, mode) {
@@ -24689,9 +27771,9 @@ function importCustomPropertiesFromFile(manager, list, mode) {
         manager.plugin.settings.customProperties = importCustomProperties(manager.plugin.settings.customProperties || [], importData, mode);
         yield manager.plugin.saveSettings();
         constructCustomPropertyUI(list, manager.plugin.settings.customProperties, manager);
-        new import_obsidian29.Notice(i18nHelper.getMessage(mode === "merge" ? "124208" : "124209"));
+        new import_obsidian31.Notice(i18nHelper.getMessage(mode === "merge" ? "124208" : "124209"));
       } catch (e) {
-        new import_obsidian29.Notice(i18nHelper.getMessage("124210"));
+        new import_obsidian31.Notice(i18nHelper.getMessage("124210"));
       }
     });
     input.click();
@@ -24699,10 +27781,10 @@ function importCustomPropertiesFromFile(manager, list, mode) {
 }
 
 // src/org/wanxp/douban/setting/AdvancedSettingsHelper.ts
-var import_obsidian31 = __toModule(require("obsidian"));
+var import_obsidian33 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/ConfirmDialogModal.ts
-var import_obsidian30 = __toModule(require("obsidian"));
+var import_obsidian32 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/setting/SettingsIO.ts
 var SETTINGS_EXPORT_VERSION = "1.0";
@@ -24752,6 +27834,25 @@ function normalizeString(value, fallback) {
 function normalizeArray(value, fallback) {
   return Array.isArray(value) ? value : fallback;
 }
+function normalizeArrayLengthLimits(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const result = [];
+  value.forEach((item) => {
+    if (!isRecord(item)) {
+      return;
+    }
+    const rawType = typeof item.type === "string" ? item.type : "";
+    const type = SupportTypeMap[rawType] || SupportTypeMap[rawType.toLowerCase()];
+    const field = typeof item.field === "string" ? item.field.trim() : "";
+    const limit = typeof item.limit === "number" ? Math.floor(item.limit) : Number.NaN;
+    if (type && field && Number.isInteger(limit) && limit >= 0) {
+      result.push({ type, field, limit });
+    }
+  });
+  return result;
+}
 function extractSettingsPayload(config) {
   if (config == null) {
     return {};
@@ -24792,6 +27893,9 @@ function sanitizeImportedSettings(config) {
       case "teleplayTemplateConfig":
         sanitized.teleplayTemplateConfig = normalizeTemplateConfig(value, payload.teleplayTemplateFile);
         return;
+      case "theaterTemplateConfig":
+        sanitized.theaterTemplateConfig = normalizeTemplateConfig(value, payload.theaterTemplateFile);
+        return;
       case "dataProtection":
         if (isRecord(value)) {
           sanitized.dataProtection = {
@@ -24809,7 +27913,11 @@ function sanitizeImportedSettings(config) {
       case "pictureBedFlag":
       case "syncBackupBeforeReplace":
       case "includeSensitiveInSettingExport":
+      case "showAfterCreate":
         sanitized[key] = normalizeBoolean(value, sanitized[key]);
+        return;
+      case "arrayLengthLimits":
+        sanitized.arrayLengthLimits = normalizeArrayLengthLimits(value);
         return;
       case "customProperties":
       case "syncHandledDataArray":
@@ -24833,6 +27941,7 @@ function sanitizeImportedSettings(config) {
       case "noteTemplateFile":
       case "gameTemplateFile":
       case "teleplayTemplateFile":
+      case "theaterTemplateFile":
       case "dateFormat":
       case "timeFormat":
       case "searchUrl":
@@ -24858,12 +27967,13 @@ function sanitizeImportedSettings(config) {
         mutableSanitized[key] = value;
     }
   });
-  sanitized.movieTemplateConfig = normalizeTemplateConfig(sanitized.movieTemplateConfig, sanitized.movieTemplateFile);
-  sanitized.bookTemplateConfig = normalizeTemplateConfig(sanitized.bookTemplateConfig, sanitized.bookTemplateFile);
-  sanitized.musicTemplateConfig = normalizeTemplateConfig(sanitized.musicTemplateConfig, sanitized.musicTemplateFile);
-  sanitized.noteTemplateConfig = normalizeTemplateConfig(sanitized.noteTemplateConfig, sanitized.noteTemplateFile);
-  sanitized.gameTemplateConfig = normalizeTemplateConfig(sanitized.gameTemplateConfig, sanitized.gameTemplateFile);
-  sanitized.teleplayTemplateConfig = normalizeTemplateConfig(sanitized.teleplayTemplateConfig, sanitized.teleplayTemplateFile);
+  sanitized.movieTemplateConfig = normalizeTemplateConfig("movieTemplateConfig" in payload ? sanitized.movieTemplateConfig : void 0, sanitized.movieTemplateFile);
+  sanitized.bookTemplateConfig = normalizeTemplateConfig("bookTemplateConfig" in payload ? sanitized.bookTemplateConfig : void 0, sanitized.bookTemplateFile);
+  sanitized.musicTemplateConfig = normalizeTemplateConfig("musicTemplateConfig" in payload ? sanitized.musicTemplateConfig : void 0, sanitized.musicTemplateFile);
+  sanitized.noteTemplateConfig = normalizeTemplateConfig("noteTemplateConfig" in payload ? sanitized.noteTemplateConfig : void 0, sanitized.noteTemplateFile);
+  sanitized.gameTemplateConfig = normalizeTemplateConfig("gameTemplateConfig" in payload ? sanitized.gameTemplateConfig : void 0, sanitized.gameTemplateFile);
+  sanitized.teleplayTemplateConfig = normalizeTemplateConfig("teleplayTemplateConfig" in payload ? sanitized.teleplayTemplateConfig : void 0, sanitized.teleplayTemplateFile);
+  sanitized.theaterTemplateConfig = normalizeTemplateConfig("theaterTemplateConfig" in payload ? sanitized.theaterTemplateConfig : void 0, sanitized.theaterTemplateFile);
   return sanitized;
 }
 function buildSettingsExportData(settings, includeSensitive = false) {
@@ -24883,7 +27993,7 @@ function buildSettingsExportData(settings, includeSensitive = false) {
 }
 
 // src/org/wanxp/douban/component/ConfirmDialogModal.ts
-var ConfirmDialogModal = class extends import_obsidian30.Modal {
+var ConfirmDialogModal = class extends import_obsidian32.Modal {
   constructor(doubanPlugin, message, promise) {
     super(doubanPlugin.app);
     this.doubanPlugin = doubanPlugin;
@@ -24897,7 +28007,7 @@ var ConfirmDialogModal = class extends import_obsidian30.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("125033") });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian30.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian32.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110152")).setCta().onClick(() => __async(this, null, function* () {
       if (this.message == i18nHelper.getMessage("125046")) {
         createFileSelectModal(this.doubanPlugin);
       } else {
@@ -24905,7 +28015,7 @@ var ConfirmDialogModal = class extends import_obsidian30.Modal {
       }
       this.close();
     })).setClass("obsidian_douban_search_button");
-    new import_obsidian30.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+    new import_obsidian32.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
       this.close();
     }).setClass("obsidian_douban_cancel_button");
   }
@@ -24932,6 +28042,83 @@ function createFileSelectModal(doubanPlugin) {
   input.click();
 }
 
+// src/org/wanxp/utils/TimeUtil.ts
+var TimeUtil = class {
+  static estimateTime(needHandled, overSlowSize) {
+    if (needHandled <= 0) {
+      return 0;
+    }
+    let times = 0;
+    if (overSlowSize) {
+      if (needHandled <= BasicConst.SLOW_SIZE) {
+        times = ESTIMATE_TIME_PER_WITH_REQUEST * needHandled;
+      } else {
+        times = ESTIMATE_TIME_PER_WITH_REQUEST * BasicConst.SLOW_SIZE + ESTIMATE_TIME_PER_WITH_REQUEST_SLOW * Math.max(needHandled - BasicConst.SLOW_SIZE, 0);
+      }
+    } else {
+      times = ESTIMATE_TIME_PER_WITH_REQUEST * needHandled;
+    }
+    return times;
+  }
+  static estimateTimeMsg(needHandled, overSlowSize) {
+    const times = this.estimateTime(needHandled, overSlowSize);
+    if (times <= 0) {
+      return 0 + i18nHelper.getMessage("SECOND");
+    }
+    return this.formatDuring(times);
+  }
+  static formatDuring(mss) {
+    let show = false;
+    let message = "";
+    const days = Math.floor(mss / (1e3 * 60 * 60 * 24));
+    const hours = Math.floor(mss % (1e3 * 60 * 60 * 24) / (1e3 * 60 * 60));
+    const minutes = Math.floor(mss % (1e3 * 60 * 60) / (1e3 * 60));
+    const seconds = Math.floor(mss % (1e3 * 60) / 1e3);
+    if (days > 0) {
+      show = true;
+      message += days + i18nHelper.getMessage("DAY");
+    }
+    if (hours > 0 || show) {
+      show = true;
+      message += hours + i18nHelper.getMessage("HOUR");
+    }
+    if (minutes > 0 || show) {
+      show = true;
+      message += minutes + i18nHelper.getMessage("MINUTE");
+    }
+    if (seconds > 0 || show) {
+      message += seconds + i18nHelper.getMessage("SECOND");
+    }
+    return message;
+  }
+  static formatDate(date, format = "yyyy-MM-dd HH:mm:ss") {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+    const second = date.getSeconds();
+    const formatMap = {
+      yyyy: year.toString(),
+      MM: month.toString().padStart(2, "0"),
+      dd: day.toString().padStart(2, "0"),
+      HH: hour.toString().padStart(2, "0"),
+      mm: minute.toString().padStart(2, "0"),
+      ss: second.toString().padStart(2, "0")
+    };
+    return format.replace(/yyyy|MM|dd|HH|mm|ss/g, (match) => formatMap[match]);
+  }
+  static getLastMonth() {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date;
+  }
+};
+var sleepRange = (msMin, msMax) => {
+  const msTime = NumberUtil.getRandomNum(msMin, msMax);
+  return new Promise((resolve) => setTimeout(resolve, msTime));
+};
+
 // src/org/wanxp/douban/setting/AdvancedSettingsHelper.ts
 function constructAdvancedUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("1252") });
@@ -24945,34 +28132,34 @@ function showAdvancedSettings(containerEl, manager) {
   });
   containerEl.createEl("h4", { text: i18nHelper.getMessage("125100") });
   containerEl.createEl("p", { text: i18nHelper.getMessage("125101") });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125102")).setDesc(i18nHelper.getMessage("125103")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveCustomProperties).onChange((value) => __async(this, null, function* () {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125102")).setDesc(i18nHelper.getMessage("125103")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveCustomProperties).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.dataProtection.preserveCustomProperties = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125104")).setDesc(i18nHelper.getMessage("125105")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveRecord).onChange((value) => __async(this, null, function* () {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125104")).setDesc(i18nHelper.getMessage("125105")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveRecord).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.dataProtection.preserveRecord = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125106")).setDesc(i18nHelper.getMessage("125107")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveThoughts).onChange((value) => __async(this, null, function* () {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125106")).setDesc(i18nHelper.getMessage("125107")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.dataProtection.preserveThoughts).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.dataProtection.preserveThoughts = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125108")).setDesc(i18nHelper.getMessage("125109")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.syncBackupBeforeReplace).onChange((value) => __async(this, null, function* () {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125108")).setDesc(i18nHelper.getMessage("125109")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.syncBackupBeforeReplace).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.syncBackupBeforeReplace = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125110")).setDesc(i18nHelper.getMessage("125111")).addSearch((search) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125110")).setDesc(i18nHelper.getMessage("125111")).addSearch((search) => {
     new PathSuggest(manager.app, search.inputEl, "folder");
     search.setValue(manager.plugin.settings.syncBackupFolder || DEFAULT_SETTINGS.syncBackupFolder).setPlaceholder(DEFAULT_SETTINGS.syncBackupFolder).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.syncBackupFolder = value || DEFAULT_SETTINGS.syncBackupFolder;
       yield manager.plugin.saveSettings();
     }));
   });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125112")).setDesc(i18nHelper.getMessage("125113")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.includeSensitiveInSettingExport).onChange((value) => __async(this, null, function* () {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125112")).setDesc(i18nHelper.getMessage("125113")).addToggle((toggle) => toggle.setValue(manager.plugin.settings.includeSensitiveInSettingExport).onChange((value) => __async(this, null, function* () {
     manager.plugin.settings.includeSensitiveInSettingExport = value;
     yield manager.plugin.saveSettings();
   })));
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125034")).setDesc(i18nHelper.getMessage("125114")).addButton((buttonComponent) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125034")).setDesc(i18nHelper.getMessage("125114")).addButton((buttonComponent) => {
     buttonComponent.setIcon("folder").setButtonText(i18nHelper.getMessage("125047")).onClick((value) => __async(this, null, function* () {
       const settings = manager.getSettingsExportData(manager.plugin.settings.includeSensitiveInSettingExport);
       const settingsString = JSON.stringify(settings, null, 2);
@@ -24985,13 +28172,13 @@ function showAdvancedSettings(containerEl, manager) {
       URL.revokeObjectURL(url);
     }));
   });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125036")).setDesc(i18nHelper.getMessage("125115")).addButton((buttonComponent) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125036")).setDesc(i18nHelper.getMessage("125115")).addButton((buttonComponent) => {
     buttonComponent.setIcon("document").setButtonText(i18nHelper.getMessage("125039")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125046"), promise.then(() => {
       }), manager);
     }));
   });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125001")).setDesc(i18nHelper.getMessage("125002")).addToggle((toggleComponent) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125001")).setDesc(i18nHelper.getMessage("125002")).addToggle((toggleComponent) => {
     toggleComponent.setValue(manager.plugin.settings.debugMode).onChange((value) => __async(this, null, function* () {
       manager.plugin.settings.debugMode = value;
       if (value) {
@@ -25002,14 +28189,14 @@ function showAdvancedSettings(containerEl, manager) {
       yield manager.plugin.saveSettings();
     }));
   });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125011")).setDesc(i18nHelper.getMessage("125012")).addButton((buttonComponent) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125011")).setDesc(i18nHelper.getMessage("125012")).addButton((buttonComponent) => {
     buttonComponent.setIcon("reset").setTooltip(i18nHelper.getMessage("125013")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125012"), promise.then(() => {
         manager.resetSetting();
       }), manager);
     }));
   });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125021")).setDesc(i18nHelper.getMessage("125022")).addButton((buttonComponent) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125021")).setDesc(i18nHelper.getMessage("125022")).addButton((buttonComponent) => {
     buttonComponent.setIcon("reset").setTooltip(i18nHelper.getMessage("125022")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125022"), promise.then(() => {
         manager.clearLoginInfo();
@@ -25017,7 +28204,7 @@ function showAdvancedSettings(containerEl, manager) {
       }), manager);
     }));
   });
-  new import_obsidian31.Setting(containerEl).setName(i18nHelper.getMessage("125031")).setDesc(i18nHelper.getMessage("125032")).addButton((buttonComponent) => {
+  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("125031")).setDesc(i18nHelper.getMessage("125032")).addButton((buttonComponent) => {
     buttonComponent.setIcon("reset").setTooltip(i18nHelper.getMessage("125032")).onClick((value) => __async(this, null, function* () {
       showConfirmDialog(i18nHelper.getMessage("125032"), promise.then(() => {
         manager.clearSyncCache();
@@ -25034,19 +28221,19 @@ function showConfirmDialog(message, promise, manager) {
 }
 
 // src/org/wanxp/douban/setting/ArrayDisplayTypeSettingsHelper.ts
-var import_obsidian32 = __toModule(require("obsidian"));
+var import_obsidian34 = __toModule(require("obsidian"));
 function arraySettingDisplayUI(containerEl, manager) {
   arraySettingDisplay(containerEl.createDiv("array-settings"), manager, true);
 }
 function arraySettingDisplay(containerEl, manager, displayExtraListTypeFlag = true) {
   containerEl.empty();
-  const arraySet = new import_obsidian32.Setting(containerEl).setName(i18nHelper.getMessage("120601")).setDesc(i18nHelper.getMessage("120602")).addButton((button) => {
+  const arraySet = new import_obsidian34.Setting(containerEl).setName(i18nHelper.getMessage("120601")).setDesc(i18nHelper.getMessage("120602")).addButton((button) => {
     button.setIcon("plus").setTooltip(i18nHelper.getMessage("120607")).onClick(() => __async(this, null, function* () {
       yield manager.addArraySetting();
       arraySettingDisplay(containerEl, manager, true);
     }));
   });
-  new import_obsidian32.Setting(containerEl);
+  new import_obsidian34.Setting(containerEl);
   arraySettingDisplayItem(containerEl, manager, manager.getArraySetting(DEFAULT_SETTINGS_ARRAY_NAME));
   displayExtraListType(manager, containerEl);
 }
@@ -25054,7 +28241,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   const arrSettingsUI = containerEl.createDiv("array-settings");
   const arrShow = containerEl.createDiv("array-show");
   const typeName = arraySetting.arrayName;
-  const arraySettingItems = new import_obsidian32.Setting(arrSettingsUI).setName(i18nHelper.getMessage("120604") + typeName).setDesc(i18nHelper.getMessage(`120605`) + (typeName == DEFAULT_SETTINGS_ARRAY_NAME ? "" : `(${typeName})`) + `}}`);
+  const arraySettingItems = new import_obsidian34.Setting(arrSettingsUI).setName(i18nHelper.getMessage("120604") + typeName).setDesc(i18nHelper.getMessage(`120605`) + (typeName == DEFAULT_SETTINGS_ARRAY_NAME ? "" : `(${typeName})`) + `}}`);
   if (typeName != DEFAULT_SETTINGS_ARRAY_NAME) {
     arraySettingItems.addButton((button) => {
       button.setIcon("trash").setTooltip(i18nHelper.getMessage("120606")).onClick(() => __async(this, null, function* () {
@@ -25064,7 +28251,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
     });
   }
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124109") });
-  const arrayStart = new import_obsidian32.TextComponent(arrSettingsUI);
+  const arrayStart = new import_obsidian34.TextComponent(arrSettingsUI);
   arrayStart.setPlaceholder(DEFAULT_SETTINGS.arrayStart).setValue(arraySetting.arrayStart).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayStart = value;
     yield manager.updateArraySetting(arraySetting);
@@ -25075,7 +28262,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arrayStartEl.addClass("obsidian_douban_settings_input");
   arrSettingsUI.appendChild(arrayStartEl).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124110") });
-  const arrayElementStart = new import_obsidian32.TextComponent(arrSettingsUI);
+  const arrayElementStart = new import_obsidian34.TextComponent(arrSettingsUI);
   arrayElementStart.setPlaceholder(DEFAULT_SETTINGS.arrayElementStart).setValue(arraySetting.arrayElementStart).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayElementStart = value;
     yield manager.updateArraySetting(arraySetting);
@@ -25086,7 +28273,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arrayElementStartEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   arrSettingsUI.appendChild(arrayElementStartEl).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124111") });
-  const arraySpiltV2 = new import_obsidian32.TextComponent(arrSettingsUI);
+  const arraySpiltV2 = new import_obsidian34.TextComponent(arrSettingsUI);
   arraySpiltV2.setPlaceholder(DEFAULT_SETTINGS.arraySpiltV2).setValue(arraySetting.arraySpiltV2).onChange((value) => __async(this, null, function* () {
     arraySetting.arraySpiltV2 = value;
     yield manager.updateArraySetting(arraySetting);
@@ -25097,7 +28284,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arraySpiltV2El.size = 2;
   arrSettingsUI.appendChild(arraySpiltV2El).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124112") });
-  const arrayElementEnd = new import_obsidian32.TextComponent(arrSettingsUI);
+  const arrayElementEnd = new import_obsidian34.TextComponent(arrSettingsUI);
   arrayElementEnd.setPlaceholder(DEFAULT_SETTINGS.arrayElementEnd).setValue(arraySetting.arrayElementEnd).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayElementEnd = value;
     yield manager.updateArraySetting(arraySetting);
@@ -25108,7 +28295,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
   arrayElementEndEl.size = DEFAULT_SETTINGS_ARRAY_INPUT_SIZE;
   arrSettingsUI.appendChild(arrayElementEndEl).appendText("  ");
   arrSettingsUI.createEl("label", { text: i18nHelper.getMessage("124113") });
-  const arrayEnd = new import_obsidian32.TextComponent(arrSettingsUI);
+  const arrayEnd = new import_obsidian34.TextComponent(arrSettingsUI);
   arrayEnd.setPlaceholder(DEFAULT_SETTINGS.arrayEnd).setValue(arraySetting.arrayEnd).onChange((value) => __async(this, null, function* () {
     arraySetting.arrayEnd = value;
     yield manager.updateArraySetting(arraySetting);
@@ -25122,7 +28309,7 @@ function arraySettingDisplayItem(containerEl, manager, arraySetting) {
 }
 function displayExtraListType(manager, containerEl) {
   manager.settings.arraySettings.forEach((arraySetting) => {
-    new import_obsidian32.Setting(containerEl);
+    new import_obsidian34.Setting(containerEl);
     arraySettingDisplayItem(containerEl, manager, arraySetting);
   });
 }
@@ -25130,11 +28317,11 @@ function showArrayExample(arrShow, manager, arraySetting) {
   arrShow.empty();
   const document2 = new DocumentFragment();
   document2.createDiv("array-show-title").innerHTML = `propertyName:${manager.handleArray(["value1", "value2", "value3"], arraySetting)}`;
-  new import_obsidian32.Setting(arrShow).setName(i18nHelper.getMessage("120603")).setDesc(document2);
+  new import_obsidian34.Setting(arrShow).setName(i18nHelper.getMessage("120603")).setDesc(document2);
 }
 
 // src/org/wanxp/douban/setting/LoginSettingsHelper.ts
-var import_obsidian33 = __toModule(require("obsidian"));
+var import_obsidian36 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/DoubanLoginModel.ts
 var DoubanLoginModel = class {
@@ -25224,6 +28411,352 @@ var DoubanLoginModel = class {
   }
 };
 
+// src/org/wanxp/douban/component/DoubanQrLoginModal.ts
+var import_obsidian35 = __toModule(require("obsidian"));
+
+// src/org/wanxp/utils/DoubanQrLoginUtil.ts
+var DoubanQrLoginStatus;
+(function(DoubanQrLoginStatus2) {
+  DoubanQrLoginStatus2["pending"] = "pending";
+  DoubanQrLoginStatus2["scanned"] = "scanned";
+  DoubanQrLoginStatus2["confirmed"] = "confirmed";
+  DoubanQrLoginStatus2["invalid"] = "invalid";
+  DoubanQrLoginStatus2["cancelled"] = "cancelled";
+  DoubanQrLoginStatus2["unknown"] = "unknown";
+})(DoubanQrLoginStatus || (DoubanQrLoginStatus = {}));
+var DoubanCookieJar = class {
+  constructor() {
+    this.cookies = new Map();
+  }
+  clear() {
+    this.cookies.clear();
+  }
+  update(headers) {
+    const newBid = this.getHeaderValues(headers, "x-douban-newbid")[0];
+    if (newBid) {
+      this.cookies.set("bid", newBid);
+    }
+    this.getHeaderValues(headers, "set-cookie").flatMap((header) => header.split(/\n|,(?=\s*[^;,=\s]+=)/)).forEach((cookieValue) => {
+      const match = cookieValue.match(/^\s*([^=;\s]+)=([^;]*)/);
+      if (match) {
+        this.cookies.set(match[1], match[2]);
+      }
+    });
+  }
+  has(name) {
+    return this.cookies.has(name);
+  }
+  toCookieHeader() {
+    return Array.from(this.cookies.entries()).map(([name, value]) => `${name}=${value}`).join("; ");
+  }
+  getHeaderValues(headers, name) {
+    const key = Object.keys(headers || {}).find((header) => header.toLowerCase() === name.toLowerCase());
+    if (!key) {
+      return [];
+    }
+    const value = headers[key];
+    if (Array.isArray(value)) {
+      return value.filter((item) => item != null).map((item) => String(item));
+    }
+    return value == null ? [] : [String(value)];
+  }
+};
+function parseDoubanQrLoginStatus(payload) {
+  switch (payload == null ? void 0 : payload.login_status) {
+    case "pending":
+      return DoubanQrLoginStatus.pending;
+    case "scan":
+      return DoubanQrLoginStatus.scanned;
+    case "login":
+      return DoubanQrLoginStatus.confirmed;
+    case "invalid":
+      return DoubanQrLoginStatus.invalid;
+    case "cancel":
+      return DoubanQrLoginStatus.cancelled;
+    default:
+      return DoubanQrLoginStatus.unknown;
+  }
+}
+function getDoubanQrContent(code, imageUrl) {
+  if (imageUrl) {
+    try {
+      const pathname = new URL(imageUrl, "https://accounts.douban.com/passport/login").pathname;
+      const prefix = "/dae/qrgen/v2/";
+      if (pathname.startsWith(prefix) && pathname.endsWith(".png")) {
+        return decodeURIComponent(pathname.substring(prefix.length, pathname.length - 4));
+      }
+    } catch (_) {
+    }
+  }
+  return `https://accounts.douban.com/passport/qrlogin?code=${encodeURIComponent(code)}`;
+}
+
+// src/org/wanxp/douban/component/DoubanQrLoginModal.ts
+var QRCode = __toModule(require_browser2());
+var LOGIN_PAGE = "https://accounts.douban.com/passport/login";
+var QR_CODE_URL = "https://accounts.douban.com/j/mobile/login/qrlogin_code";
+var QR_STATUS_URL = "https://accounts.douban.com/j/mobile/login/qrlogin_status";
+var POLL_INTERVAL_MS = 3e3;
+var MAX_POLL_COUNT = 120;
+var MAX_CONSECUTIVE_ERRORS = 3;
+var DoubanQrLoginModal = class extends import_obsidian35.Modal {
+  constructor(app, settingsManager, onLoginSuccess) {
+    super(app);
+    this.cookies = new DoubanCookieJar();
+    this.qrCode = "";
+    this.pollTimer = null;
+    this.pollCount = 0;
+    this.consecutiveErrors = 0;
+    this.polling = false;
+    this.closed = false;
+    this.sessionId = 0;
+    this.settingsManager = settingsManager;
+    this.onLoginSuccess = onLoginSuccess;
+  }
+  onOpen() {
+    this.closed = false;
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("obsidian_douban_qr_login");
+    contentEl.createEl("h2", { text: i18nHelper.getMessage("100141") });
+    contentEl.createEl("p", { text: i18nHelper.getMessage("100142") });
+    const imageContainer = contentEl.createDiv("obsidian_douban_qr_image_container");
+    this.qrImageEl = imageContainer.createEl("img", {
+      attr: { alt: i18nHelper.getMessage("100141") }
+    });
+    this.qrImageEl.addEventListener("error", () => {
+      if (!this.closed) {
+        this.setStatus(i18nHelper.getMessage("100149"), true);
+      }
+    });
+    this.qrImageEl.style.display = "none";
+    this.statusEl = contentEl.createDiv("obsidian_douban_qr_status");
+    const controls = contentEl.createDiv("obsidian_douban_qr_controls");
+    this.refreshButton = new import_obsidian35.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("100150")).onClick(() => void this.loadQrCode());
+    new import_obsidian35.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
+    void this.loadQrCode();
+  }
+  onClose() {
+    this.closed = true;
+    this.sessionId++;
+    this.stopPolling();
+    this.contentEl.empty();
+  }
+  loadQrCode() {
+    return __async(this, null, function* () {
+      var _a5;
+      this.stopPolling();
+      const sessionId = ++this.sessionId;
+      this.cookies.clear();
+      this.qrCode = "";
+      this.pollCount = 0;
+      this.consecutiveErrors = 0;
+      this.polling = false;
+      this.qrImageEl.style.display = "none";
+      this.refreshButton.setDisabled(true);
+      this.setStatus(i18nHelper.getMessage("100143"));
+      try {
+        const response = yield this.request(QR_CODE_URL, "POST", sessionId);
+        const payload = (_a5 = response.textJson) == null ? void 0 : _a5.payload;
+        if (!(payload == null ? void 0 : payload.code) || !(payload == null ? void 0 : payload.img)) {
+          throw new Error("\u8C46\u74E3\u4E8C\u7EF4\u7801\u54CD\u5E94\u7F3A\u5C11 code \u6216\u56FE\u7247\u5730\u5740");
+        }
+        if (this.closed || sessionId !== this.sessionId) {
+          return;
+        }
+        this.qrCode = String(payload.code);
+        this.qrImageEl.src = yield this.renderQrImage(this.qrCode, String(payload.img), sessionId);
+        if (sessionId !== this.sessionId || this.closed) {
+          return;
+        }
+        this.qrImageEl.style.display = "";
+        this.setStatus(i18nHelper.getMessage("100144"));
+        this.schedulePolling(sessionId);
+      } catch (error) {
+        if (sessionId !== this.sessionId || this.closed) {
+          return;
+        }
+        this.settingsManager.debug("\u914D\u7F6E\u754C\u9762:\u4E8C\u7EF4\u7801\u52A0\u8F7D\u5931\u8D25");
+        this.setStatus(i18nHelper.getMessage("100149"), true);
+      } finally {
+        if (sessionId === this.sessionId && !this.closed) {
+          this.refreshButton.setDisabled(false);
+        }
+      }
+    });
+  }
+  schedulePolling(sessionId) {
+    if (this.closed || !this.qrCode || sessionId !== this.sessionId) {
+      return;
+    }
+    this.pollTimer = window.setTimeout(() => {
+      void this.pollLoginStatus(sessionId);
+    }, POLL_INTERVAL_MS);
+  }
+  pollLoginStatus(sessionId) {
+    return __async(this, null, function* () {
+      if (this.closed || !this.qrCode || this.polling || sessionId !== this.sessionId) {
+        return;
+      }
+      if (++this.pollCount > MAX_POLL_COUNT) {
+        this.setStatus(i18nHelper.getMessage("100147"), true);
+        return;
+      }
+      this.polling = true;
+      let continuePolling = false;
+      try {
+        const response = yield this.request(`${QR_STATUS_URL}?code=${encodeURIComponent(this.qrCode)}`, "GET", sessionId);
+        const responseJson = response.textJson;
+        if (!responseJson || responseJson.status !== "success") {
+          throw new Error("\u8C46\u74E3\u4E8C\u7EF4\u7801\u72B6\u6001\u54CD\u5E94\u5F02\u5E38");
+        }
+        this.consecutiveErrors = 0;
+        const loginStatus = parseDoubanQrLoginStatus(responseJson.payload);
+        switch (loginStatus) {
+          case DoubanQrLoginStatus.pending:
+            this.setStatus(i18nHelper.getMessage("100144"));
+            continuePolling = true;
+            break;
+          case DoubanQrLoginStatus.scanned:
+            this.setStatus(i18nHelper.getMessage("100145"));
+            continuePolling = true;
+            break;
+          case DoubanQrLoginStatus.confirmed:
+            this.setStatus(i18nHelper.getMessage("100152"));
+            yield this.completeLogin(sessionId);
+            break;
+          case DoubanQrLoginStatus.invalid:
+            this.setStatus(i18nHelper.getMessage("100147"), true);
+            break;
+          case DoubanQrLoginStatus.cancelled:
+            this.setStatus(i18nHelper.getMessage("100148"), true);
+            break;
+          default:
+            continuePolling = true;
+        }
+      } catch (error) {
+        if (sessionId !== this.sessionId || this.closed) {
+          return;
+        }
+        this.consecutiveErrors++;
+        this.settingsManager.debug(`\u914D\u7F6E\u754C\u9762:\u4E8C\u7EF4\u7801\u72B6\u6001\u67E5\u8BE2\u5931\u8D25:${this.safeError(error)}`);
+        if (this.consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          this.setStatus(i18nHelper.getMessage("100149"), true);
+        } else {
+          continuePolling = true;
+        }
+      } finally {
+        this.polling = false;
+        if (continuePolling && sessionId === this.sessionId) {
+          this.schedulePolling(sessionId);
+        }
+      }
+    });
+  }
+  completeLogin(sessionId) {
+    return __async(this, null, function* () {
+      if (sessionId !== this.sessionId || this.closed) {
+        return;
+      }
+      const cookie = this.cookies.toCookieHeader();
+      if (!this.cookies.has("dbcl2") || !cookie) {
+        this.setStatus(i18nHelper.getMessage("100153"), true);
+        return;
+      }
+      let user;
+      try {
+        user = yield this.settingsManager.plugin.userComponent.loginCookie(cookie);
+      } catch (error) {
+        this.settingsManager.debug(`\u914D\u7F6E\u754C\u9762:\u626B\u7801\u51ED\u8BC1\u5DF2\u83B7\u53D6\uFF0C\u7528\u6237\u8D44\u6599\u9A8C\u8BC1\u5931\u8D25:${this.safeError(error)}`);
+      }
+      if (sessionId !== this.sessionId || this.closed) {
+        return;
+      }
+      let verified = !!(user == null ? void 0 : user.id) && !!(user == null ? void 0 : user.login);
+      if (!verified) {
+        user = yield this.settingsManager.plugin.userComponent.acceptQrLoginCookie(cookie);
+        verified = false;
+      }
+      if (!(user == null ? void 0 : user.login)) {
+        this.setStatus(i18nHelper.getMessage("100153"), true);
+        return;
+      }
+      const message = i18nHelper.getMessage(verified ? "100146" : "100154");
+      this.setStatus(message);
+      new import_obsidian35.Notice(message);
+      this.close();
+      this.onLoginSuccess();
+    });
+  }
+  request(url, method, sessionId) {
+    return __async(this, null, function* () {
+      const response = yield HttpUtil.httpRequest(url, {
+        Accept: "application/json, text/plain, */*",
+        "Cache-Control": "no-cache",
+        "Content-Type": "application/x-www-form-urlencoded",
+        Referer: LOGIN_PAGE,
+        "X-Requested-With": "XMLHttpRequest"
+      }, this.settingsManager, {
+        method,
+        body: method === "POST" ? "" : void 0,
+        timeoutMs: 3e4
+      });
+      if (sessionId !== this.sessionId || this.closed) {
+        throw new Error("\u4E8C\u7EF4\u7801\u767B\u5F55\u4F1A\u8BDD\u5DF2\u7ED3\u675F");
+      }
+      if (this.isDoubanUrl(url)) {
+        this.cookies.update(response.headers);
+      }
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`\u8C46\u74E3\u4E8C\u7EF4\u7801\u8BF7\u6C42\u5931\u8D25\uFF1AHTTP ${response.status}`);
+      }
+      return response;
+    });
+  }
+  isDoubanUrl(url) {
+    try {
+      const hostname = new URL(url).hostname.replace(/^\./, "").toLowerCase();
+      return hostname === "douban.com" || hostname.endsWith(".douban.com");
+    } catch (_) {
+      return false;
+    }
+  }
+  renderQrImage(code, imageUrl, sessionId) {
+    return __async(this, null, function* () {
+      const content = getDoubanQrContent(code, imageUrl);
+      const dataUrl = yield QRCode.toDataURL(content, {
+        errorCorrectionLevel: "M",
+        margin: 2,
+        width: 280,
+        color: {
+          dark: "#000000",
+          light: "#ffffff"
+        }
+      });
+      if (sessionId !== this.sessionId || this.closed) {
+        throw new Error("\u4E8C\u7EF4\u7801\u767B\u5F55\u4F1A\u8BDD\u5DF2\u7ED3\u675F");
+      }
+      return dataUrl;
+    });
+  }
+  stopPolling() {
+    if (this.pollTimer != null) {
+      window.clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+  setStatus(message, error = false) {
+    if (!this.statusEl || this.closed) {
+      return;
+    }
+    this.statusEl.setText(message);
+    this.statusEl.toggleClass("has_error", error);
+  }
+  safeError(error) {
+    return (error instanceof Error ? error.message : String(error)).replace(/([?&]code=)[^&\s]+/gi, "$1<redacted>").replace(/(dbcl2=)[^;\s]+/gi, "$1<redacted>");
+  }
+};
+
 // src/org/wanxp/douban/setting/LoginSettingsHelper.ts
 function constructLoginUI(containerEl, manager) {
   const userComponent = manager.plugin.userComponent;
@@ -25244,7 +28777,7 @@ function constructDoubanTokenSettingsUI(containerEl, manager) {
   containerEl.empty();
   let login = manager.plugin.userComponent.isLogin();
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u5C55\u793A\u8C46\u74E3\u72B6\u6001:${login ? "\u5DF2\u767B\u5F55" : "\u672A\u767B\u5F55"}`);
-  if (import_obsidian33.Platform.isDesktopApp) {
+  if (import_obsidian36.Platform.isDesktopApp) {
     if (login) {
       constructHasLoginSettingsUI(containerEl, manager);
     } else {
@@ -25262,7 +28795,7 @@ function constructLoginSettingsUI(containerEl, manager) {
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u672A\u767B\u5F55-\u5C55\u793A\u767B\u5F55\u6309\u94AE`);
   let loginSetting = containerEl.createDiv("login-button");
   let loginCookie = containerEl.createDiv("login-button-cookie");
-  new import_obsidian33.Setting(loginSetting).setName(i18nHelper.getMessage("100131")).addButton((button) => {
+  new import_obsidian36.Setting(loginSetting).setName(i18nHelper.getMessage("100131")).addButton((button) => {
     return button.setButtonText(i18nHelper.getMessage("100130")).onClick(() => __async(this, null, function* () {
       button.setDisabled(true);
       manager.debug(`\u914D\u7F6E\u754C\u9762:\u70B9\u51FB\u767B\u5F55\u6309\u94AE`);
@@ -25270,7 +28803,12 @@ function constructLoginSettingsUI(containerEl, manager) {
       yield loginModel.doLogin();
     }));
   });
-  const loginCookieSetting = new import_obsidian33.Setting(loginSetting).setName(i18nHelper.getMessage("100133"));
+  new import_obsidian36.Setting(loginSetting).setName(i18nHelper.getMessage("100140")).addButton((button) => {
+    return button.setButtonText(i18nHelper.getMessage("100140")).setCta().onClick(() => {
+      new DoubanQrLoginModal(manager.plugin.app, manager, () => constructDoubanTokenSettingsUI(containerEl, manager)).open();
+    });
+  });
+  const loginCookieSetting = new import_obsidian36.Setting(loginSetting).setName(i18nHelper.getMessage("100133"));
   loginCookieSetting.addButton((button) => {
     loginCookieSetting.descEl.appendChild(createFragment((frag) => {
       frag.appendText(i18nHelper.getMessage("100134"));
@@ -25291,7 +28829,7 @@ function constructLoginSettingsUI(containerEl, manager) {
 }
 function constructLoginCookieSettingsUI(containerEl, parentContainerEl, manager) {
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u767B\u5F55\u5F02\u5E38\u5904\u7406\u6309\u94AE-\u5C55\u793ACookie\u8F93\u5165\u6846`);
-  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100136")).setClass("obsidian_douban_settings_cookie_login").addTextArea((text3) => {
+  new import_obsidian36.Setting(containerEl).setName(i18nHelper.getMessage("100136")).setClass("obsidian_douban_settings_cookie_login").addTextArea((text3) => {
     text3.onChange((value) => manager.updateCookieTemp(value));
     return text3;
   }).addExtraButton((button) => {
@@ -25315,12 +28853,16 @@ function constructLoginCookieSettingsUI(containerEl, parentContainerEl, manager)
 function constructHasLoginSettingsUI(containerEl, manager) {
   const user = manager.plugin.userComponent.getUser();
   let userDom = new DocumentFragment();
-  userDom.createDiv().innerHTML = `${i18nHelper.getMessage("100120")}<br>
+  if (user.id) {
+    userDom.createDiv().innerHTML = `${i18nHelper.getMessage("100120")}<br>
 ${i18nHelper.getMessage("100123")}: <a href="https://www.douban.com/people/${user.id}/">${user.id}</a><br>
 		${i18nHelper.getMessage("100124")}: ${user.name}<br>
 ${i18nHelper.getMessage("100125")}`;
+  } else {
+    userDom.createDiv().setText(i18nHelper.getMessage("100154"));
+  }
   manager.debug(`\u914D\u7F6E\u754C\u9762:\u5C55\u793A\u8C46\u74E3\u767B\u5F55\u4FE1\u606F:id:${StringUtil.confuse(user.id)}, \u7528\u6237\u540D:${StringUtil.confuse(user.name)}`);
-  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
+  new import_obsidian36.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
     return button.setButtonText(i18nHelper.getMessage("100128")).setCta().onClick(() => __async(this, null, function* () {
       button.setDisabled(true);
       manager.debug(`\u914D\u7F6E\u754C\u9762:\u70B9\u51FB\u9000\u51FA\u767B\u5F55\u6309\u94AE\uFF0C\u51C6\u5907\u9000\u51FA\u767B\u5F55`);
@@ -25331,16 +28873,29 @@ ${i18nHelper.getMessage("100125")}`;
   });
 }
 function showMobileLogin(containerEl, manager) {
-  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(i18nHelper.getMessage("100129"));
+  const loginButtons = containerEl.createDiv("login-button");
+  const cookieContainer = containerEl.createDiv("login-button-cookie");
+  new import_obsidian36.Setting(loginButtons).setName(i18nHelper.getMessage("100126")).setDesc(i18nHelper.getMessage("100129")).addButton((button) => {
+    return button.setButtonText(i18nHelper.getMessage("100140")).setCta().onClick(() => {
+      new DoubanQrLoginModal(manager.plugin.app, manager, () => constructDoubanTokenSettingsUI(containerEl, manager)).open();
+    });
+  });
+  new import_obsidian36.Setting(loginButtons).setName(i18nHelper.getMessage("100135")).addButton((button) => {
+    return button.setButtonText(i18nHelper.getMessage("100135")).onClick(() => constructLoginCookieSettingsUI(cookieContainer, containerEl, manager));
+  });
 }
 function showMobileLogout(containerEl, manager) {
   const user = manager.plugin.userComponent.getUser();
   let userDom = new DocumentFragment();
-  userDom.createDiv().innerHTML = `${i18nHelper.getMessage("100120")}<br>
+  if (user.id) {
+    userDom.createDiv().innerHTML = `${i18nHelper.getMessage("100120")}<br>
 ${i18nHelper.getMessage("100123")}: <a href="https://www.douban.com/people/${user.id}/">${user.id}</a><br>
 		${i18nHelper.getMessage("100124")}: ${user.name}<br>
 ${i18nHelper.getMessage("100125")}`;
-  new import_obsidian33.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
+  } else {
+    userDom.createDiv().setText(i18nHelper.getMessage("100154"));
+  }
+  new import_obsidian36.Setting(containerEl).setName(i18nHelper.getMessage("100126")).setDesc(userDom).addButton((button) => {
     return button.setButtonText(i18nHelper.getMessage("100128")).setCta().onClick(() => __async(this, null, function* () {
       button.setDisabled(true);
       manager.updateSetting("loginCookiesContent", "");
@@ -25351,7 +28906,7 @@ ${i18nHelper.getMessage("100125")}`;
 }
 
 // src/org/wanxp/douban/setting/DoubanSettingTab.ts
-var DoubanSettingTab = class extends import_obsidian34.PluginSettingTab {
+var DoubanSettingTab = class extends import_obsidian37.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -25397,15 +28952,15 @@ var DoubanSettingTab = class extends import_obsidian34.PluginSettingTab {
 };
 
 // src/org/wanxp/douban/component/DoubanSyncModal.ts
-var import_obsidian37 = __toModule(require("obsidian"));
+var import_obsidian40 = __toModule(require("obsidian"));
 var import_timers = __toModule(require("timers"));
 
 // src/org/wanxp/utils/VaultUtil.ts
-var import_obsidian35 = __toModule(require("obsidian"));
+var import_obsidian38 = __toModule(require("obsidian"));
 function scanVaultForDoubanIds(app, folderPath) {
   const result = new Map();
   const allFiles = app.vault.getMarkdownFiles();
-  const normalizedPath = folderPath ? (0, import_obsidian35.normalizePath)(folderPath) : "";
+  const normalizedPath = folderPath ? (0, import_obsidian38.normalizePath)(folderPath) : "";
   const targetFiles = normalizedPath ? allFiles.filter((file) => file.path.startsWith(normalizedPath)) : allFiles;
   for (const file of targetFiles) {
     try {
@@ -25448,6 +29003,7 @@ var SyncStatusHolder = class {
       [SyncItemStatus.unHandle, 0]
     ]);
     this.existingDoubanIdsCache = null;
+    this.existingDoubanIdByPathCache = null;
     this.message = "";
     this.syncConfig = syncConfig;
     this.app = app;
@@ -25540,6 +29096,7 @@ var SyncStatusHolder = class {
         return;
       }
       this.existingDoubanIdsCache = new Map();
+      this.existingDoubanIdByPathCache = new Map();
       const files = this.app.vault.getMarkdownFiles();
       const normalizedPath = this.normalizePath(dataFilePath);
       for (const file of files) {
@@ -25555,6 +29112,7 @@ var SyncStatusHolder = class {
           const doubanId = extractDoubanId(frontmatter);
           if (doubanId) {
             this.existingDoubanIdsCache.set(doubanId, file.path);
+            this.existingDoubanIdByPathCache.set(this.normalizeFilePath(file.path), doubanId);
           }
         } catch (e) {
         }
@@ -25590,11 +29148,13 @@ var SyncStatusHolder = class {
     return normalizedFilePath === targetPathWithoutSlash;
   }
   addToExistingCache(doubanId, filePath) {
+    var _a5;
     if (!(doubanId == null ? void 0 : doubanId.trim()) || !this.existingDoubanIdsCache) {
       return;
     }
     const normalizedId = String(doubanId).trim();
     this.existingDoubanIdsCache.set(normalizedId, filePath);
+    (_a5 = this.existingDoubanIdByPathCache) == null ? void 0 : _a5.set(this.normalizeFilePath(filePath), normalizedId);
   }
   getExistingFilePath(doubanId) {
     if (!(doubanId == null ? void 0 : doubanId.trim()) || !this.existingDoubanIdsCache) {
@@ -25604,11 +29164,26 @@ var SyncStatusHolder = class {
     return this.existingDoubanIdsCache.get(normalizedId) || null;
   }
   removeFromExistingCache(doubanId) {
+    var _a5;
     if (!(doubanId == null ? void 0 : doubanId.trim()) || !this.existingDoubanIdsCache) {
       return;
     }
     const normalizedId = String(doubanId).trim();
+    const filePath = this.existingDoubanIdsCache.get(normalizedId);
+    if (filePath) {
+      (_a5 = this.existingDoubanIdByPathCache) == null ? void 0 : _a5.delete(this.normalizeFilePath(filePath));
+    }
     this.existingDoubanIdsCache.delete(normalizedId);
+  }
+  getDoubanIdForFilePath(filePath) {
+    if (!filePath || !this.existingDoubanIdByPathCache) {
+      return null;
+    }
+    const normalizedPath = this.normalizeFilePath(filePath);
+    return this.existingDoubanIdByPathCache.get(normalizedPath) || null;
+  }
+  normalizeFilePath(filePath) {
+    return String(filePath || "").replace(/\\/g, "/").replace(/^\/+/, "");
   }
   getKey(syncConfig) {
     const type = syncConfig.syncType ? syncConfig.syncType : "";
@@ -26135,7 +29710,17 @@ var DoubanAbstractListHandler = class {
   }
   getPageList(url, context) {
     return __async(this, null, function* () {
-      return DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager).then(load).then((data2) => this.parseSubjectFromHtml(data2, context)).catch((e) => log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e));
+      var _a5, _b;
+      try {
+        const html3 = yield DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager);
+        DoubanPageGuard.assertCanParse(html3);
+        return this.parseSubjectFromHtml(load(html3), context);
+      } catch (e) {
+        const detail = DoubanPageGuard.describeError(e);
+        (_b = (_a5 = context.plugin.statusHolder) == null ? void 0 : _a5.syncStatus) == null ? void 0 : _b.setMessage(detail);
+        log.error(i18nHelper.getMessage("130101").replace("{0}", detail), e);
+        return SearchPage.emptyWithNoType();
+      }
     });
   }
   parseSubjectFromHtml(dataHtml, context) {
@@ -26290,8 +29875,8 @@ var SyncPreviewHandler = class {
 };
 
 // src/org/wanxp/douban/component/SyncPreviewModal.ts
-var import_obsidian36 = __toModule(require("obsidian"));
-var SyncPreviewModal = class extends import_obsidian36.Modal {
+var import_obsidian39 = __toModule(require("obsidian"));
+var SyncPreviewModal = class extends import_obsidian39.Modal {
   constructor(app, result, onConfirm) {
     super(app);
     this.result = result;
@@ -26328,18 +29913,18 @@ var SyncPreviewModal = class extends import_obsidian36.Modal {
     buttonRow.style.gap = "8px";
     buttonRow.style.marginTop = "12px";
     if (this.onConfirm) {
-      new import_obsidian36.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("130310")).setCta().onClick(() => __async(this, null, function* () {
+      new import_obsidian39.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("130310")).setCta().onClick(() => __async(this, null, function* () {
         var _a5;
         yield (_a5 = this.onConfirm) == null ? void 0 : _a5.call(this);
         this.close();
       }));
     }
-    new import_obsidian36.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
+    new import_obsidian39.ButtonComponent(buttonRow).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close());
   }
 };
 
 // src/org/wanxp/douban/component/DoubanSyncModal.ts
-var DoubanSyncModal = class extends import_obsidian37.Modal {
+var DoubanSyncModal = class extends import_obsidian40.Modal {
   constructor(app, plugin, context) {
     super(app);
     this.plugin = plugin;
@@ -26365,11 +29950,11 @@ var DoubanSyncModal = class extends import_obsidian37.Modal {
     const sliderDiv = contentEl.createEl("div");
     sliderDiv.addClass("obsidian_douban_sync_slider");
     const controls = contentEl.createDiv("controls");
-    const stopButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110009")).onClick(() => __async(this, null, function* () {
+    const stopButton = new import_obsidian40.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110009")).onClick(() => __async(this, null, function* () {
       this.close();
       yield this.plugin.statusHolder.stopSync();
     }));
-    const backgroundButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110010")).onClick(() => {
+    const backgroundButton = new import_obsidian40.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110010")).onClick(() => {
       this.close();
     });
     this.showProgress(sliderDiv, backgroundButton, stopButton);
@@ -26381,7 +29966,7 @@ var DoubanSyncModal = class extends import_obsidian37.Modal {
   }
   showProgress(sliderDiv, backgroundButton, stopButton) {
     sliderDiv.empty();
-    new import_obsidian37.Setting(sliderDiv);
+    new import_obsidian40.Setting(sliderDiv);
     let progress = sliderDiv.createDiv("progress");
     const { syncStatus } = this.plugin.statusHolder;
     if (!this.plugin.statusHolder.syncStarted) {
@@ -26445,10 +30030,10 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     };
     this.showConfigPan(contentEl.createDiv("config"), syncConfig, false);
     const controls = contentEl.createDiv("controls");
-    const cancelButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+    const cancelButton = new import_obsidian40.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
       this.close();
     });
-    const previewButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130300")).onClick(() => __async(this, null, function* () {
+    const previewButton = new import_obsidian40.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130300")).onClick(() => __async(this, null, function* () {
       if (!(yield this.plugin.checkLogin(this.context))) {
         return;
       }
@@ -26459,7 +30044,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
         previewButton.setDisabled(false);
       }
     }));
-    const syncButton = new import_obsidian37.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110007")).onClick(() => __async(this, null, function* () {
+    const syncButton = new import_obsidian40.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110007")).onClick(() => __async(this, null, function* () {
       if (!(yield this.plugin.checkLogin(this.context))) {
         return;
       }
@@ -26486,7 +30071,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
         }) : void 0).open();
       } catch (error) {
         log.error("Failed to generate sync preview", error);
-        new import_obsidian37.Notice(i18nHelper.getMessage("130311"));
+        new import_obsidian40.Notice(i18nHelper.getMessage("130311"));
       }
     });
   }
@@ -26508,7 +30093,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     context.syncActive = true;
   }
   showConfigPan(contentEl, config, disable) {
-    new import_obsidian37.Setting(contentEl);
+    new import_obsidian40.Setting(contentEl);
     this.showTypeDropdown(contentEl, config, disable);
     this.showCondition(contentEl, config, disable);
     this.showUpdateAllConfig(contentEl, config, disable);
@@ -26560,7 +30145,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     }
   }
   showTypeDropdown(containerEl, config, disable) {
-    const settings = new import_obsidian37.Setting(containerEl);
+    const settings = new import_obsidian40.Setting(containerEl);
     const scopeSelections = containerEl.createDiv("scope-selection");
     settings.setName(i18nHelper.getMessage("110030")).addDropdown((dropdown) => {
       dropdown.addOptions(SyncTypeRecords).setValue(config.syncType).onChange((value) => {
@@ -26584,7 +30169,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
   }
   showScopeDropdown(containerEl, scopeSelections, config, disable) {
     containerEl.empty();
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110032")).addDropdown((dropdown) => {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("110032")).addDropdown((dropdown) => {
       dropdown.addOptions(scopeSelections);
       dropdown.setValue(config.scope).onChange((value) => __async(this, null, function* () {
         config.scope = value;
@@ -26592,14 +30177,14 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     }).setDisabled(disable);
   }
   showOutiFleName(containerEl, config, disable) {
-    const dataFilePathSetting = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121601")).setDesc(i18nHelper.getMessage("121602")).addText((textField) => {
+    const dataFilePathSetting = new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121601")).setDesc(i18nHelper.getMessage("121602")).addText((textField) => {
       textField.setPlaceholder(i18nHelper.getMessage("121602")).setValue(config.dataFileNamePath).onChange((value) => __async(this, null, function* () {
         config.dataFileNamePath = value;
       }));
     }).setDisabled(disable);
   }
   showOutputFolderSelections(containerEl, config, disable) {
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121501")).setDesc(i18nHelper.getMessage("121502")).addSearch((search) => __async(this, null, function* () {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121501")).setDesc(i18nHelper.getMessage("121502")).addSearch((search) => __async(this, null, function* () {
       new PathSuggest(this.app, search.inputEl, "folder");
       search.setValue(config.dataFilePath).setPlaceholder(i18nHelper.getMessage("121503")).onChange((value) => __async(this, null, function* () {
         config.dataFilePath = value;
@@ -26609,7 +30194,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
   showTemplateFileSelectionSetting(containerEl, config, disable) {
     containerEl.empty();
     const key = this.getKey(config.syncType);
-    let setting = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121101")).setDesc(i18nHelper.getMessage("121102")).addSearch((search) => __async(this, null, function* () {
+    let setting = new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121101")).setDesc(i18nHelper.getMessage("121102")).addSearch((search) => __async(this, null, function* () {
       new PathSuggest(this.app, search.inputEl, "file");
       search.setValue(config.templateFile).onChange((value) => __async(this, null, function* () {
         config.templateFile = value;
@@ -26630,7 +30215,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     return supportType + "TemplateFile";
   }
   showForceUpdateConfig(containerEl, config, disable, onToggle) {
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110031")).setDesc(i18nHelper.getMessage("500110")).addToggle((toggleComponent) => {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("110031")).setDesc(i18nHelper.getMessage("500110")).addToggle((toggleComponent) => {
       toggleComponent.setValue(config.force).onChange((value) => __async(this, null, function* () {
         config.force = value;
         onToggle && onToggle();
@@ -26638,7 +30223,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     }).setDisabled(disable);
   }
   showInheritOldFieldsConfig(containerEl, config, disable, onToggle) {
-    const setting = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110097")).setDesc(i18nHelper.getMessage("110098")).setDisabled(disable || !config.force);
+    const setting = new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("110097")).setDesc(i18nHelper.getMessage("110098")).setDisabled(disable || !config.force);
     setting.addToggle((toggleComponent) => {
       toggleComponent.setValue(!!config.inheritOldFields).onChange((value) => __async(this, null, function* () {
         config.inheritOldFields = value;
@@ -26647,7 +30232,7 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     });
   }
   showAttachmentsFileConfig(containerEl, config, disable) {
-    const settings = new import_obsidian37.Setting(containerEl);
+    const settings = new import_obsidian40.Setting(containerEl);
     let attachmentFileEl = containerEl.createDiv("attachment-file-path-selection");
     settings.setName(i18nHelper.getMessage("121430")).setDesc(i18nHelper.getMessage("121431")).addToggle((toggleComponent) => {
       toggleComponent.setValue(config.cacheImage).onChange((value) => __async(this, null, function* () {
@@ -26662,31 +30247,31 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
     if (!show) {
       return;
     }
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121432")).setDesc(i18nHelper.getMessage("121433")).addSearch((search) => __async(this, null, function* () {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121432")).setDesc(i18nHelper.getMessage("121433")).addSearch((search) => __async(this, null, function* () {
       new PathSuggest(this.plugin.app, search.inputEl, "folder");
       search.setValue(config.attachmentPath).setPlaceholder(i18nHelper.getMessage("121434")).onChange((value) => __async(this, null, function* () {
         config.attachmentPath = value;
       }));
     })).setDisabled(disable);
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121452")).setDesc(i18nHelper.getMessage("121453")).addSearch((search) => __async(this, null, function* () {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121452")).setDesc(i18nHelper.getMessage("121453")).addSearch((search) => __async(this, null, function* () {
       new PathSuggest(this.plugin.app, search.inputEl, "folder");
       search.setValue(config.attachmentFileName).setPlaceholder(i18nHelper.getMessage("121454")).onChange((value) => __async(this, null, function* () {
         config.attachmentFileName = value;
       }));
     })).setDisabled(disable);
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121438")).addToggle((toggleComponent) => {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121435")).setDesc(i18nHelper.getMessage("121438")).addToggle((toggleComponent) => {
       toggleComponent.setValue(config.cacheHighQuantityImage).onChange((value) => __async(this, null, function* () {
         config.cacheHighQuantityImage = value;
       }));
     }).setDisabled(disable);
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("121470")).setDesc(i18nHelper.getMessage("121471")).addToggle((toggleComponent) => {
       toggleComponent.setValue(config.overwriteCoverImage).onChange((value) => __async(this, null, function* () {
         config.overwriteCoverImage = value;
       }));
     }).setDisabled(disable);
   }
   showUpdateAllConfig(containerEl, config, disable) {
-    new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110039")).setDesc(i18nHelper.getMessage("110040")).addToggle((toggleComponent) => {
+    new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("110039")).setDesc(i18nHelper.getMessage("110040")).addToggle((toggleComponent) => {
       toggleComponent.setTooltip(i18nHelper.getMessage("110040")).setValue(config.incrementalUpdate).onChange((value) => __async(this, null, function* () {
         config.incrementalUpdate = value;
       }));
@@ -26698,9 +30283,9 @@ ${syncStatus.getHandle() == 0 ? "..." : i18nHelper.getMessage("110042") + ":" + 
 };
 function showConditionItem(containerEl, manager, config, disable) {
   containerEl.empty();
-  const condition = new import_obsidian37.Setting(containerEl).setName(i18nHelper.getMessage("110070"));
+  const condition = new import_obsidian40.Setting(containerEl).setName(i18nHelper.getMessage("110070"));
   const conditionDesc = condition.descEl.createDiv("sync-douban-condition-desc");
-  new import_obsidian37.DropdownComponent(conditionDesc).addOptions(SyncConditionTypeRecords).setValue(config.syncConditionType).onChange((value) => {
+  new import_obsidian40.DropdownComponent(conditionDesc).addOptions(SyncConditionTypeRecords).setValue(config.syncConditionType).onChange((value) => {
     config.syncConditionType = value;
     showConditionItem(containerEl, manager, config, disable);
   }).setDisabled(disable);
@@ -26717,7 +30302,7 @@ function showCustomInputCount(containerEl, config, disable) {
   containerEl.createEl("span", { text: "   " });
   containerEl.createEl("span", { text: i18nHelper.getMessage("110077") });
   containerEl.createEl("span", { text: i18nHelper.getMessage("110078") });
-  const fromField = new import_obsidian37.TextComponent(containerEl);
+  const fromField = new import_obsidian40.TextComponent(containerEl);
   fromField.setPlaceholder(i18nHelper.getMessage("110080")).setValue(config.syncConditionCountFromValue + "").onChange((value) => __async(this, null, function* () {
     if (!value) {
       config.syncConditionCountFromValue = 1;
@@ -26733,13 +30318,13 @@ function showCustomInputCount(containerEl, config, disable) {
   fromEl.addClass("obsidian_douban_settings_input");
   fromEl.style.width = "20%";
   containerEl.appendChild(fromEl);
-  const lang2 = window.localStorage.getItem("language") || "en";
-  if (lang2 === "zh" || lang2 === "zh-CN" || lang2 === "zh-TW") {
+  const lang = window.localStorage.getItem("language") || "en";
+  if (lang === "zh" || lang === "zh-CN" || lang === "zh-TW") {
     containerEl.createEl("span", { text: i18nHelper.getMessage("110073") });
   }
   containerEl.createEl("span", { text: i18nHelper.getMessage("110079") });
   containerEl.createEl("span", { text: i18nHelper.getMessage("110078") });
-  const toField = new import_obsidian37.TextComponent(containerEl);
+  const toField = new import_obsidian40.TextComponent(containerEl);
   toField.setPlaceholder(i18nHelper.getMessage("110080")).setValue(config.syncConditionCountToValue + "").onChange((value) => __async(this, null, function* () {
     if (!value) {
       config.syncConditionCountToValue = 30;
@@ -26755,16 +30340,16 @@ function showCustomInputCount(containerEl, config, disable) {
   toEl.addClass("obsidian_douban_settings_input");
   toEl.style.width = "20%";
   containerEl.appendChild(toEl);
-  if (lang2 === "zh" || lang2 === "zh-CN" || lang2 === "zh-TW") {
+  if (lang === "zh" || lang === "zh-CN" || lang === "zh-TW") {
     containerEl.createEl("span", { text: i18nHelper.getMessage("110073") });
   }
   containerEl.createEl("span", { text: "  " });
-  const buttopn = new import_obsidian37.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
+  const buttopn = new import_obsidian40.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
   containerEl.appendChild(buttopn.buttonEl);
 }
 function showCustomInputTime(containerEl, config, disable) {
   containerEl.createEl("span", { text: i18nHelper.getMessage("110077") });
-  const fromDateField = new import_obsidian37.TextComponent(containerEl);
+  const fromDateField = new import_obsidian40.TextComponent(containerEl);
   const fromDateEl = fromDateField.inputEl;
   fromDateEl.type = "date";
   fromDateEl.value = config.syncConditionDateFromValue ? config.syncConditionDateFromValue.toISOString().substring(0, 10) : TimeUtil.getLastMonth().toISOString().substring(0, 10);
@@ -26781,7 +30366,7 @@ function showCustomInputTime(containerEl, config, disable) {
   fromDateEl.addClass("obsidian_douban_settings_input");
   containerEl.appendChild(fromDateEl);
   containerEl.createEl("span", { text: i18nHelper.getMessage("110079") });
-  const toDateField = new import_obsidian37.TextComponent(containerEl);
+  const toDateField = new import_obsidian40.TextComponent(containerEl);
   let toDateEl = toDateField.inputEl;
   toDateEl.type = "date";
   toDateEl.value = config.syncConditionDateToValue ? config.syncConditionDateToValue.toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
@@ -26797,11 +30382,11 @@ function showCustomInputTime(containerEl, config, disable) {
   })).setDisabled(disable);
   toDateEl.addClass("obsidian_douban_settings_input");
   containerEl.appendChild(toDateEl);
-  new import_obsidian37.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
+  new import_obsidian40.ButtonComponent(containerEl).setIcon("help").setTooltip(i18nHelper.getMessage("110095"));
 }
 
 // src/org/wanxp/douban/model/GlobalStatusHolder.ts
-var import_obsidian38 = __toModule(require("obsidian"));
+var import_obsidian41 = __toModule(require("obsidian"));
 var GlobalStatusHolder = class {
   constructor(app, plugin) {
     this._app = app;
@@ -26816,7 +30401,7 @@ var GlobalStatusHolder = class {
   startSync(syncConfigOut) {
     if (this.syncStarted) {
       const { syncConfig } = this.syncStatus;
-      new import_obsidian38.Notice(i18nHelper.getMessage("110008"), SyncTypeRecords[syncConfig.syncType], DoubanSubjectState[syncConfig.scope]);
+      new import_obsidian41.Notice(i18nHelper.getMessage("110008"), SyncTypeRecords[syncConfig.syncType], DoubanSubjectState[syncConfig.scope]);
       return false;
     }
     this.syncStatus = new SyncStatusHolder(syncConfigOut, this._app);
@@ -27151,6 +30736,29 @@ var SettingsManager = class {
       return arraySetting;
     });
   }
+  addArrayLengthLimit() {
+    return __async(this, null, function* () {
+      if (!this.settings.arrayLengthLimits) {
+        this.settings.arrayLengthLimits = [];
+      }
+      this.settings.arrayLengthLimits.push({
+        type: SupportType.all,
+        field: "",
+        limit: 0
+      });
+      yield this.plugin.saveSettings();
+    });
+  }
+  removeArrayLengthLimit(index2) {
+    return __async(this, null, function* () {
+      var _a5;
+      if (!((_a5 = this.settings.arrayLengthLimits) == null ? void 0 : _a5[index2])) {
+        return;
+      }
+      this.settings.arrayLengthLimits.splice(index2, 1);
+      yield this.plugin.saveSettings();
+    });
+  }
   getSettingStr(field) {
     const setting = this.getSetting(field);
     if (setting) {
@@ -27188,12 +30796,14 @@ var SettingsManager = class {
     this.settings.noteTemplateFile = DEFAULT_SETTINGS.noteTemplateFile;
     this.settings.gameTemplateFile = DEFAULT_SETTINGS.gameTemplateFile;
     this.settings.teleplayTemplateFile = DEFAULT_SETTINGS.teleplayTemplateFile;
+    this.settings.theaterTemplateFile = DEFAULT_SETTINGS.theaterTemplateFile;
     this.settings.movieTemplateConfig = DEFAULT_SETTINGS.movieTemplateConfig;
     this.settings.bookTemplateConfig = DEFAULT_SETTINGS.bookTemplateConfig;
     this.settings.musicTemplateConfig = DEFAULT_SETTINGS.musicTemplateConfig;
     this.settings.noteTemplateConfig = DEFAULT_SETTINGS.noteTemplateConfig;
     this.settings.gameTemplateConfig = DEFAULT_SETTINGS.gameTemplateConfig;
     this.settings.teleplayTemplateConfig = DEFAULT_SETTINGS.teleplayTemplateConfig;
+    this.settings.theaterTemplateConfig = DEFAULT_SETTINGS.theaterTemplateConfig;
     this.settings.dateFormat = DEFAULT_SETTINGS.dateFormat;
     this.settings.timeFormat = DEFAULT_SETTINGS.timeFormat;
     this.settings.searchUrl = DEFAULT_SETTINGS.searchUrl;
@@ -27205,10 +30815,12 @@ var SettingsManager = class {
     this.settings.cacheImage = DEFAULT_SETTINGS.cacheImage;
     this.settings.cacheHighQuantityImage = DEFAULT_SETTINGS.cacheHighQuantityImage;
     this.settings.overwriteCoverImage = DEFAULT_SETTINGS.overwriteCoverImage;
+    this.settings.showAfterCreate = DEFAULT_SETTINGS.showAfterCreate;
     this.settings.syncBackupBeforeReplace = DEFAULT_SETTINGS.syncBackupBeforeReplace;
     this.settings.syncBackupFolder = DEFAULT_SETTINGS.syncBackupFolder;
     this.settings.includeSensitiveInSettingExport = DEFAULT_SETTINGS.includeSensitiveInSettingExport;
     this.settings.dataProtection = DEFAULT_SETTINGS.dataProtection;
+    this.settings.arrayLengthLimits = DEFAULT_SETTINGS.arrayLengthLimits.map((limit) => __spreadValues({}, limit));
   }
   clearLoginInfo() {
     this.settings.loginCookiesContent = DEFAULT_SETTINGS.loginCookiesContent;
@@ -27239,7 +30851,7 @@ var SettingsManager = class {
 };
 
 // src/org/wanxp/douban/sync/handler/SyncHandler.ts
-var import_obsidian39 = __toModule(require("obsidian"));
+var import_obsidian42 = __toModule(require("obsidian"));
 var SyncHandler = class {
   constructor(app, plugin, syncConfig, context) {
     this.app = app;
@@ -27332,7 +30944,7 @@ var SyncHandler = class {
           details += "\n";
         }
       }
-      const reportTime = (0, import_obsidian39.moment)(new Date()).format("YYYYMMDDHHmmss");
+      const reportTime = (0, import_obsidian42.moment)(new Date()).format("YYYYMMDDHHmmss");
       const reportPath = `${this.plugin.fileHandler.getTmpPath()}/sync-report-${reportTime}.json`;
       yield this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
         generatedAt: new Date().toISOString(),
@@ -27400,7 +31012,7 @@ var SyncHandler = class {
 
 - JSON: \`${reportPath}\`
 `);
-      const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian39.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
+      const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian42.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
       yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
     });
   }
@@ -27474,17 +31086,21 @@ var UserComponent = class {
   }
   loginHeaders(headers) {
     return __async(this, null, function* () {
+      var _a5, _b;
       if (!headers) {
         return new User();
       }
-      this.settingsManager.debug("\u914D\u7F6E\u754C\u9762:loginCookie:\u8C46\u74E3headers\u4FE1\u606F\u6B63\u5E38\uFF0C\u5C1D\u8BD5\u83B7\u53D6\u7528\u6237\u4FE1\u606F,headers:" + headers);
+      this.settingsManager.debug("\u914D\u7F6E\u754C\u9762:loginCookie:\u8C46\u74E3headers\u4FE1\u606F\u6B63\u5E38\uFF0C\u5C1D\u8BD5\u83B7\u53D6\u7528\u6237\u4FE1\u606F");
       yield this.loadUserInfoByHeaders(headers).then((user) => {
         this.user = user;
         this.settingsManager.debug(`\u914D\u7F6E\u754C\u9762:loginCookie:\u8C46\u74E3headers\u4FE1\u606F\u6B63\u5E38\uFF0C${user && user.id ? "\u83B7\u53D6\u7528\u6237\u4FE1\u606F\u6210\u529Fid:" + StringUtil.confuse(user.id) + ",\u7528\u6237\u540D:" + StringUtil.confuse(user.name) : "\u83B7\u53D6\u7528\u6237\u4FE1\u606F\u5931\u8D25"}`);
       });
-      if (this.user) {
+      if (((_a5 = this.user) == null ? void 0 : _a5.id) && ((_b = this.user) == null ? void 0 : _b.login)) {
         this.verified = true;
         this.settingsManager.updateSetting("loginHeadersContent", JSON.stringify(headers));
+      } else {
+        this.user = null;
+        this.verified = false;
       }
       return this.user;
     });
@@ -27498,11 +31114,24 @@ var UserComponent = class {
     return __async(this, null, function* () {
       const headers = this.settingsManager.getHeadersByCookie(cookie);
       return this.loginHeaders(headers).then((user) => {
-        if (this.user) {
+        if ((user == null ? void 0 : user.id) && (user == null ? void 0 : user.login)) {
           this.settingsManager.updateSetting("loginCookiesContent", cookie);
         }
         return user;
       });
+    });
+  }
+  acceptQrLoginCookie(cookie) {
+    return __async(this, null, function* () {
+      if (!cookie || !/(?:^|;\s*)dbcl2=/.test(cookie)) {
+        return null;
+      }
+      yield this.settingsManager.updateSetting("loginCookiesContent", cookie);
+      const user = new User();
+      user.login = true;
+      this.user = user;
+      this.verified = false;
+      return user;
     });
   }
   loadUserInfo(cookie) {
@@ -27558,13 +31187,13 @@ var UserComponent = class {
 };
 
 // src/org/wanxp/douban/note/DoubanNoteManager.ts
-var import_obsidian42 = __toModule(require("obsidian"));
+var import_obsidian45 = __toModule(require("obsidian"));
 
 // src/org/wanxp/utils/FrontmatterUtil.ts
-var import_obsidian40 = __toModule(require("obsidian"));
+var import_obsidian43 = __toModule(require("obsidian"));
 function getFileFrontmatter(app, filePath) {
   const file = app.vault.getAbstractFileByPath(filePath);
-  if (!(file instanceof import_obsidian40.TFile)) {
+  if (!(file instanceof import_obsidian43.TFile)) {
     return null;
   }
   const cache = app.metadataCache.getFileCache(file);
@@ -27575,8 +31204,8 @@ function getFileFrontmatter(app, filePath) {
 }
 
 // src/org/wanxp/douban/note/NoteSelectModal.ts
-var import_obsidian41 = __toModule(require("obsidian"));
-var NoteSelectModal = class extends import_obsidian41.FuzzySuggestModal {
+var import_obsidian44 = __toModule(require("obsidian"));
+var NoteSelectModal = class extends import_obsidian44.FuzzySuggestModal {
   constructor(plugin) {
     super(plugin.app);
     this.resolveFn = null;
@@ -27727,8 +31356,8 @@ var DoubanNoteManager = class {
   createOrAppendForCurrentFile() {
     return __async(this, null, function* () {
       const file = this.app.workspace.getActiveFile();
-      if (!(file instanceof import_obsidian42.TFile)) {
-        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
+      if (!(file instanceof import_obsidian45.TFile)) {
+        new import_obsidian45.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       yield this.createOrAppendForLocalFile(file);
@@ -27738,18 +31367,18 @@ var DoubanNoteManager = class {
     return __async(this, null, function* () {
       const notePathTemplate = this.plugin.settings.notePathTemplate;
       if (!(notePathTemplate == null ? void 0 : notePathTemplate.trim())) {
-        new import_obsidian42.Notice(i18nHelper.getMessage("130131"));
+        new import_obsidian45.Notice(i18nHelper.getMessage("130131"));
         return;
       }
       const context = this.resolveContext(localFile);
       if (!context) {
-        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
+        new import_obsidian45.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       const vars = { id: context.doubanId, title: context.title, type: context.type };
-      const notePath = (0, import_obsidian42.normalizePath)(applyTemplate(notePathTemplate, vars).replace(/(?<!\.md)$/i, ".md"));
+      const notePath = (0, import_obsidian45.normalizePath)(applyTemplate(notePathTemplate, vars).replace(/(?<!\.md)$/i, ".md"));
       const existingFile = this.app.vault.getAbstractFileByPath(notePath);
-      if (!(existingFile instanceof import_obsidian42.TFile)) {
+      if (!(existingFile instanceof import_obsidian45.TFile)) {
         const parentPath = notePath.substring(0, notePath.lastIndexOf("/"));
         if (parentPath && !this.app.vault.getAbstractFileByPath(parentPath)) {
           yield this.app.vault.createFolder(parentPath);
@@ -27774,19 +31403,19 @@ title: ${context.title}
         fm["\u7B14\u8BB0"] = link.includes('"') ? link.replaceAll('"', '\\"') : link;
       });
       yield this.app.workspace.openLinkText(stripMd(notePath), localFile.path, true);
-      new import_obsidian42.Notice(i18nHelper.getMessage(existingFile instanceof import_obsidian42.TFile ? "130133" : "130132", notePath));
+      new import_obsidian45.Notice(i18nHelper.getMessage(existingFile instanceof import_obsidian45.TFile ? "130133" : "130132", notePath));
     });
   }
   linkExistingNoteForCurrentFile() {
     return __async(this, null, function* () {
       const file = this.app.workspace.getActiveFile();
-      if (!(file instanceof import_obsidian42.TFile)) {
-        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
+      if (!(file instanceof import_obsidian45.TFile)) {
+        new import_obsidian45.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       const context = this.resolveContext(file);
       if (!context) {
-        new import_obsidian42.Notice(i18nHelper.getMessage("130130"));
+        new import_obsidian45.Notice(i18nHelper.getMessage("130130"));
         return;
       }
       const selectModal = new NoteSelectModal(this.plugin);
@@ -27809,7 +31438,7 @@ title: ${context.title}
       yield this.app.fileManager.processFrontMatter(file, (fm) => {
         fm["\u7B14\u8BB0"] = link.includes('"') ? link.replaceAll('"', '\\"') : link;
       });
-      new import_obsidian42.Notice(i18nHelper.getMessage("130143", noteFile.path));
+      new import_obsidian45.Notice(i18nHelper.getMessage("130143", noteFile.path));
     });
   }
   resolveContext(localFile) {
@@ -28087,10 +31716,10 @@ function stripQuotedValue(value) {
 }
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var import_obsidian46 = __toModule(require("obsidian"));
+var import_obsidian49 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataExporter.ts
-var import_obsidian43 = __toModule(require("obsidian"));
+var import_obsidian46 = __toModule(require("obsidian"));
 var UserDataExporter = class {
   constructor(app) {
     this.app = app;
@@ -28117,7 +31746,7 @@ var UserDataExporter = class {
             items
           };
           const fileName = `douban-user-data-${typeLabel}.json`;
-          const filePath = (0, import_obsidian43.normalizePath)(`${outputDir}/${fileName}`);
+          const filePath = (0, import_obsidian46.normalizePath)(`${outputDir}/${fileName}`);
           yield this.saveFile(filePath, JSON.stringify(exportData, null, 2));
           files.push(filePath);
         }
@@ -28140,7 +31769,7 @@ var UserDataExporter = class {
   }
   ensureDirectory(path) {
     return __async(this, null, function* () {
-      const normalizedPath = (0, import_obsidian43.normalizePath)(path);
+      const normalizedPath = (0, import_obsidian46.normalizePath)(path);
       const exists = yield this.app.vault.adapter.exists(normalizedPath);
       if (!exists) {
         yield this.app.vault.createFolder(normalizedPath);
@@ -28149,9 +31778,9 @@ var UserDataExporter = class {
   }
   saveFile(path, content) {
     return __async(this, null, function* () {
-      const normalizedPath = (0, import_obsidian43.normalizePath)(path);
+      const normalizedPath = (0, import_obsidian46.normalizePath)(path);
       const existing = this.app.vault.getAbstractFileByPath(normalizedPath);
-      if (existing instanceof import_obsidian43.TFile) {
+      if (existing instanceof import_obsidian46.TFile) {
         yield this.app.vault.process(existing, () => content);
       } else {
         yield this.app.vault.create(normalizedPath, content);
@@ -28161,10 +31790,10 @@ var UserDataExporter = class {
 };
 
 // src/org/wanxp/douban/userdata/ImportPreviewModal.ts
-var import_obsidian45 = __toModule(require("obsidian"));
+var import_obsidian48 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataImporter.ts
-var import_obsidian44 = __toModule(require("obsidian"));
+var import_obsidian47 = __toModule(require("obsidian"));
 var UserDataImporter = class {
   constructor(app) {
     this.fileCache = null;
@@ -28174,7 +31803,7 @@ var UserDataImporter = class {
   importFromFile(filePath, options, onProgress) {
     return __async(this, null, function* () {
       const file = this.app.vault.getAbstractFileByPath(filePath);
-      if (!(file instanceof import_obsidian44.TFile)) {
+      if (!(file instanceof import_obsidian47.TFile)) {
         throw new Error("Import file not found");
       }
       const content = yield this.app.vault.read(file);
@@ -28415,7 +32044,7 @@ var UserDataImporter = class {
       const items = [];
       for (const filePath of filePaths) {
         const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (file instanceof import_obsidian44.TFile) {
+        if (file instanceof import_obsidian47.TFile) {
           items.push({ name: filePath, content: yield this.app.vault.read(file) });
         }
       }
@@ -28544,7 +32173,7 @@ var UserDataImporter = class {
 };
 
 // src/org/wanxp/douban/userdata/ImportPreviewModal.ts
-var ImportPreviewModal = class extends import_obsidian45.Modal {
+var ImportPreviewModal = class extends import_obsidian48.Modal {
   constructor(app) {
     super(app);
     this.importData = null;
@@ -28671,7 +32300,7 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
     this.renderAttributeSettingsPanel();
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    const nextBtn = new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => {
+    const nextBtn = new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => {
       this.rebuildDiffs();
       for (const diff of this.diffs) {
         if (diff.localFile === null || diff.identical) {
@@ -28681,7 +32310,7 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
       this.currentStep = "diffs";
       this.renderStep();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
     const updateSelectedCount = () => {
       const count = this.diffs.filter((d) => d.selected).length;
       selectedCountEl.setText(i18nHelper.getMessage("130265", count));
@@ -28734,7 +32363,7 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
       row.createEl("td", { text: attrName, cls: "import-attr-name" });
       const actionCell = row.createEl("td");
       const currentAction = (_a5 = this.attrActions.get(attrName)) != null ? _a5 : "keep";
-      new import_obsidian45.Setting(actionCell).addDropdown((dropdown) => {
+      new import_obsidian48.Setting(actionCell).addDropdown((dropdown) => {
         dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267")).addOption("alias", i18nHelper.getMessage("130268")).setValue(currentAction === "keep" || currentAction === "ignore" ? currentAction : "alias").onChange((value) => {
           var _a6;
           if (value === "alias") {
@@ -28794,7 +32423,7 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
         row.createEl("td", { text: String((_a5 = diff.localValue) != null ? _a5 : "") });
         row.createEl("td", { text: String((_b = diff.importValue) != null ? _b : "") });
         const strategyCell = row.createEl("td");
-        new import_obsidian45.Setting(strategyCell).addDropdown((dropdown) => {
+        new import_obsidian48.Setting(strategyCell).addDropdown((dropdown) => {
           dropdown.addOption("keep_local", i18nHelper.getMessage("130244")).addOption("overwrite", i18nHelper.getMessage("130245")).addOption("smart_merge", i18nHelper.getMessage("130246")).setValue(diff.strategy).onChange((value) => {
             diff.strategy = value;
           });
@@ -28814,8 +32443,8 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
     }
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
-    new import_obsidian45.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
+    new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   renderResult() {
     const result = this.importResult;
@@ -28833,7 +32462,7 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
         errorList.createEl("li", { text: `... ${result.errors.length - 10} more` });
       }
     }
-    new import_obsidian45.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
+    new import_obsidian48.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
   }
   doImport() {
     return __async(this, null, function* () {
@@ -28854,7 +32483,7 @@ var ImportPreviewModal = class extends import_obsidian45.Modal {
 };
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var UserDataExportModal = class extends import_obsidian46.Modal {
+var UserDataExportModal = class extends import_obsidian49.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -28867,10 +32496,10 @@ var UserDataExportModal = class extends import_obsidian46.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130201", folderPath) });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
       yield this.doExport(folderPath, outputDir);
     })).setClass("obsidian_douban_search_button");
-    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   doExport(folderPath, outputDir) {
     return __async(this, null, function* () {
@@ -28894,7 +32523,7 @@ var UserDataExportModal = class extends import_obsidian46.Modal {
     this.contentEl.empty();
   }
 };
-var UserDataImportModal = class extends import_obsidian46.Modal {
+var UserDataImportModal = class extends import_obsidian49.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -28905,11 +32534,11 @@ var UserDataImportModal = class extends import_obsidian46.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130211") });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
       this.close();
       new ImportPreviewModal(this.app).open();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian46.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   onClose() {
     this.contentEl.empty();
@@ -28917,16 +32546,232 @@ var UserDataImportModal = class extends import_obsidian46.Modal {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian48 = __toModule(require("obsidian"));
-var DoubanPlugin = class extends import_obsidian47.Plugin {
+var import_obsidian52 = __toModule(require("obsidian"));
+
+// src/org/wanxp/douban/component/DoubanBatchImportModal.ts
+var import_obsidian50 = __toModule(require("obsidian"));
+
+// src/org/wanxp/utils/DoubanUrlUtil.ts
+var DoubanUrlUtil = class {
+  static parse(value) {
+    const url = this.normalizeUrl(value);
+    if (!url) {
+      return null;
+    }
+    const host = url.hostname.toLowerCase();
+    if (host !== "douban.com" && !host.endsWith(".douban.com")) {
+      return null;
+    }
+    const path = url.pathname;
+    let type;
+    let id;
+    if (host === "book.douban.com" && (id = this.matchId(path, /\/subject\/(\d{5,10})(?:\/|$)/))) {
+      type = SupportType.book;
+    } else if (host === "music.douban.com" && (id = this.matchId(path, /\/subject\/(\d{5,10})(?:\/|$)/))) {
+      type = SupportType.music;
+    } else if (host === "movie.douban.com" && (id = this.matchId(path, /\/subject\/(\d{5,10})(?:\/|$)/))) {
+      type = SupportType.movie;
+    } else if (id = this.matchId(path, /\/note\/(\d{5,10})(?:\/|$)/)) {
+      type = SupportType.note;
+    } else if (id = this.matchId(path, /\/game\/(\d{5,10})(?:\/|$)/)) {
+      type = SupportType.game;
+    } else if (id = this.matchId(path, /\/location\/drama\/(\d{5,10})(?:\/|$)/)) {
+      type = SupportType.theater;
+    } else {
+      return null;
+    }
+    url.hash = "";
+    return { id, type, url: url.toString() };
+  }
+  static parseLines(lines) {
+    const items = [];
+    const invalid = [];
+    const duplicates = [];
+    const seen = new Set();
+    lines.map((line) => line.trim()).filter(Boolean).forEach((line) => {
+      const parsed = this.parse(line);
+      if (!parsed) {
+        invalid.push(line);
+        return;
+      }
+      const key = `${parsed.type}:${parsed.id}`;
+      if (seen.has(parsed.id) || seen.has(key)) {
+        duplicates.push(line);
+        return;
+      }
+      seen.add(parsed.id);
+      seen.add(key);
+      items.push(parsed);
+    });
+    return { items, invalid, duplicates };
+  }
+  static normalizeUrl(value) {
+    let url;
+    try {
+      url = new URL((value || "").trim());
+    } catch (_) {
+      return null;
+    }
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return null;
+    }
+    if (url.hostname.toLowerCase() === "www.douban.com" && url.pathname.startsWith("/link2/")) {
+      const target = url.searchParams.get("url");
+      if (target) {
+        try {
+          url = new URL(target);
+        } catch (_) {
+          return null;
+        }
+      }
+    }
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return null;
+    }
+    url.protocol = "https:";
+    return url;
+  }
+  static matchId(path, pattern) {
+    var _a5;
+    return ((_a5 = path.match(pattern)) == null ? void 0 : _a5[1]) || "";
+  }
+};
+
+// src/org/wanxp/douban/component/DoubanBatchImportModal.ts
+var DoubanBatchImportModal = class extends import_obsidian50.Modal {
+  constructor(app, plugin, context) {
+    super(app);
+    this.plugin = plugin;
+    this.context = context;
+    this.value = "";
+    this.running = false;
+    this.cancelRequested = false;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("obsidian_douban_batch_import");
+    contentEl.createEl("h2", { text: i18nHelper.getMessage("batchImportTitle") });
+    contentEl.createEl("p", { text: i18nHelper.getMessage("batchImportDesc") });
+    this.textarea = new import_obsidian50.TextAreaComponent(contentEl).setPlaceholder("https://movie.douban.com/subject/3742360/\nhttps://book.douban.com/subject/2567698/").onChange((value) => {
+      this.value = value;
+    });
+    this.textarea.inputEl.rows = 10;
+    this.textarea.inputEl.addClass("obsidian_douban_batch_urls");
+    const controls = contentEl.createDiv("obsidian_douban_batch_controls");
+    this.startButton = new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("batchImportStart")).setCta().onClick(() => void this.startImport());
+    this.cancelButton = new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+      if (this.running) {
+        this.cancelRequested = true;
+        this.cancelButton.setButtonText(i18nHelper.getMessage("batchImportStopping"));
+      } else {
+        this.close();
+      }
+    });
+    this.progressEl = contentEl.createDiv("obsidian_douban_batch_progress");
+    this.summaryEl = contentEl.createDiv("obsidian_douban_batch_summary");
+  }
+  onClose() {
+    this.cancelRequested = true;
+    this.contentEl.empty();
+  }
+  startImport() {
+    return __async(this, null, function* () {
+      if (this.running) {
+        return;
+      }
+      this.running = true;
+      this.cancelRequested = false;
+      this.startButton.setDisabled(true);
+      this.cancelButton.setButtonText(i18nHelper.getMessage("batchImportStop"));
+      this.summaryEl.empty();
+      const lines = this.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      const parsed = DoubanUrlUtil.parseLines(lines);
+      const failures = [
+        ...parsed.invalid.map((url) => ({ url, reason: i18nHelper.getMessage("batchImportInvalidUrl") })),
+        ...parsed.duplicates.map((url) => ({ url, reason: i18nHelper.getMessage("batchImportDuplicateUrl") }))
+      ];
+      let success = 0;
+      let completedItems = 0;
+      for (let index2 = 0; index2 < parsed.items.length; index2++) {
+        if (this.cancelRequested) {
+          break;
+        }
+        const item = parsed.items[index2];
+        this.setProgress(i18nHelper.getMessage("batchImportProgress", index2 + 1, parsed.items.length));
+        this.plugin.showStatus(i18nHelper.getMessage("batchImportProgress", index2 + 1, parsed.items.length));
+        const itemContext = __spreadProps(__spreadValues({}, this.context), {
+          showAfterCreate: this.plugin.settings.showAfterCreate,
+          syncActive: false,
+          importError: ""
+        });
+        try {
+          const result = yield this.plugin.doubanExtractHandler.handleUrl(item, itemContext);
+          if ((result == null ? void 0 : result.handledStatus) === SubjectHandledStatus.saved) {
+            success++;
+          } else {
+            failures.push({
+              url: item.url,
+              reason: itemContext.importError || i18nHelper.getMessage("batchImportFailed")
+            });
+          }
+        } catch (error) {
+          failures.push({
+            url: item.url,
+            reason: error instanceof Error ? error.message : String(error)
+          });
+        }
+        completedItems++;
+        if (index2 < parsed.items.length - 1) {
+          yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
+        }
+      }
+      const cancelled = this.cancelRequested;
+      const remaining = cancelled ? Math.max(0, parsed.items.length - completedItems) : 0;
+      const summary = i18nHelper.getMessage("batchImportSummary", success, failures.length + remaining, cancelled ? `${i18nHelper.getMessage("batchImportCancelled")}
+` : "");
+      this.setProgress(summary);
+      this.renderFailures(failures, remaining);
+      new import_obsidian50.Notice(summary);
+      this.plugin.clearStatusBarDelay();
+      this.running = false;
+      this.startButton.setDisabled(false);
+      this.cancelButton.setButtonText(i18nHelper.getMessage("110005"));
+    });
+  }
+  setProgress(message) {
+    this.progressEl.setText(message);
+  }
+  renderFailures(failures, remaining) {
+    if (failures.length === 0 && remaining === 0) {
+      return;
+    }
+    this.summaryEl.createEl("h3", { text: i18nHelper.getMessage("batchImportFailures") });
+    failures.forEach((failure) => {
+      this.summaryEl.createEl("p", { text: `${failure.url}
+${failure.reason}` });
+    });
+    if (remaining > 0) {
+      this.summaryEl.createEl("p", {
+        text: i18nHelper.getMessage("batchImportRemaining", remaining)
+      });
+    }
+  }
+};
+
+// src/org/wanxp/main.ts
+var DoubanPlugin = class extends import_obsidian51.Plugin {
   putToObsidian(context, extract3) {
     return __async(this, null, function* () {
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
+      context.importError = "";
       try {
         if (!extract3) {
           log.warn(i18nHelper.getMessage("140101"));
-          return;
+          context.importError = i18nHelper.getMessage("140101");
+          return false;
         }
+        DoubanPageGuard.assertValidSubject(extract3);
         if (context.syncActive && extract3.guessType && extract3.guessType != extract3.type) {
           extract3.handledStatus = SubjectHandledStatus.syncTypeDiffAbort;
           if (Action.Sync == context.action) {
@@ -28935,7 +32780,8 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           } else {
             console.log(i18nHelper.getMessage("140102", extract3.type, extract3.title, extract3.guessType));
           }
-          return;
+          context.importError = i18nHelper.getMessage("140102", extract3.type, extract3.title, extract3.guessType);
+          return false;
         }
         if (Action.Sync == context.action) {
           this.showStatus(i18nHelper.getMessage("140207", syncStatus.getHasHandle(), syncStatus.getTotal(), extract3.title));
@@ -28943,18 +32789,27 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           this.showStatus(i18nHelper.getMessage("140204", extract3.title));
         }
         const result = yield this.doubanExtractHandler.parseText(extract3, context);
-        if (result) {
-          yield this.putContentToObsidian(context, result);
-          extract3.handledStatus = SubjectHandledStatus.saved;
+        if (!result) {
+          context.importError = "\u6A21\u677F\u89E3\u6790\u7ED3\u679C\u4E3A\u7A7A";
+          return false;
         }
+        const saved = yield this.putContentToObsidian(context, result);
+        if (!saved) {
+          return false;
+        }
+        extract3.handledStatus = SubjectHandledStatus.saved;
         if (Action.Sync == context.action) {
           this.showStatus(i18nHelper.getMessage("140208", syncStatus.getHasHandle(), syncStatus.getTotal(), extract3.title));
         } else {
           this.showStatus(i18nHelper.getMessage("140205", extract3.title));
         }
+        return true;
       } catch (e) {
-        log.error(i18nHelper.getMessage("140206", e.message), e);
-        syncStatus != null ? syncStatus.fail(extract3.id, extract3.title) : null;
+        const detail = DoubanPageGuard.describeError(e);
+        context.importError = detail;
+        log.error(i18nHelper.getMessage("140206", detail), e);
+        syncStatus != null ? syncStatus.fail((extract3 == null ? void 0 : extract3.id) || "", (extract3 == null ? void 0 : extract3.title) || "", detail) : null;
+        return false;
       } finally {
         this.clearStatusBarDelay();
       }
@@ -28965,12 +32820,12 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
       const { mode } = context;
       switch (mode) {
         case SearchHandleMode.FOR_CREATE:
-          yield this.createFile(context, result);
-          break;
+          return yield this.createFile(context, result);
         case SearchHandleMode.FOR_REPLACE:
           yield this.putToEditor(context.editor, result.content);
-          break;
+          return true;
       }
+      return false;
     });
   }
   putToEditor(editor, content) {
@@ -28986,8 +32841,15 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
       const { subject } = result;
       const { content } = result;
-      const fullFilePath = filePath + ".md";
+      let fullFilePath = filePath + ".md";
       if (Action.Sync == context.action) {
+        const targetExists = yield this.app.vault.adapter.exists(fullFilePath);
+        const targetOwnerId = syncStatus == null ? void 0 : syncStatus.getDoubanIdForFilePath(fullFilePath);
+        if (targetExists && targetOwnerId !== subject.id) {
+          const collisionSafePath = `${filePath} (${subject.id})`;
+          filePath = collisionSafePath;
+          fullFilePath = `${collisionSafePath}.md`;
+        }
         if (context.syncStatusHolder.syncStatus.syncConfig.force) {
           const existingFilePath = syncStatus.getExistingFilePath(subject.id);
           let localUserData = null;
@@ -28998,20 +32860,24 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
                 backupPath = yield this.fileHandler.backupMarkdownFile(existingFilePath, this.settings.syncBackupFolder);
               }
             } catch (error) {
-              syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u5907\u4EFD\u65E7\u6587\u4EF6\u5931\u8D25\uFF1A${existingFilePath}`);
+              const detail = `\u5907\u4EFD\u65E7\u6587\u4EF6\u5931\u8D25\uFF1A${existingFilePath}`;
+              context.importError = detail;
+              syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
               log.error(`Failed to backup file before force sync: ${existingFilePath}`, error);
-              return;
+              return false;
             }
             try {
               const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
-              if (existingFile instanceof import_obsidian48.TFile) {
+              if (existingFile instanceof import_obsidian52.TFile) {
                 const extractor = new UserDataExtractor(this.app);
                 localUserData = yield extractor.extractFromFileAsync(existingFile);
               }
             } catch (error) {
-              syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u8BFB\u53D6\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF1A${existingFilePath}`);
+              const detail = `\u8BFB\u53D6\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF1A${existingFilePath}`;
+              context.importError = detail;
+              syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
               log.error(`Failed to extract local user data from ${existingFilePath}`, error);
-              return;
+              return false;
             }
           }
           let exists = false;
@@ -29021,14 +32887,16 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
             if (backupPath && existingFilePath === fullFilePath) {
               yield this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
             }
-            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u5199\u5165\u65B0\u6587\u4EF6\u5931\u8D25\uFF1A${fullFilePath}`);
+            const detail = `\u5199\u5165\u65B0\u6587\u4EF6\u5931\u8D25\uFF1A${fullFilePath}`;
+            context.importError = detail;
+            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
             log.error(`Failed to write synced file: ${fullFilePath}`, error);
-            return;
+            return false;
           }
           try {
             if (localUserData && ((_a5 = context.syncConfig) == null ? void 0 : _a5.inheritOldFields)) {
               const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-              if (newFile instanceof import_obsidian48.TFile) {
+              if (newFile instanceof import_obsidian52.TFile) {
                 const merger = new UserDataMerger();
                 const currentContent = yield this.app.vault.read(newFile);
                 const mergedContent = merger.mergeUserData(currentContent, localUserData, this.settings.dataProtection);
@@ -29043,9 +32911,11 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
             } else if (existingFilePath && existingFilePath !== fullFilePath) {
               yield this.fileHandler.deleteFile(fullFilePath);
             }
-            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, `\u7EE7\u627F\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF0C\u5DF2\u505C\u6B62\u66FF\u6362\uFF1A${subject.title}`);
+            const detail = `\u7EE7\u627F\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF0C\u5DF2\u505C\u6B62\u66FF\u6362\uFF1A${subject.title}`;
+            context.importError = detail;
+            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
             log.error(`Failed to merge protected user data for ${subject.title}`, error);
-            return;
+            return false;
           }
           if (existingFilePath && existingFilePath !== fullFilePath) {
             try {
@@ -29054,7 +32924,8 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
             } catch (error) {
               syncStatus == null ? void 0 : syncStatus.manualReview(subject.id, subject.title, fullFilePath, `\u65E7\u6587\u4EF6\u5220\u9664\u5931\u8D25\uFF0C\u5DF2\u4FDD\u7559\u65B0\u65E7\u4E24\u4E2A\u6587\u4EF6\uFF1A${existingFilePath}`);
               log.error(`Failed to delete old file after force sync: ${existingFilePath}`, error);
-              return;
+              context.importError = `\u65E7\u6587\u4EF6\u5220\u9664\u5931\u8D25\uFF0C\u5DF2\u4FDD\u7559\u65B0\u65E7\u4E24\u4E2A\u6587\u4EF6\uFF1A${existingFilePath}`;
+              return false;
             }
           }
           if (exists) {
@@ -29062,12 +32933,18 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           } else {
             syncStatus != null ? syncStatus.create(subject.id, subject.title, fullFilePath) : null;
           }
+          return true;
         } else {
           const created = yield this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate, false);
           created ? syncStatus.create(subject.id, subject.title, fullFilePath) : syncStatus.exists(subject.id, subject.title, fullFilePath);
+          if (!created) {
+            context.importError = `\u6587\u4EF6\u5DF2\u5B58\u5728\uFF1A${fullFilePath}`;
+          }
+          return created;
         }
       } else {
         yield this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate);
+        return true;
       }
     });
   }
@@ -29076,7 +32953,7 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
       try {
         this.showStatus(i18nHelper.getMessage("140201", searchTerm));
         const result = yield SearcherV2.search(searchTerm, searchType, 1, SEARCH_ITEM_PAGE_SIZE, this.settings, context.plugin.settingsManager);
-        this.showStatus(i18nHelper.getMessage("140202", result.list.toString()));
+        this.showStatus(i18nHelper.getMessage("140202", result.total));
         context.searchPage = result;
         new DoubanFuzzySuggester(this, context, searchTerm).showSearchPage(result);
       } catch (e) {
@@ -29133,9 +33010,22 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           settings: this.settings,
           userComponent: this.userComponent,
           netFileHandler: this.netFileHandler,
-          showAfterCreate: true,
+          showAfterCreate: this.settings.showAfterCreate,
           action: Action.SearchAndCrate
         }, this.settings.searchDefaultType)
+      });
+      this.addCommand({
+        id: "douban-batch-import-urls",
+        name: i18nHelper.getMessage("batchImportCommand"),
+        callback: () => new DoubanBatchImportModal(this.app, this, {
+          plugin: this,
+          mode: SearchHandleMode.FOR_CREATE,
+          settings: this.settings,
+          userComponent: this.userComponent,
+          netFileHandler: this.netFileHandler,
+          showAfterCreate: false,
+          action: Action.SearchAndCrate
+        }).open()
       });
       this.addCommand({
         id: "searcher-douban-and-input-current-file",
@@ -29185,7 +33075,7 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           settings: this.settings,
           userComponent: this.userComponent,
           netFileHandler: this.netFileHandler,
-          showAfterCreate: true,
+          showAfterCreate: this.settings.showAfterCreate,
           action: Action.SearchAndCrate
         }, SupportType.movie)
       });
@@ -29198,7 +33088,7 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           settings: this.settings,
           userComponent: this.userComponent,
           netFileHandler: this.netFileHandler,
-          showAfterCreate: true,
+          showAfterCreate: this.settings.showAfterCreate,
           action: Action.SearchAndCrate
         }, SupportType.book)
       });
@@ -29211,7 +33101,7 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           settings: this.settings,
           userComponent: this.userComponent,
           netFileHandler: this.netFileHandler,
-          showAfterCreate: true,
+          showAfterCreate: this.settings.showAfterCreate,
           action: Action.SearchAndCrate
         }, SupportType.music)
       });
@@ -29224,7 +33114,7 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
           settings: this.settings,
           userComponent: this.userComponent,
           netFileHandler: this.netFileHandler,
-          showAfterCreate: true,
+          showAfterCreate: this.settings.showAfterCreate,
           action: Action.SearchAndCrate
         }, SupportType.game)
       });
@@ -29290,7 +33180,8 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
       { configKey: "musicTemplateConfig", fileKey: "musicTemplateFile" },
       { configKey: "noteTemplateConfig", fileKey: "noteTemplateFile" },
       { configKey: "gameTemplateConfig", fileKey: "gameTemplateFile" },
-      { configKey: "teleplayTemplateConfig", fileKey: "teleplayTemplateFile" }
+      { configKey: "teleplayTemplateConfig", fileKey: "teleplayTemplateFile" },
+      { configKey: "theaterTemplateConfig", fileKey: "theaterTemplateFile" }
     ];
     for (const { configKey, fileKey } of templateKeys) {
       const existing = this.settings[configKey];
@@ -29341,13 +33232,13 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
         if (!result) {
           return;
         }
-        new import_obsidian47.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
+        new import_obsidian51.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
         this.initSyncDefaultSettings(syncConfig);
         context.syncStatusHolder.initHandledData();
         this.showStatus(i18nHelper.getMessage("140203", SyncTypeRecords[syncConfig.syncType]));
         const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
         yield syncHandler.sync();
-        new import_obsidian47.Notice(i18nHelper.getMessage("140302"));
+        new import_obsidian51.Notice(i18nHelper.getMessage("140302"));
       } catch (e) {
         log.error(i18nHelper.getMessage("140206", e.message), e);
       } finally {
@@ -29369,7 +33260,7 @@ var DoubanPlugin = class extends import_obsidian47.Plugin {
       }
       if (!uc.isLogin()) {
         this.settingsManager.debug("\u4E3B\u754C\u9762:\u540C\u6B65\u65F6\u7684\u767B\u5F55\u72B6\u6001\u68C0\u6D4B\u5B8C\u6210: \u5C1D\u8BD5\u83B7\u53D6\u7528\u6237\u4FE1\u606F\u5931\u8D25");
-        new import_obsidian47.Notice(i18nHelper.getMessage("140303"));
+        new import_obsidian51.Notice(i18nHelper.getMessage("140303"));
         return false;
       }
       return true;

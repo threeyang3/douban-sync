@@ -15,6 +15,7 @@ parent: 功能
 | score            | 评分               | 评分                | 评分                | 评分            | 评分             | 评分            |       |   
 | scoreStar        | 评分⭐               | 评分⭐                | 评分⭐                | 评分⭐            | 评分⭐             | 评分⭐            |       |   
 | image            | 封面               | 封面                | 封面                | 封面            | 图片             | 封面            | 照片    |    
+| imageName        | 本地封面文件名          | 本地封面文件名           | 本地封面文件名           | 本地封面文件名       | 本地封面文件名        | 本地封面文件名       |       |
 | imageData.url    | 封面url            | 封面url             | 封面url             | 封面url         | 封面url          | 封面url         | 照片url |    
 | url              | 豆瓣网址             | 豆瓣网址              | 豆瓣网址              | 豆瓣网址          | 豆瓣网址           | 豆瓣网址          | 豆瓣网址  |    
 | desc             | 简介               | 简介                | 内容简介              | 简介            | 简介             | 简介            | 简介    |    
@@ -40,6 +41,20 @@ parent: 功能
 | 扩展9              | IMDb             | IMDb              | price:定价          |               |                |               |       |     
 | 扩展7              |                  | episode:集数        | binding:装帧        |               |                |               |       |    
 | 扩展8              |                  |                   | producer: 出品方     |               |                |               |       |
+
+## 舞台剧字段
+
+舞台剧支持以下主要变量：
+
+- `id`、`title`、`type`、`score`、`image`、`url`、`desc`
+- `datePublished`、`genre`、`director`、`actor`、`author`
+- `publisher`：演出剧院或演出团体
+- `originalTitle`、`aliases`、`language`
+
+## 图书热门短评
+
+- `{{popularComments}}` 输出图书热门短评，自动去重并最多保留五条
+- 该变量也受数组长度限制配置影响
 
 # 模板语法注意事项
 
@@ -73,3 +88,4 @@ url: [[{{url}}]]
 - 变量名区分大小写：`{{title}}` 和 `{{Title}}` 是不同的变量
 - 变量值中的特殊字符（`:`、`#`、`"` 等）会被自动处理为合法 YAML
 - 多行文本（如 `{{desc}}`）会自动使用 YAML 块标量语法 `|` 保留换行
+- 设置页“字段”标签中的变量名可点击复制完整 `{{变量名}}`

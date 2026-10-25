@@ -1,6 +1,6 @@
 {
   "name": "obsidian-douban-plugin",
-  "version": "2.1.8",
+  "version": "2.2.0",
   "description": "This is a plugin for Obsidian (https://obsidian.md) that can import data from Douban (https://www.douban.com/).",
   "main": "main.js",
   "scripts": {
@@ -18,6 +18,7 @@
   "devDependencies": {
     "@types/jest": "^28.1.4",
     "@types/node": "^16.11.6",
+    "@types/qrcode": "^1.5.6",
     "@typescript-eslint/eslint-plugin": "^5.2.0",
     "@typescript-eslint/parser": "^5.2.0",
     "builtin-modules": "^3.2.0",
@@ -34,6 +35,7 @@
     "@popperjs/core": "^2.11.6",
     "cheerio": "^1.0.0-rc.11",
     "follow-redirects": "^1.15.6",
+    "qrcode": "^1.5.4",
     "schema-dts": "^1.1.0"
   }
 }
