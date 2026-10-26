@@ -208,6 +208,56 @@ export default class FileHandler {
 		}
 	}
 
+	async writeTextFile(filePath: string, data: string, overwrite = true): Promise<void> {
+		const {vault} = this._app;
+		const {adapter} = vault;
+		const path = normalizePath(filePath.replace(/\\/g, '/')).replace(/^\/+/, '');
+		const slash = path.lastIndexOf('/');
+		const dir = slash < 0 ? '' : path.slice(0, slash);
+		const name = FileUtil.replaceSpecialCharactersForFileName(path.slice(slash + 1));
+		const normalizedPath = dir ? FileUtil.join(dir, name) : name;
+
+		if (dir !== '') {
+			await this.createDirectory(dir);
+		}
+
+		const exists = await adapter.exists(normalizedPath);
+		if (exists) {
+			if (!overwrite) {
+				throw new Error(i18nHelper.getMessage('110201').replace('{0}', normalizedPath ?? ''));
+			}
+			await adapter.write(normalizedPath, data);
+			return;
+		}
+
+		await vault.create(normalizedPath, data);
+	}
+
+	async backupMarkdownFile(sourcePath: string, backupDir: string): Promise<string> {
+		const {vault} = this._app;
+		const sourceFile = vault.getAbstractFileByPath(sourcePath);
+		if (!(sourceFile instanceof TFile)) {
+			throw new Error(`Source file not found: ${sourcePath}`);
+		}
+
+		const content = await vault.read(sourceFile);
+		const parsed = FileUtil.parse(sourcePath);
+		const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+		const backupName = `${parsed.name}.${timestamp}.bak.md`;
+		const backupPath = FileUtil.join(backupDir, backupName);
+		await this.writeTextFile(backupPath, content, false);
+		return backupPath;
+	}
+
+	async restoreMarkdownFile(targetPath: string, backupPath: string): Promise<void> {
+		const {vault} = this._app;
+		if (!await vault.adapter.exists(backupPath)) {
+			throw new Error(`Backup file not found: ${backupPath}`);
+		}
+		const backupContent = await vault.adapter.read(backupPath);
+		await this.writeTextFile(targetPath, backupContent, true);
+	}
+
 
 
 	getRootPath(): string {

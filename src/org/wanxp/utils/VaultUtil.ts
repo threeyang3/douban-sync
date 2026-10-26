@@ -49,8 +49,11 @@ export function scanVaultForDoubanIds(
  * 从 frontmatter 中提取 doubanId（字符串形式）
  */
 export function extractDoubanId(frontmatter: Record<string, unknown>): string | null {
-	const id = frontmatter['doubanId'];
-	if (typeof id === 'string' && id.trim()) return id.trim();
-	if (typeof id === 'number') return String(id);
+	const candidateKeys = ['doubanId', 'douban_id', 'id', 'ID'];
+	for (const key of candidateKeys) {
+		const id = frontmatter[key];
+		if (typeof id === 'string' && id.trim()) return id.trim();
+		if (typeof id === 'number') return String(id);
+	}
 	return null;
 }

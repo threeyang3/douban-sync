@@ -35,6 +35,7 @@ import {DataField} from "../../../utils/model/DataField";
 import {TemplateConfig, DoubanPluginSetting} from "../../setting/model/DoubanPluginSetting";
 import NumberUtil from "../../../utils/NumberUtil";
 import {DoubanHttpUtil} from "../../../utils/DoubanHttpUtil";
+import DoubanPageGuard from "../../../utils/DoubanPageGuard";
 export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject> implements DoubanSubjectLoadHandler<T> {
 
 
@@ -75,6 +76,8 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		} else {
 			result = this.parsePartText(template, extract, context, variableMap);
 		}
+		// 检测未解析的模板变量并警告
+		this.warnUnresolvedVariables(result, template);
 		let filePath = '';
 		if (SearchHandleMode.FOR_CREATE == context.mode) {
 			filePath = this.parsePartPath(this.getFilePath(context), extract, context, variableMap);
@@ -84,6 +87,22 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			fileName = this.parsePartPath(this.getFileName(context), extract, context, variableMap);
 		}
 		return {content: result,filePath: filePath, fileName: fileName, subject:extract};
+	}
+
+	/**
+	 * 检测处理后内容中未解析的模板变量并输出警告
+	 */
+	private warnUnresolvedVariables(result: string, originalTemplate: string): void {
+		// 检测 {{doubleBrace}} 格式的未解析变量（标准格式）
+		const unresolvedDouble = result.match(/\{\{[a-zA-Z0-9_]+\}\}/g);
+		if (unresolvedDouble && unresolvedDouble.length > 0) {
+			log.warn(`模板变量未解析: ${unresolvedDouble.join(', ')}，请检查模板语法是否正确（应使用 {{变量名}} 格式）`);
+		}
+		// 检测 { singleBrace } 格式的变量（常见错误格式）
+		const unresolvedSingle = result.match(/\{\s*[a-zA-Z0-9_]+\s*\}/g);
+		if (unresolvedSingle && unresolvedSingle.length > 0) {
+			log.warn(`检测到可能的模板语法错误: ${unresolvedSingle.join(', ')}，模板变量应使用 {{双花括号}} 格式，而非 { 单花括号 }`);
+		}
 	}
 
 	private getFileName(context: HandleContext): string {
@@ -117,9 +136,29 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 	async handle(id: string, context: HandleContext): Promise<T> {
 		const url:string = this.getSubjectUrl(id);
 		context.plugin.settingsManager.debug(`开始请求地址:${url}`)
-		context.plugin.settingsManager.debug(`(注意:请勿向任何人透露你的Cookie,此处若需要截图请**打码**)请求header:${context.settings.loginHeadersContent}`)
-		return await DoubanHttpUtil.httpRequestGet(url, context.plugin.settingsManager.getHeaders(), context.plugin.settingsManager)
-			.then(load)
+		try {
+			const html = await DoubanHttpUtil.httpRequestGet(
+				url,
+				context.plugin.settingsManager.getHeaders(),
+				context.plugin.settingsManager,
+			);
+			return await this.handleHtml(id, html, context);
+		} catch (e) {
+			const detail = DoubanPageGuard.describeError(e);
+			context.importError = detail;
+			log.error(i18nHelper.getMessage('130101', detail), e);
+			context.syncStatusHolder?.syncStatus.fail(id, '', detail);
+			return undefined;
+		}
+	}
+
+	async handleHtml(id: string, html: string, context: HandleContext): Promise<T> {
+		const url:string = this.getSubjectUrl(id);
+		return await Promise.resolve(html)
+			.then(page => {
+				DoubanPageGuard.assertCanParse(page);
+				return load(page);
+			})
 			.then(data => this.analysisUserState(data, context))
 			.then(({data, userState}) => {
 				let guessType = this.getSupportType();
@@ -131,25 +170,32 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 					// M-hM-7M-#M-fM-^^M-^PM-eM--1M-hM-4M-%M-fM-^WM-6M-oM-<M-^LM-hM-^KM-%M-gM-1M-;M-eM-^^M-^KM-dM-8M-^MM-eM-^LM-9M-iM-^EM-^MM-oM-<M-^LM-fM- M-^GM-hM-.M-0M-dM-8M-: failByDiffType M-hM-^@M-^LM-iM-^]M-^^M-fM-^IM-)M-fM-;M-^BM-iM-^@M-^ZM fail
 					if (context.syncActive && guessType && guessType !== this.getSupportType()) {
 						const id = StringUtil.analyzeIdByUrl(url);
+						const detail = `${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`;
+						context.importError = detail;
 						context.syncStatusHolder?.syncStatus.failByDiffType(id, '',
-							`${i18nHelper.getMessage(guessType)} -> ${i18nHelper.getMessage(this.getSupportType())}`);
-						return undefined;
+							detail);
+						return null;
 					}
 					throw new Error('parseSubjectFromHtml returned null');
 				}
 				sub.imageUrl = this.normalizeImageUrl(sub.imageUrl);
+				// 从云端获取的 title 可能包含各类引号（如《"解忧杂货店"》），统一去除
+				sub.title = sub.title?.replace(/[""“”＂«»‘’「」『』]/g, '') ?? sub.title;
+				DoubanPageGuard.assertValidSubject(sub, this.getSupportType());
 				sub.userState = userState;
 				sub.guessType = guessType;
 				return sub;
 			})
-			.then(content => this.toEditor(context, content))
+			.then(content => content ? this.toEditor(context, content) : null)
 			.catch(e =>  {
-				log.error(i18nHelper.getMessage('130101',  e.toString()), e);
+				const detail = DoubanPageGuard.describeError(e);
+				context.importError = detail;
+				log.error(i18nHelper.getMessage('130101', detail), e);
 				if (url) {
 					const id = StringUtil.analyzeIdByUrl(url);
-					context.syncStatusHolder?context.syncStatusHolder.syncStatus.fail(id, ''):null;
+					context.syncStatusHolder?.syncStatus.fail(id, '', detail);
 				}else {
-					context.syncStatusHolder?context.syncStatusHolder.syncStatus.handled(1):null;
+					context.syncStatusHolder?.syncStatus.handled(1);
 				}
 				return undefined;
 			});
@@ -239,8 +285,8 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 	abstract parseSubjectFromHtml(data: CheerioAPI, context: HandleContext): T | undefined;
 
 	async toEditor(context: HandleContext, extract: T): Promise<T> {
-		await this.doubanPlugin.putToObsidian(context, extract);
-		return extract;
+		const saved = await this.doubanPlugin.putToObsidian(context, extract);
+		return saved ? extract : undefined;
 	}
 
 	getPersonName(name: string, context: HandleContext): string {
@@ -282,11 +328,11 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		let regValue: RegExpExecArray;
 		switch (personNameMode) {
 			case PersonNameMode.CH_NAME:
-				regValue = /[\u4e00-\u9fa50-9. ·:\u3002|\uff1f|\uff01|\uff0c|\u3001|\uff1b|\uff1a|\u201c|\u201d|\u2018|\u2019|\uff08|\uff09|\u300a|\u300b|\u3008|\u3009|\u3010|\u3011|\u300e|\u300f|\u300c|\u300d|\ufe43|\ufe44|\u3014|\u3015|\u2026|\u2014|\uff5e|\ufe4f|\uffe5()]{2,}/g.exec(name);
+				regValue = /[\u4e00-\u9fa50-9.·:\u3002|\uff1f|\uff01|\uff0c|\u3001|\uff1b|\uff1a|\u201c|\u201d|\u2018|\u2019|\uff08|\uff09|\u300a|\u300b|\u3008|\u3009|\u3010|\u3011|\u300e|\u300f|\u300c|\u300d|\ufe43|\ufe44|\u3014|\u3015|\u2026|\u2014|\uff5e|\ufe4f|\uffe5()]{2,}/g.exec(name);
 				resultName = regValue ? regValue[0] : name;
 				break;
 			case PersonNameMode.EN_NAME:
-				regValue = /[0-9a-zA-Z.\s-:]{2,}/g.exec(name);
+				regValue = /[0-9a-zA-Z.\-:]{2,}/g.exec(name);
 				resultName = regValue ? regValue[0] : name;
 				break;
 			default:
@@ -299,16 +345,29 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		if (!name || !personNameMode) {
 			return "";
 		}
-		if (context.listItem) {
-			const newName = context.listItem.title.trim().replaceAll(' ', '');
-			switch (personNameMode) {
-				case PersonNameMode.CH_NAME:
-					return newName;
-					break;
-				case PersonNameMode.EN_NAME:
-					return name.trim().replaceAll(' ', '').replaceAll(newName, '');
-                    break;
+		const normalizedName = name.trim();
+		const listTitle = context.listItem?.title?.trim() || '';
+		if (listTitle) {
+			const listTitleHasChinese = /[\u4e00-\u9fff]/.test(listTitle);
+			const listTitleHasLatin = /[A-Za-z]/.test(listTitle);
+			if (personNameMode === PersonNameMode.CH_NAME && listTitleHasChinese) {
+				return listTitle;
 			}
+			if (personNameMode === PersonNameMode.EN_NAME && listTitleHasLatin && !listTitleHasChinese) {
+				return listTitle;
+			}
+			const remainder = normalizedName.replace(listTitle, '').trim();
+			if (remainder && remainder !== normalizedName) {
+				return remainder;
+			}
+			return listTitle;
+		}
+		if (personNameMode === PersonNameMode.EN_NAME) {
+			const chineseName = this.getPersonNameByMode(normalizedName, PersonNameMode.CH_NAME);
+			const remainder = chineseName && chineseName !== normalizedName
+				? normalizedName.replace(chineseName, '').trim()
+				: normalizedName;
+			return remainder || normalizedName;
 		}
 		return this.getPersonNameByMode(name, personNameMode);
 	}
@@ -360,6 +419,13 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			DataValueType.url,
 			extract.imageUrl,
 			extract.imageUrl
+		));
+		const imageName = this.getImageBasename(extract.image);
+		variableMap.set(DoubanParameterName.IMAGE_NAME, new DataField(
+			DoubanParameterName.IMAGE_NAME,
+			DataValueType.string,
+			imageName,
+			imageName,
 		));
 		variableMap.set(DoubanParameterName.YEAR_PUBLISHED, new DataField(
 			DoubanParameterName.YEAR_PUBLISHED,
@@ -470,6 +536,7 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			case SupportType.teleplay: return { templateKey: TemplateKey.teleplayTemplateFile, configKey: 'teleplayTemplateConfig' };
 			case SupportType.game:   return { templateKey: TemplateKey.gameTemplateFile,      configKey: 'gameTemplateConfig' };
 			case SupportType.note:   return { templateKey: TemplateKey.noteTemplateFile,      configKey: 'noteTemplateConfig' };
+			case SupportType.theater: return { templateKey: TemplateKey.theaterTemplateFile,  configKey: 'theaterTemplateConfig' };
 			default: return { templateKey: null, configKey: null };
 		}
 	}
@@ -590,6 +657,17 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		fileName = this.parsePartPath(fileName, extract, context, variableMap)
 		fileName = fileName + fileNameSuffix;
 		const overwriteCoverImage = syncConfig ? (syncConfig.overwriteCoverImage ?? false) : context.settings.overwriteCoverImage;
+		// 封面已存在且未勾选覆盖时跳过下载，加速替换同步
+		if (!overwriteCoverImage) {
+			const existingPath = folder.replace(/\\/g, '/') + '/' + fileName;
+			const existing = context.plugin.app.vault.getAbstractFileByPath(existingPath);
+			if (existing instanceof TFile) {
+				extract.image = existingPath;
+				extract.imageUrl = image;
+				this.initImageVariableMap(extract, context, variableMap);
+				return;
+			}
+		}
 		const imageReferer = (extract.id ? this.getSubjectUrl(extract.id) : '') || extract.url;
 		const referHeaders = HttpUtil.buildImageRequestHeaders(
 			context.plugin.settingsManager.getHeaders() as Record<string, any>,
@@ -630,6 +708,14 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 		return imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
 	}
 
+	private getImageBasename(image: string): string {
+		if (!image) {
+			return '';
+		}
+		const cleanPath = image.split(/[?#]/, 1)[0].replace(/\\/g, '/');
+		return cleanPath.substring(cleanPath.lastIndexOf('/') + 1);
+	}
+
 	private initImageVariableMap(extract: T, context: HandleContext, variableMap : Map<string, DataField>) {
 		variableMap.set(DoubanParameterName.IMAGE_URL, new DataField(
 			DoubanParameterName.IMAGE_URL,
@@ -642,6 +728,13 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			DataValueType.path,
 			extract.image,
 			extract.image
+		));
+		const imageName = this.getImageBasename(extract.image);
+		variableMap.set(DoubanParameterName.IMAGE_NAME, new DataField(
+			DoubanParameterName.IMAGE_NAME,
+			DataValueType.string,
+			imageName,
+			imageName,
 		));
 
 	}

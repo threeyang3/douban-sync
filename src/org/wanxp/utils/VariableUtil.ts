@@ -9,6 +9,7 @@ import {DataField} from "./model/DataField";
 import {FieldVariable} from "./model/FieldVariable";
 import {CustomProperty} from "../douban/setting/model/CustomProperty";
 import {FileUtil} from "./FileUtil";
+import {ArrayLengthLimit} from "../douban/setting/model/ArrayLengthLimit";
 
 type TargetType = 'text' | 'path' | 'yml_text';
 
@@ -36,6 +37,7 @@ export class VariableUtil {
 			return content;
 		}
 		const map = obj instanceof Map ? obj : this.objToMap(obj);
+		this.applyArrayLengthLimits(subjectType, map, settingManager);
 		this.handleCustomVariable(subjectType, map, settingManager, 'text');
 		content = this.replaceMap(map, allVariables, content, settingManager, targetType);
 		return content;
@@ -102,6 +104,9 @@ export class VariableUtil {
 		if (!value) {
 			return content.replaceAll(variableStr, "");
 		}
+		// 当变量被 [[ ]] 包裹时（wiki link），使用内联格式，不添加 YAML 引号
+		const wikiLinkPattern = `[[${variableStr}]]`;
+		const isWikiLink = content.includes(wikiLinkPattern);
 		let arraySettings = this.getArraySetting(outTypeName, settingManager);
 		if (!arraySettings) {
 			log.warn(i18nHelper.getMessage(`130107`, variable.variable, outTypeName));
@@ -142,14 +147,18 @@ export class VariableUtil {
 			}
 		})
 			.filter(v => v)
-			.map(v => this.handleText(v, targetType))
+			.map(v => isWikiLink ? v : this.handleText(v, targetType))
 		;
 		let arrayValue = StringUtil.handleArray(strValues, arraySettings);
 		// menu 在 callout 中需要为每行添加 > 前缀
 		if (targetType === 'text' && variable.key === 'menu' && arrayValue) {
 			arrayValue = arrayValue.replace(/\n/g, '\n> ');
 		}
-		content = content.replaceAll(variableStr, arrayValue);
+		if (isWikiLink) {
+			content = content.replaceAll(wikiLinkPattern, `[[${arrayValue}]]`);
+		} else {
+			content = content.replaceAll(variableStr, arrayValue);
+		}
 		return content;
 	}
 
@@ -162,6 +171,14 @@ export class VariableUtil {
 			return content;
 		}
 		let strValue = value?  value.toString() : "";
+		// 当变量被 [[ ]] 包裹时（wiki link），不添加 YAML 引号，Obsidian frontmatter 能直接识别
+		const wikiLinkPattern = `[[${variable.variable}]]`;
+		if (content.includes(wikiLinkPattern)) {
+			return content.replaceAll(wikiLinkPattern, `[[${strValue}]]`);
+		}
+		if (targetType === 'text' && variable.key === 'image' && strValue) {
+			content = this.replaceMarkdownImagePaths(content, variable.variable, strValue);
+		}
 		return content.replaceAll(variable.variable, this.handleText(strValue, targetType, valueField));
 	}
 
@@ -172,13 +189,13 @@ export class VariableUtil {
 	 * @param settingManager
 	 */
 	private static getAllVariables(content: string, settingManager:SettingsManager): FieldVariable[] {
-		const reg =/\{\{[a-zA-Z-0-9_.]+([(a-zA-Z-0-9)]+)?}}/g
+		const reg =/\{\{[a-zA-Z0-9_.\-]+([(a-zA-Z0-9)]+)?}}/g
 		const result = content.match(reg);
 		if (!result) {
 			return [];
 		}
 		return result.map((v) => {
-			const reg2 = new RegExp(`[a-zA-Z-0-9_.]+`, 'g');
+			const reg2 = new RegExp(`[a-zA-Z0-9_.\\-]+`, 'g');
 			const result2 = v.match(reg2);
 			if (!result2) {
 				return null;
@@ -276,12 +293,76 @@ export class VariableUtil {
 				content = this.replaceArray(variable, value.value, content, settingManager, targetType);
 				break;
 			default:
+				if (targetType === 'text' && variable.key === 'image' && value.value) {
+					content = this.replaceMarkdownImagePaths(content, variableStr, String(value.value));
+				}
 				content = content.replaceAll(variableStr,  this.handleText(value.value, targetType, value));
 				break;
 
 		}
 
 		return content;
+	}
+
+	private static replaceMarkdownImagePaths(content: string, variable: string, value: string): string {
+		const escapedVariable = variable.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const imageTargetRegex = new RegExp(
+			`(\\]\\(\\s*<?)${escapedVariable}(>?\\s*(?:"[^"]*"|'[^']*')?\\s*\\))`,
+			'g',
+		);
+		const encodedPath = FileUtil.toMarkdownLinkPath(value);
+		return content.replace(imageTargetRegex, `$1${encodedPath}$2`);
+	}
+
+	static applyArrayLengthLimits(
+		subjectType: SupportType,
+		variableMap: Map<string, DataField>,
+		settingManager: SettingsManager,
+	): void {
+		if (!variableMap?.size) {
+			return;
+		}
+		const limits = settingManager.getSetting('arrayLengthLimits') as ArrayLengthLimit[];
+		if (!Array.isArray(limits) || limits.length === 0) {
+			return;
+		}
+
+		const currentType = String(subjectType || '').toLowerCase();
+		const effectiveLimits = new Map<string, number>();
+		limits.forEach(limit => {
+			const field = String(limit?.field || '').trim().toLowerCase();
+			const type = String(limit?.type || '').toLowerCase();
+			const value = Number(limit?.limit);
+			if (!field || !Number.isInteger(value) || value <= 0) {
+				return;
+			}
+			if (type !== SupportType.all && type !== currentType) {
+				return;
+			}
+			const existing = effectiveLimits.get(field);
+			if (existing == null || value < existing) {
+				effectiveLimits.set(field, value);
+			}
+		});
+		if (effectiveLimits.size === 0) {
+			return;
+		}
+
+		variableMap.forEach((dataField, key) => {
+			if (!(dataField instanceof DataField) || !Array.isArray(dataField.value)) {
+				return;
+			}
+			const limit = effectiveLimits.get(key.toLowerCase());
+			if (limit == null || dataField.value.length <= limit) {
+				return;
+			}
+			variableMap.set(key, new DataField(
+				dataField.name,
+				dataField.type,
+				dataField.origin,
+				dataField.value.slice(0, limit),
+			));
+		});
 	}
 
 	/**

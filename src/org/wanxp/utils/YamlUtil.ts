@@ -8,12 +8,12 @@ export default class YamlUtil {
 	}
 
 
-	public static handleSpecialChar(text: string): string {
-		return '"' + text + '"';
-	}
-
 	public static handleText(text: string, dataField: DataField = null): string {
 		if (!YamlUtil.hasSpecialChar(text)) {
+			return text;
+		}
+		// Obsidian frontmatter 能直接识别 [[wiki link]]，无需加引号
+		if (/^\[\[.+\]\]$/.test(text)) {
 			return text;
 		}
 		// 多行文本使用 YAML 块标量语法，保留换行结构

@@ -4,12 +4,12 @@ import DoubanPlugin from "../../../main";
 import DoubanSubject from '../model/DoubanSubject';
 import DoubanGameSubject from '../model/DoubanGameSubject';
 import HandleContext from "../model/HandleContext";
-import {DataValueType, PersonNameMode, SupportType} from "../../../constant/Constsant";
+import {DataValueType, PersonNameMode, PropertyName, SupportType} from "../../../constant/Constsant";
 import {UserStateSubject} from "../model/UserStateSubject";
 import {moment} from "obsidian";
 import {TITLE_ALIASES_SPECIAL_CHAR_REG_G} from "../../../utils/YamlUtil";
 import {DataField} from "../../../utils/model/DataField";
-import {b} from "@shikijs/engine-javascript/dist/shared/engine-javascript.BnuFKbIS";
+import DoubanPageParser from "../../../utils/DoubanPageParser";
 
 export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<DoubanGameSubject> {
 
@@ -49,15 +49,15 @@ export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<Dou
 
 	analysisUser(html: CheerioAPI, context: HandleContext): {data:CheerioAPI ,  userState: UserStateSubject} {
 		let rate = html('input#n_rating').val();
-		const rating = html('span#rating');
-		const tagsStr = rating.parent().next().text().trim();
-		const tags = tagsStr ? tagsStr.replace('标签:', '').trim().split(' ') : null;
+		const tags = DoubanPageParser.parseUserTags(html);
 		const collected = html('div.collection-section > div.collection-rating-stars > div.collection-collected');
 		const stateWord = collected.find('span.collection-result').text().trim();
 		const collectionDateStr = collected.find('span.color_gray').text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		let component = rating.parent().next().next().text().trim();
-			component = this.filterCommentText(component);
+		const component = DoubanPageParser.parseUserComment(
+			html,
+			this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment),
+		);
 
 		const userState: UserStateSubject = {
 			tags: tags,
@@ -71,7 +71,7 @@ export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<Dou
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanGameSubject {
 		let title = html(html("#content > h1").get(0)).text();
-		title = this.getPersonNameByMode(title, PersonNameMode.CH_NAME);
+		title = this.getTitleNameByMode(title, PersonNameMode.CH_NAME, context);
 		let idContent = html(html("head > meta[name= 'mobile-agent']").get(0)).attr("content");
 		let idPattern = /(\d){5,10}/g;
 		let idP = idPattern.exec(idContent);
@@ -80,20 +80,16 @@ export default class DoubanGameLoadHandler extends DoubanAbstractLoadHandler<Dou
 		let detailDom = html(html("dl.thing-attr").get(0));
 		let dt = detailDom.find("dt");
 		let image = html(html("#content > div > div.article > div.mod.item-subject > div.item-subject-info > div > a > img").get(0)).attr("src");
-		// 获取所有#link-report > p元素，按段落拼接
-		const descElements = html("#link-report > p").get();
-		let desc = '';
-		for (const p of descElements) {
-			const text = html(p).text().trim();
-			if (text) {
-				desc += (desc ? '\n' : '') + text;
-			}
-		}
+		let desc = DoubanPageParser.extractText(html, [
+			"#link-report > p",
+			"#link-report p",
+			".mod.item-subject .indent p",
+		]);
 		// fallback: 从 meta 标签获取简介
 		if (!desc) {
 			const metaDesc = html("head > meta[property='og:description']").get(0);
 			if (metaDesc) {
-				desc = html(metaDesc).attr("content") || '';
+				desc = DoubanPageParser.normalizeText(html(metaDesc).attr("content") || '');
 			}
 		}
 

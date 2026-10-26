@@ -1,7 +1,7 @@
 import {
 	App,
 	ButtonComponent, DropdownComponent,
-	Modal, SearchComponent, Setting, TextComponent, ValueComponent,
+	Modal, Notice, SearchComponent, Setting, TextComponent, ValueComponent,
 } from "obsidian";
 
 import DoubanPlugin from "../../main";
@@ -36,6 +36,8 @@ import {arraySettingDisplay} from "../setting/ArrayDisplayTypeSettingsHelper";
 import {DatePickComponent} from "./DatePickComponent";
 import {NumberComponent} from "./NumberComponent";
 import {log} from "../../utils/Logutil";
+import {SyncPreviewHandler} from "../sync/handler/SyncPreviewHandler";
+import {SyncPreviewModal} from "./SyncPreviewModal";
 
 export class DoubanSyncModal extends Modal {
 	plugin: DoubanPlugin;
@@ -167,25 +169,65 @@ ${syncStatus.getHandle() == 0? '...' : i18nHelper.getMessage('110042') + ':' + T
 			.onClick(() => {
 				this.close();
 			});
+		const previewButton = new ButtonComponent(controls)
+			.setButtonText(i18nHelper.getMessage('130300'))
+			.onClick(async () => {
+				if(!await this.plugin.checkLogin(this.context)) {
+					return;
+				}
+				previewButton.setDisabled(true);
+				try {
+					await this.showPreview(syncConfig, contentEl, syncButton);
+				} finally {
+					previewButton.setDisabled(false);
+				}
+			});
 		const syncButton = new ButtonComponent(controls)
 			.setButtonText(i18nHelper.getMessage('110007'))
 			.onClick(async () => {
 				if(!await this.plugin.checkLogin(this.context)) {
 					return;
 				}
-				syncButton.setDisabled(true);
-				if(!this.plugin.statusHolder.startSync(syncConfig)) {
+				if (syncConfig.force) {
+					await this.showPreview(syncConfig, contentEl, syncButton, true);
 					return;
 				}
-				this.updateContextByConfig(syncConfig);
-				this.show(contentEl);
-				await this.plugin.sync(this.context);
+				await this.startSyncFlow(syncConfig, contentEl, syncButton);
 			})
 
 
 		syncButton.setClass("obsidian_douban_search_button");
 		cancelButton.setClass("obsidian_douban_search_button");
+		previewButton.setClass("obsidian_douban_search_button");
 
+	}
+
+	private async showPreview(syncConfig: SyncConfig, contentEl: HTMLElement, syncButton: ButtonComponent, allowStart:boolean = false) {
+		try {
+			const previewHandler = new SyncPreviewHandler(this.app, this.plugin);
+			const previewResult = await previewHandler.preview(syncConfig, {
+				...this.context,
+				syncConfig,
+				syncPreviewMode: true,
+			});
+			new SyncPreviewModal(this.app, previewResult, allowStart ? async () => {
+				await this.startSyncFlow(syncConfig, contentEl, syncButton);
+			} : undefined).open();
+		} catch (error) {
+			log.error('Failed to generate sync preview', error);
+			new Notice(i18nHelper.getMessage('130311'));
+		}
+	}
+
+	private async startSyncFlow(syncConfig: SyncConfig, contentEl: HTMLElement, syncButton: ButtonComponent) {
+		syncButton.setDisabled(true);
+		if(!this.plugin.statusHolder.startSync(syncConfig)) {
+			syncButton.setDisabled(false);
+			return;
+		}
+		this.updateContextByConfig(syncConfig);
+		this.show(contentEl);
+		await this.plugin.sync(this.context);
 	}
 
 	private updateContextByConfig(syncConfig: SyncConfig) {

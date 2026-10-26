@@ -36,7 +36,7 @@ render_with_liquid: false
 | 笔记     | [[摘录：{{title}}]]      |
 | 作者     | {{author(ArrayType1)}}             |
 | 译者     | {{translator(ArrayType1)}}     |
-| 来源     | [ {{title}} ]( {{url}} ) |
+| 来源     | [ \{\{title\}\} ]( \{\{url\}\} ) |
 | 网站评分     | {{score}}                |
 | 出版发行 | {{publisher}}        |
 | 原作名   | {{originalTitle}}        |
@@ -76,7 +76,7 @@ translator: {{translator}}
 publisher: {{publisher}}
 producer: {{producer}}
 isbn: {{isbn}}
-url: {{url}}
+url: \{\{url\}\}
 totalPage: {{totalPage}}
 price: {{price}}
 tags: {{myTags}}
@@ -101,7 +101,7 @@ desc: {{desc}}
 | 笔记     | [[摘录：{{title}}]]      |
 | 作者     | {{author(ArrayType1)}}             |
 | 译者     | {{translator(ArrayType1)}}     |
-| 来源     | [ {{title}} ]( {{url}} ) |
+| 来源     | [ \{\{title\}\} ]( \{\{url\}\} ) |
 | 网站评分     | {{score}}                |
 | 出版发行 | {{publisher}}        |
 | 原作名   | {{originalTitle}}        |

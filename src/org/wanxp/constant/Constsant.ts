@@ -98,6 +98,7 @@ export enum TemplateKey {
 	noteTemplateFile = 'noteTemplateFile',
 	gameTemplateFile = 'gameTemplateFile',
 	teleplayTemplateFile = 'teleplayTemplateFile',
+	theaterTemplateFile = 'theaterTemplateFile',
 }
 
 export enum SupportType {
@@ -280,6 +281,7 @@ export enum SyncItemStatus {
 	replace = 'replace',
 	create = 'create',
 	fail = 'fail',
+	manualReview = 'manualReview',
 	failByDiffType = 'failByDiffType',
 	unHandle = 'unHandle',
 }

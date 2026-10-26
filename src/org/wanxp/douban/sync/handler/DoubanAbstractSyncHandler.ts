@@ -5,18 +5,20 @@ import {
 	SyncConditionType,
 	SyncType,
 } from "../../../constant/Constsant";
-import { DoubanSyncHandler } from "./DoubanSyncHandler";
-import { SyncConfig } from "../model/SyncConfig";
+import {DoubanSyncHandler} from "./DoubanSyncHandler";
+import {SyncConfig} from "../model/SyncConfig";
 import HandleContext from "../../data/model/HandleContext";
-import { SubjectListItem } from "../../data/model/SubjectListItem";
-import { sleepRange } from "../../../utils/TimeUtil";
+import {SubjectListItem} from "../../data/model/SubjectListItem";
+import {sleepRange} from "../../../utils/TimeUtil";
 import DoubanSubjectLoadHandler from "../../data/handler/DoubanSubjectLoadHandler";
-import { DoubanListHandler } from "./list/DoubanListHandler";
+import {DoubanListHandler} from "./list/DoubanListHandler";
 import DoubanSubject from "../../data/model/DoubanSubject";
-import { log } from "../../../utils/Logutil";
-import { i18nHelper } from "../../../lang/helper";
-import { SearchPage } from "../../data/model/SearchPage";
+import {log} from "../../../utils/Logutil";
+import {i18nHelper} from "../../../lang/helper";
+import {SearchPage} from "../../data/model/SearchPage";
 import {SearchPageTypeOf} from "../../data/model/SearchPageTypeOf";
+import SyncStatusHolder from "../model/SyncStatusHolder";
+import {SyncPreviewEntry, SyncPreviewResult} from "../model/SyncPreviewResult";
 
 function toDateList(dataList: SubjectListItem[]): Date[] {
 	const dateList = dataList
@@ -31,23 +33,8 @@ function toDateList(dataList: SubjectListItem[]): Date[] {
 	return dateList;
 }
 
-function testTouchEndCondition(searchPage: SearchPage, context: HandleContext) {
-	const { syncConfig } = context;
-	if (!syncConfig) {
-		return false;
-	}
-	switch (syncConfig.syncConditionType) {
-		case SyncConditionType.ALL:
-			return false;
-		case SyncConditionType.LAST_THIRTY:
-			return searchPage.pageNum >= 0;
-		case SyncConditionType.CUSTOM_ITEM:
-			const syncConditionCountToValue = syncConfig.syncConditionCountToValue? syncConfig.syncConditionCountToValue : searchPage.total;
-			return searchPage.start + PAGE_SIZE - 1 >= syncConditionCountToValue;
-		case SyncConditionType.CUSTOM_TIME:
-			return true;
-	}
-	return false;
+function isPreviewMode(context: HandleContext): boolean {
+	return !!context.syncPreviewMode;
 }
 
 export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
@@ -73,6 +60,71 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 
 	abstract getSyncType(): SyncType;
 
+	async preview(syncConfig: SyncConfig, context: HandleContext): Promise<SyncPreviewResult> {
+		const previewContext: HandleContext = {
+			...context,
+			syncConfig,
+			syncPreviewMode: true,
+		};
+		const items = await this.collectItems(syncConfig, previewContext);
+		const previewStatus = new SyncStatusHolder(syncConfig, this.plugin.app);
+		previewStatus.initSyncHandledData(this.plugin.settings.syncHandledDataArray);
+		await previewStatus.buildExistingFilesCache(syncConfig?.dataFilePath || '');
+
+		const entries: SyncPreviewEntry[] = [];
+		let createCount = 0;
+		let replaceCount = 0;
+		let existsCount = 0;
+		let unHandleCount = 0;
+
+		for (const item of items) {
+			if (!previewStatus.shouldSync(item.id)) {
+				unHandleCount++;
+				entries.push({id: item.id, title: item.title, action: 'unHandle'});
+				continue;
+			}
+
+			const existingFilePath = previewStatus.getExistingFilePath(item.id);
+			if (existingFilePath) {
+				if (syncConfig.force) {
+					replaceCount++;
+					entries.push({id: item.id, title: item.title, action: 'replace', existingFilePath});
+				} else {
+					existsCount++;
+					entries.push({id: item.id, title: item.title, action: 'exists', existingFilePath});
+				}
+			} else {
+				createCount++;
+				entries.push({id: item.id, title: item.title, action: 'create'});
+			}
+		}
+
+		const inheritSummary: string[] = [];
+		if (syncConfig.force && syncConfig.inheritOldFields) {
+			if (this.plugin.settings.dataProtection.preserveCustomProperties) {
+				inheritSummary.push('frontmatter 自定义属性');
+			}
+			if (this.plugin.settings.dataProtection.preserveRecord) {
+				inheritSummary.push('## 记录');
+			}
+			if (this.plugin.settings.dataProtection.preserveThoughts) {
+				inheritSummary.push('## 感想');
+			}
+		}
+
+		return {
+			total: items.length,
+			createCount,
+			replaceCount,
+			existsCount,
+			unHandleCount,
+			affectedCount: createCount + replaceCount,
+			inheritSummary,
+			backupEnabled: !!this.plugin.settings.syncBackupBeforeReplace,
+			entries,
+		};
+	}
+
 	async sync(syncConfig: SyncConfig, context: HandleContext): Promise<void> {
 		if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
 			await this.syncByTimeLimit(syncConfig, context);
@@ -96,12 +148,12 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			: null;
 		if (!startDate && !endDate) {
 			log.warn(i18nHelper.getMessage("110081"));
-			return;
+			return [];
 		}
 		const cacheList = new Map<number, SearchPageTypeOf<SubjectListItem>>();
 		const searchPage = await this.getItems(syncConfig, context);
 		if (!searchPage) {
-			return;
+			return [];
 		}
 		const total = searchPage.total;
 		const lastPage = total / PAGE_SIZE + 1;
@@ -116,7 +168,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		cacheList.set(currentPage, searchPage);
 		if (startDate != null) {
 			do {
-				if (!context.plugin.statusHolder.syncing()) {
+				if (this.isStopped(context)) {
 					break;
 				}
 				let page = cacheList.get(currentPage);
@@ -148,7 +200,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		currentPage = 1;
 		if (endDate != null) {
 			do {
-				if (!context.plugin.statusHolder.syncing()) {
+				if (this.isStopped(context)) {
 					break;
 				}
 				let page = cacheList.get(currentPage);
@@ -177,7 +229,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		}
 		let needHandleItems:SubjectListItem[] = [];
 		for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-			if (!context.plugin.statusHolder.syncing()) {
+			if (this.isStopped(context)) {
 				break;
 			}
 			let page = cacheList.get(pageNum);
@@ -193,44 +245,57 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 				.filter((item) => {
 					const itemDate = item.updateDate;
 					return (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
-				}
-			));
+				}),
+			);
 		}
 		return needHandleItems;
-
 	}
+
 	async syncByTimeLimit(syncConfig: SyncConfig, context: HandleContext) {
 		const items = await this.getByTimeLimit(syncConfig, context);
 		if (!items || items.length == 0) {
 			return;
 		}
 
-		const subjectListItems = await this.removeExists(
-			items,
-			syncConfig,
-			context,
-		);
+		const subjectListItems = await this.removeExists(items, syncConfig, context);
 
-		const searchPage = new SearchPageTypeOf<SubjectListItem>(subjectListItems.length,
+		const searchPage = new SearchPageTypeOf<SubjectListItem>(
+			subjectListItems.length,
 			1,
 			subjectListItems.length,
-			null,subjectListItems);
+			null,
+			subjectListItems,
+		);
 		await this.handleItems(searchPage, subjectListItems, context);
+	}
 
+	private async collectItems(syncConfig: SyncConfig, context: HandleContext): Promise<SubjectListItem[]> {
+		if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
+			return await this.getByTimeLimit(syncConfig, context);
+		}
+		if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
+			return await this.collectByCountLimit(syncConfig, context);
+		}
+		if (syncConfig.syncConditionType == SyncConditionType.ALL) {
+			return await this.collectAll(syncConfig, context);
+		}
+		if (syncConfig.syncConditionType == SyncConditionType.LAST_THIRTY) {
+			return await this.collectLastThirty(syncConfig, context);
+		}
+		return [];
 	}
 
 	private async getItems(
 		syncConfig: SyncConfig,
 		context: HandleContext,
 	): Promise<SearchPageTypeOf<SubjectListItem>> {
-		const supportHandlers: DoubanListHandler[] =
-			this.doubanListHandlers.filter((h) => h.support(syncConfig));
+		const supportHandlers: DoubanListHandler[] = this.doubanListHandlers.filter((h) => h.support(syncConfig));
 		const handler = supportHandlers[0];
-		if (!context.plugin.statusHolder.syncing()) {
+		if (this.isStopped(context)) {
 			return SearchPage.emptyWithNoType();
 		}
 		const item = await handler.getPageData(context);
-		if (!context.plugin.statusHolder.syncing()) {
+		if (this.isStopped(context)) {
 			return SearchPage.emptyWithNoType();
 		}
 		return item;
@@ -241,7 +306,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		syncConfig: SyncConfig,
 		context: HandleContext,
 	): Promise<SubjectListItem[]> {
-		if (!context.plugin.statusHolder.syncing()) {
+		if (this.isStopped(context)) {
 			return [];
 		}
 		return items;
@@ -255,40 +320,29 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		if (!items || items.length == 0) {
 			return;
 		}
-		const { syncStatus } = context.syncStatusHolder;
-		const { syncConfig } = context;
+		const {syncStatus} = context.syncStatusHolder;
+		const {syncConfig} = context;
 		syncStatus.totalNum(searchPage.total);
-		const needHandled: number =
-			syncStatus.getTotal() - syncStatus.getHasHandle();
+		const needHandled: number = syncStatus.getTotal() - syncStatus.getHasHandle();
 		syncStatus.setNeedHandled(needHandled);
 
-		// 在处理前预先构建本地文件索引，避免每次检查都遍历
 		const dataFilePath = syncConfig?.dataFilePath || '';
 		await syncStatus.buildExistingFilesCache(dataFilePath);
 
 		for (const item of items) {
-			if (!context.plugin.statusHolder.syncing()) {
+			if (this.isStopped(context)) {
 				return;
 			}
 			try {
-				// 先检查缓存
 				if (syncStatus.shouldSync(item.id)) {
-					// 缓存中没有，检查本地文件是否存在（使用预构建的索引）
 					const localExists = syncStatus.checkLocalExists(item.id);
 					if (localExists && !syncConfig.force) {
-						// 本地已存在且未开启强制替换，标记为已存在
 						syncStatus.exists(item.id, item.title, syncStatus.getExistingFilePath(item.id));
 					} else {
-						// 本地不存在或开启了强制替换，执行同步
-						await this.doubanSubjectLoadHandler.handle(
-								item.id,
-								context,
-							);
-
+						await this.doubanSubjectLoadHandler.handle(item.id, context);
 						await sleepRange(
 							BasicConst.CALL_DOUBAN_DELAY,
-							BasicConst.CALL_DOUBAN_DELAY +
-								BasicConst.CALL_DOUBAN_DELAY_RANGE,
+							BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE,
 						);
 					}
 				} else {
@@ -302,120 +356,118 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		}
 	}
 
+	private isStopped(context: HandleContext): boolean {
+		if (isPreviewMode(context)) {
+			return false;
+		}
+		return !context.plugin.statusHolder.syncing();
+	}
+
 	private async syncByCountLimit(syncConfig: SyncConfig, context: HandleContext) {
+		const items = await this.collectByCountLimit(syncConfig, context);
+		if (!items.length) {
+			return;
+		}
+		const page = new SearchPageTypeOf<SubjectListItem>(
+			items.length,
+			1,
+			items.length,
+			null,
+			items,
+		);
+		await this.handleItems(page, items, context);
+	}
+
+	private async collectByCountLimit(syncConfig: SyncConfig, context: HandleContext): Promise<SubjectListItem[]> {
 		const {syncConditionCountFromValue, syncConditionCountToValue} = syncConfig;
-		const startOffset = Math.floor((syncConditionCountFromValue - 1)/ PAGE_SIZE) * PAGE_SIZE;
+		const startOffset = Math.floor((syncConditionCountFromValue - 1) / PAGE_SIZE) * PAGE_SIZE;
 		context.syncOffset = startOffset;
-		//结束点是第几条
 		let endOffsetNumberForCustom = 0;
 		let needHandleTotalCustomItem = 0;
 		let isFirstStep = true;
 		let handleCount = 0;
+		const result: SubjectListItem[] = [];
 		do {
 			const searchPage = await this.getItems(syncConfig, context);
-			if (!context.plugin.statusHolder.syncing()) {
+			if (this.isStopped(context)) {
 				break;
 			}
 			const {list, total} = searchPage;
-			if (
-				!searchPage ||
-				!list ||
-				list.length == 0
-			) {
+			if (!searchPage || !list || list.length == 0) {
 				break;
 			}
 			if (syncConditionCountFromValue > total) {
-				context.syncStatusHolder.syncStatus.setMessage(i18nHelper.getMessage("130121", total));
+				if (!isPreviewMode(context)) {
+					context.syncStatusHolder.syncStatus.setMessage(i18nHelper.getMessage("130121", total));
+				}
 				break;
 			}
 			if (endOffsetNumberForCustom == 0) {
-				endOffsetNumberForCustom = Math.min(syncConditionCountToValue?syncConditionCountToValue:searchPage.total, searchPage.total);
+				endOffsetNumberForCustom = Math.min(syncConditionCountToValue ? syncConditionCountToValue : searchPage.total, searchPage.total);
 				needHandleTotalCustomItem = endOffsetNumberForCustom - syncConditionCountFromValue + 1;
-
 			}
-			let subjectListItems = [];
 
-			//在开始和结束同一页
+			let subjectListItems: SubjectListItem[] = [];
 			if (Math.floor((syncConditionCountFromValue - 1) / PAGE_SIZE) == Math.floor((endOffsetNumberForCustom - 1) / PAGE_SIZE)) {
 				const startIndex = Math.floor((syncConditionCountFromValue - 1) % PAGE_SIZE);
-				const endIndex =  Math.floor((endOffsetNumberForCustom - 1) % PAGE_SIZE);
-				subjectListItems = await this.removeExists(
-					list.slice(startIndex, endIndex + 1),
-					syncConfig,
-					context,
-				);
+				const endIndex = Math.floor((endOffsetNumberForCustom - 1) % PAGE_SIZE);
+				subjectListItems = await this.removeExists(list.slice(startIndex, endIndex + 1), syncConfig, context);
 				handleCount += (endIndex - startIndex + 1);
-			//第一页
 			} else if (isFirstStep) {
 				const startIndex = (syncConditionCountFromValue - 1) % PAGE_SIZE;
 				handleCount += (list.length - startIndex);
-				subjectListItems = await this.removeExists(
-					list.slice(startIndex),
-					syncConfig,
-					context,
-				);
+				subjectListItems = await this.removeExists(list.slice(startIndex), syncConfig, context);
 				isFirstStep = false;
-			}
-			//最后一页
-			else if (needHandleTotalCustomItem - handleCount <= PAGE_SIZE) {
+			} else if (needHandleTotalCustomItem - handleCount <= PAGE_SIZE) {
 				const endIndex = needHandleTotalCustomItem - handleCount;
-				subjectListItems = await this.removeExists(
-					list.slice(0, endIndex),
-					syncConfig,
-					context,
-				);
+				subjectListItems = await this.removeExists(list.slice(0, endIndex), syncConfig, context);
 				handleCount += endIndex;
-				//中间页
 			} else {
-				subjectListItems = await this.removeExists(
-					list,
-					syncConfig,
-					context,
-				);
+				subjectListItems = await this.removeExists(list, syncConfig, context);
 				handleCount += PAGE_SIZE;
 			}
 
-
-			if (!subjectListItems || subjectListItems.length == 0) {
+			result.push(...subjectListItems);
+			context.syncOffset = context.syncOffset + PAGE_SIZE;
+			if (!isPreviewMode(context)) {
 				await sleepRange(
 					BasicConst.CALL_DOUBAN_DELAY,
-					BasicConst.CALL_DOUBAN_DELAY +
-						BasicConst.CALL_DOUBAN_DELAY_RANGE,
+					BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE,
 				);
-				continue;
 			}
-
-			searchPage.total = needHandleTotalCustomItem;
-			//处理
-			await this.handleItems(searchPage, subjectListItems, context);
-
-			context.syncOffset = context.syncOffset + PAGE_SIZE;
-			await sleepRange(
-				BasicConst.CALL_DOUBAN_DELAY,
-				BasicConst.CALL_DOUBAN_DELAY +
-					BasicConst.CALL_DOUBAN_DELAY_RANGE,
-			);
 		} while (handleCount < needHandleTotalCustomItem);
+		return result;
 	}
 
 	private async syncAll(syncConfig: SyncConfig, context: HandleContext) {
-		//最多100000条
+		const items = await this.collectAll(syncConfig, context);
+		if (!items.length) {
+			return;
+		}
+		const page = new SearchPageTypeOf<SubjectListItem>(
+			items.length,
+			1,
+			items.length,
+			null,
+			items,
+		);
+		await this.handleItems(page, items, context);
+	}
+
+	private async collectAll(syncConfig: SyncConfig, context: HandleContext): Promise<SubjectListItem[]> {
 		context.syncOffset = 0;
 		let handleCount = 0;
 		let totalForHandle = 0;
 		let isFirstStep = true;
+		const result: SubjectListItem[] = [];
 		do {
 			const searchPage = await this.getItems(syncConfig, context);
-			if (!context.plugin.statusHolder.syncing()) {
+			if (this.isStopped(context)) {
 				break;
 			}
 
 			const {list, total} = searchPage;
-			if (
-				!searchPage ||
-				!list ||
-				list.length == 0
-			) {
+			if (!searchPage || !list || list.length == 0) {
 				break;
 			}
 			if (isFirstStep) {
@@ -423,53 +475,44 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 				isFirstStep = false;
 			}
 			handleCount += list.length;
-			const subjectListItems = await this.removeExists(
-				list,
-				syncConfig,
-				context,
-			);
-			if (!subjectListItems || subjectListItems.length == 0) {
+			const subjectListItems = await this.removeExists(list, syncConfig, context);
+			result.push(...subjectListItems);
+			context.syncOffset = context.syncOffset + PAGE_SIZE;
+			if (!isPreviewMode(context)) {
 				await sleepRange(
 					BasicConst.CALL_DOUBAN_DELAY,
-					BasicConst.CALL_DOUBAN_DELAY +
-						BasicConst.CALL_DOUBAN_DELAY_RANGE,
+					BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE,
 				);
-				continue;
 			}
-			await this.handleItems(searchPage, subjectListItems, context);
-			context.syncOffset = context.syncOffset + PAGE_SIZE;
-			await sleepRange(
-				BasicConst.CALL_DOUBAN_DELAY,
-				BasicConst.CALL_DOUBAN_DELAY +
-					BasicConst.CALL_DOUBAN_DELAY_RANGE,
-			);
 		} while (handleCount <= totalForHandle);
+		return result;
 	}
 
 	private async syncLastThirty(syncConfig: SyncConfig, context: HandleContext) {
+		const items = await this.collectLastThirty(syncConfig, context);
+		if (!items.length) {
+			return;
+		}
+		const page = new SearchPageTypeOf<SubjectListItem>(
+			items.length,
+			1,
+			items.length,
+			null,
+			items,
+		);
+		await this.handleItems(page, items, context);
+	}
+
+	private async collectLastThirty(syncConfig: SyncConfig, context: HandleContext): Promise<SubjectListItem[]> {
 		context.syncOffset = 0;
 		const searchPage = await this.getItems(syncConfig, context);
-		if (!context.plugin.statusHolder.syncing()) {
-			return;
+		if (this.isStopped(context)) {
+			return [];
 		}
-		const {list, total} = searchPage;
-		if (
-			!searchPage ||
-			!list ||
-			list.length == 0
-		) {
-			return;
+		const {list} = searchPage;
+		if (!searchPage || !list || list.length == 0) {
+			return [];
 		}
-
-		const subjectListItems = await this.removeExists(
-			list,
-			syncConfig,
-			context,
-		);
-		if (!subjectListItems || subjectListItems.length == 0) {
-			return;
-		}
-		searchPage.total = Math.min(list.length, total);
-		await this.handleItems(searchPage, subjectListItems, context);
+		return await this.removeExists(list, syncConfig, context);
 	}
 }

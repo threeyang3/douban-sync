@@ -9,6 +9,7 @@ import {
 } from "../../../constant/Constsant";
 import {SyncHandledData} from "../../setting/model/SyncHandledData";
 import {DoubanSubjectStateRecords_SYNC} from "../../../constant/DoubanUserState";
+import { extractDoubanId } from "../../../utils/VaultUtil";
 
 export default class SyncStatusHolder {
 
@@ -21,12 +22,14 @@ export default class SyncStatusHolder {
 	[SyncItemStatus.replace, 0],
 	[SyncItemStatus.create, 0],
 	[SyncItemStatus.fail, 0],
+		[SyncItemStatus.manualReview, 0],
 		[SyncItemStatus.failByDiffType, 0],
 		[SyncItemStatus.unHandle, 0],
 	]);
 
 	// 缓存已存在的豆瓣ID映射，避免重复遍历
 	private existingDoubanIdsCache: Map<string, string> | null = null;
+	private existingDoubanIdByPathCache: Map<string, string> | null = null;
 
 	private key: string;
 	//不管处不处理的总数，比如会包含已经存在的，或者条件没覆盖的部分，比如过滤条件选择了1-2条，但总共其实有10条
@@ -119,12 +122,16 @@ export default class SyncStatusHolder {
 		}
 	}
 
-	public fail(id:string, title:string) {
-		this.updateResult(id, title, SyncItemStatus.fail);
+	public fail(id:string, title:string, detailMsg?: string, fileName?: string) {
+		this.updateResult(id, title, SyncItemStatus.fail, fileName, detailMsg);
 	}
 
 	public failByDiffType(id:string, title:string, detailMsg?: string) {
 		this.updateResult(id, title, SyncItemStatus.failByDiffType, undefined, detailMsg);
+	}
+
+	public manualReview(id:string, title:string, fileName?: string, detailMsg?: string) {
+		this.updateResult(id, title, SyncItemStatus.manualReview, fileName, detailMsg);
 	}
 
 	private updateResult(id:string, title:string, status:SyncItemStatus, fileName?:string, detailMsg?: string) {
@@ -163,6 +170,7 @@ export default class SyncStatusHolder {
 			return;
 		}
 		this.existingDoubanIdsCache = new Map<string, string>();
+		this.existingDoubanIdByPathCache = new Map<string, string>();
 		const files: TFile[] = this.app.vault.getMarkdownFiles();
 		// 规范化路径，统一使用 / 作为分隔符
 		const normalizedPath = this.normalizePath(dataFilePath);
@@ -174,11 +182,14 @@ export default class SyncStatusHolder {
 			}
 			try {
 				const cache = this.app.metadataCache.getFileCache(file);
-				if (cache?.frontmatter?.doubanId) {
-					const doubanId = String(cache.frontmatter.doubanId).trim();
-					if (doubanId) {
-						this.existingDoubanIdsCache.set(doubanId, file.path);
-					}
+				const frontmatter = cache?.frontmatter as Record<string, unknown> | undefined;
+				if (!frontmatter) {
+					continue;
+				}
+				const doubanId = extractDoubanId(frontmatter);
+				if (doubanId) {
+					this.existingDoubanIdsCache.set(doubanId, file.path);
+					this.existingDoubanIdByPathCache.set(this.normalizeFilePath(file.path), doubanId);
 				}
 			} catch (e) {
 				// 忽略单个文件的缓存错误
@@ -247,6 +258,7 @@ export default class SyncStatusHolder {
 		}
 		const normalizedId = String(doubanId).trim();
 		this.existingDoubanIdsCache.set(normalizedId, filePath);
+		this.existingDoubanIdByPathCache?.set(this.normalizeFilePath(filePath), normalizedId);
 	}
 
 	/**
@@ -273,7 +285,23 @@ export default class SyncStatusHolder {
 			return;
 		}
 		const normalizedId = String(doubanId).trim();
+		const filePath = this.existingDoubanIdsCache.get(normalizedId);
+		if (filePath) {
+			this.existingDoubanIdByPathCache?.delete(this.normalizeFilePath(filePath));
+		}
 		this.existingDoubanIdsCache.delete(normalizedId);
+	}
+
+	getDoubanIdForFilePath(filePath: string): string | null {
+		if (!filePath || !this.existingDoubanIdByPathCache) {
+			return null;
+		}
+		const normalizedPath = this.normalizeFilePath(filePath);
+		return this.existingDoubanIdByPathCache.get(normalizedPath) || null;
+	}
+
+	private normalizeFilePath(filePath: string): string {
+		return String(filePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
 	}
 
 	getKey(syncConfig: SyncConfig):string {

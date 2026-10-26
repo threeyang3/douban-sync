@@ -4,13 +4,14 @@ import DoubanPlugin from "../../../main";
 import {i18nHelper} from "src/org/wanxp/lang/helper";
 import HandleContext from "../model/HandleContext";
 import {SearchTypeRecords, SupportType} from "../../../constant/Constsant";
-import {sleep} from "../../../utils/TimeUtil";
 
 export class DoubanSearchModal extends Modal {
 	searchTerm: string;
 	searchType: SupportType = SupportType.all;
 	plugin: DoubanPlugin;
 	context: HandleContext
+	private submitRequested = false;
+	private submitting = false;
 
 	constructor(app: App, plugin: DoubanPlugin, context: HandleContext, type: SupportType) {
 		super(app);
@@ -36,8 +37,10 @@ export class DoubanSearchModal extends Modal {
 
 		searchInput.inputEl.addEventListener("keydown", (event) => {
 			if (event.key === "Enter") {
-				sleep(1000);
-				this.close();
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				event.stopPropagation();
+				this.submitSearch();
 			}
 		});
 		inputs.addClass("obsidian_douban_search_input")
@@ -58,7 +61,7 @@ export class DoubanSearchModal extends Modal {
 					.setButtonText(i18nHelper.getMessage('110004'))
 					.setCta()
 					.onClick(() => {
-						this.close();
+						this.submitSearch();
 					}).setClass( "obsidian_douban_search_button");
 		new ButtonComponent(controls)
 			.setButtonText(i18nHelper.getMessage('110005'))
@@ -71,9 +74,18 @@ export class DoubanSearchModal extends Modal {
 	async onClose() {
 		let {contentEl} = this;
 		contentEl.empty();
-		if (this.searchTerm) {
+		if (this.submitRequested && this.searchTerm) {
 			await this.plugin.search(this.searchTerm, this.searchType, this.context);
 		}
+	}
+
+	private submitSearch(): void {
+		if (this.submitting) {
+			return;
+		}
+		this.submitting = true;
+		this.submitRequested = true;
+		this.close();
 	}
 
 }

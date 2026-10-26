@@ -10,4 +10,6 @@ export default interface DoubanSubjectLoadHandler<T extends DoubanSubject> {
 
 	handle(id: string, context: HandleContext): Promise<T>;
 
+	handleHtml?(id: string, html: string, context: HandleContext): Promise<T>;
+
 }

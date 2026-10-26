@@ -13,6 +13,10 @@ import DoubanGameLoadHandler from "./DoubanGameLoadHandler";
 import HandleContext from "../model/HandleContext";
 import HandleResult from "../model/HandleResult";
 import DoubanTheaterLoadHandler from "./DoubanTheaterLoadHandler";
+import {DoubanHttpUtil} from "../../../utils/DoubanHttpUtil";
+import DoubanPageTypeDetector from "../../../utils/DoubanPageTypeDetector";
+import {ParsedDoubanUrl} from "../../../utils/DoubanUrlUtil";
+import {SupportType} from "../../../constant/Constsant";
 
 export class DoubanSearchChooseItemHandler {
 
@@ -35,17 +39,45 @@ export class DoubanSearchChooseItemHandler {
 			this._doubanSubjectHandlerDefault];
 	}
 
-	public async handle(searchExtract: DoubanSubject, context: HandleContext): Promise<void> {
+	public async handle(searchExtract: DoubanSubject, context: HandleContext): Promise<DoubanSubject | undefined> {
 		if (!searchExtract) {
-			return;
+			return undefined;
 		}
 		let doubanSubjectHandlers: DoubanSubjectLoadHandler<DoubanSubject>[] = this._doubanSubjectHandlers
 			.filter(h => h.support(searchExtract));
 		if (doubanSubjectHandlers && doubanSubjectHandlers.length > 0) {
-			await doubanSubjectHandlers[0].handle(searchExtract.id, context);
+			return await doubanSubjectHandlers[0].handle(searchExtract.id, context);
 		} else {
-			await this._doubanSubjectHandlerDefault.handle(searchExtract.id, context);
+			return await this._doubanSubjectHandlerDefault.handle(searchExtract.id, context);
 		}
+	}
+
+	public async handleUrl(parsed: ParsedDoubanUrl, context: HandleContext): Promise<DoubanSubject | undefined> {
+		const html = await DoubanHttpUtil.httpRequestGet(
+			parsed.url,
+			context.plugin.settingsManager.getHeaders(),
+			context.plugin.settingsManager,
+		);
+		const type = DoubanPageTypeDetector.detect(html, parsed.type) || parsed.type;
+		const subject = {
+			id: parsed.id,
+			type,
+			title: parsed.id,
+			url: parsed.url,
+		} as DoubanSubject;
+		const handlers = this._doubanSubjectHandlers.filter(handler => handler.support(subject));
+		const handler = handlers[0] || this._doubanSubjectHandlerDefault;
+		if (handler.handleHtml) {
+			const handlerContext: HandleContext = {
+				...context,
+				listItem: type === SupportType.theater ? subject : context.listItem,
+				syncActive: false,
+			};
+			const result = await handler.handleHtml(parsed.id, html, handlerContext);
+			context.importError = handlerContext.importError || '';
+			return result;
+		}
+		return await handler.handle(parsed.id, context);
 	}
 
 	public async parseText(extract: DoubanSubject, context: HandleContext): Promise<HandleResult> {

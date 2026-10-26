@@ -38,7 +38,7 @@ export default class NetFileHandler {
 				return buffer.byteLength;
 			}).then((size) => {
 				if (size == 0) {
-					return {success: false, size: size, error: '文件唯恐', filepath: null};
+					return {success: false, size: size, error: '文件为空', filepath: null};
 				}
 				return {success: true, size: size, error: '', filepath: filePath};
 			})

@@ -38,6 +38,9 @@ import {UserDataExtractor} from "./douban/userdata/UserDataExtractor";
 import {UserDataMerger} from "./douban/userdata/UserDataMerger";
 import {UserDataExportModal, UserDataImportModal} from "./douban/userdata/UserDataModal";
 import {TFile} from "obsidian";
+import { sanitizeImportedSettings } from "./douban/setting/SettingsIO";
+import DoubanPageGuard from "./utils/DoubanPageGuard";
+import DoubanBatchImportModal from "./douban/component/DoubanBatchImportModal";
 
 export default class DoubanPlugin extends Plugin {
 	public settings: DoubanPluginSetting;
@@ -53,14 +56,17 @@ export default class DoubanPlugin extends Plugin {
 	public doubanNoteManager: DoubanNoteManager;
 
 
-	async putToObsidian(context: HandleContext, extract: DoubanSubject) {
+	async putToObsidian(context: HandleContext, extract: DoubanSubject): Promise<boolean> {
 		const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
+		context.importError = '';
 		try {
 
 			if (!extract) {
 				log.warn(i18nHelper.getMessage('140101'));
-				return;
+				context.importError = i18nHelper.getMessage('140101');
+				return false;
 			}
+			DoubanPageGuard.assertValidSubject(extract);
 			if (context.syncActive && extract.guessType && extract.guessType != extract.type) {
 				extract.handledStatus = SubjectHandledStatus.syncTypeDiffAbort;
 				if (Action.Sync == context.action) {
@@ -70,7 +76,8 @@ export default class DoubanPlugin extends Plugin {
 				}else {
 					console.log(i18nHelper.getMessage('140102', extract.type, extract.title, extract.guessType));
 				}
-				return;
+				context.importError = i18nHelper.getMessage('140102', extract.type, extract.title, extract.guessType);
+				return false;
 			}
 			if (Action.Sync == context.action) {
 				this.showStatus(i18nHelper.getMessage('140207', syncStatus.getHasHandle(), syncStatus.getTotal(), extract.title));
@@ -78,92 +85,180 @@ export default class DoubanPlugin extends Plugin {
 				this.showStatus(i18nHelper.getMessage('140204', extract.title));
 			}
 			const result  = await this.doubanExtractHandler.parseText(extract, context)
-			if (result) {
-				await this.putContentToObsidian(context, result);
-				extract.handledStatus = SubjectHandledStatus.saved;
+			if (!result) {
+				context.importError = '模板解析结果为空';
+				return false;
 			}
+			const saved = await this.putContentToObsidian(context, result);
+			if (!saved) {
+				return false;
+			}
+			extract.handledStatus = SubjectHandledStatus.saved;
 			if (Action.Sync == context.action) {
 				this.showStatus(i18nHelper.getMessage('140208', syncStatus.getHasHandle(),  syncStatus.getTotal(), extract.title));
 			}else {
 				this.showStatus(i18nHelper.getMessage('140205', extract.title));
 			}
+			return true;
 		} catch (e) {
-			log.error(i18nHelper.getMessage('140206', e.message), e);
-			syncStatus!=null?syncStatus.fail(extract.id, extract.title):null;
+			const detail = DoubanPageGuard.describeError(e);
+			context.importError = detail;
+			log.error(i18nHelper.getMessage('140206', detail), e);
+			syncStatus!=null?syncStatus.fail(extract?.id || '', extract?.title || '', detail):null;
+			return false;
 		} finally {
 			this.clearStatusBarDelay();
 		}
 	}
 
-	async putContentToObsidian(context: HandleContext, result: HandleResult) {
+	async putContentToObsidian(context: HandleContext, result: HandleResult): Promise<boolean> {
 		const {mode} = context;
 		switch (mode) {
 			case SearchHandleMode.FOR_CREATE:
-				await this.createFile(context, result);
-				break;
+				return await this.createFile(context, result);
 			case SearchHandleMode.FOR_REPLACE:
 				await this.putToEditor(context.editor, result.content);
-				break;
+				return true;
 		}
+		return false;
 	}
 
 	async putToEditor(editor: Editor, content: string) {
 		editor.replaceSelection(content);
 	}
 
-	async createFile(context: HandleContext, result: HandleResult) {
+	async createFile(context: HandleContext, result: HandleResult): Promise<boolean> {
 		let filePath = result.filePath?result.filePath:DEFAULT_SETTINGS.dataFilePath;
 		filePath = FileUtil.join(filePath, result.fileName);
 		const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
 		const {subject} = result;
 		const {content} = result;
 		// 构建完整文件路径（用于更新缓存）
-		const fullFilePath = filePath + '.md';
+		let fullFilePath = filePath + '.md';
 		if (Action.Sync == context.action) {
+			const targetExists = await this.app.vault.adapter.exists(fullFilePath);
+			const targetOwnerId = syncStatus?.getDoubanIdForFilePath(fullFilePath);
+			if (targetExists && targetOwnerId !== subject.id) {
+				// The title may be the same while the Douban IDs differ. Preserve both
+				// subjects instead of treating the second item as already synced.
+				const basePath = `${filePath} (${subject.id})`;
+				filePath = basePath;
+				let suffix = 2;
+				while (await this.app.vault.adapter.exists(`${filePath}.md`)
+					&& syncStatus?.getDoubanIdForFilePath(`${filePath}.md`) !== subject.id) {
+					filePath = `${basePath} (${suffix++})`;
+				}
+				fullFilePath = `${filePath}.md`;
+			}
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
-				// 在force模式下，先检查是否存在该doubanId的旧文件
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
-				// 在替换前提取旧文件的用户数据（自定义属性+正文分区）
 				let localUserData = null;
+				let backupPath: string | null = null;
 				if (existingFilePath) {
-					const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
-					if (existingFile instanceof TFile) {
-						const extractor = new UserDataExtractor(this.app);
-						localUserData = await extractor.extractFromFileAsync(existingFile);
+					try {
+						if (this.settings.syncBackupBeforeReplace) {
+							backupPath = await this.fileHandler.backupMarkdownFile(
+								existingFilePath,
+								this.settings.syncBackupFolder,
+							);
+						}
+					} catch (error) {
+						const detail = `备份旧文件失败：${existingFilePath}`;
+						context.importError = detail;
+						syncStatus?.fail(subject.id, subject.title, detail);
+						log.error(`Failed to backup file before force sync: ${existingFilePath}`, error);
+						return false;
+					}
+
+					try {
+						const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+						if (existingFile instanceof TFile) {
+							const extractor = new UserDataExtractor(this.app);
+							localUserData = await extractor.extractFromFileAsync(existingFile);
+						}
+					} catch (error) {
+						const detail = `读取旧文件数据失败：${existingFilePath}`;
+						context.importError = detail;
+						syncStatus?.fail(subject.id, subject.title, detail);
+						log.error(`Failed to extract local user data from ${existingFilePath}`, error);
+						return false;
 					}
 				}
-				const exists:boolean = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
-				// 数据保护：将旧文件的自定义属性和正文分区合并到新文件
-				if (localUserData) {
-					const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-					if (newFile instanceof TFile) {
-						const merger = new UserDataMerger();
-						const currentContent = await this.app.vault.read(newFile);
-						const mergedContent = merger.mergeUserData(
-							currentContent, localUserData, this.settings.dataProtection,
-						);
-						if (mergedContent !== currentContent) {
-							await this.app.vault.process(newFile, () => mergedContent);
+
+				let exists = false;
+				try {
+					exists = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
+				} catch (error) {
+					if (backupPath && existingFilePath === fullFilePath) {
+						await this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+					}
+					const detail = `写入新文件失败：${fullFilePath}`;
+					context.importError = detail;
+					syncStatus?.fail(subject.id, subject.title, detail);
+					log.error(`Failed to write synced file: ${fullFilePath}`, error);
+					return false;
+				}
+
+				try {
+					if (localUserData && context.syncConfig?.inheritOldFields) {
+						const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+						if (newFile instanceof TFile) {
+							const merger = new UserDataMerger();
+							const currentContent = await this.app.vault.read(newFile);
+							const mergedContent = merger.mergeUserData(
+								currentContent, localUserData, this.settings.dataProtection,
+							);
+							if (mergedContent !== currentContent) {
+								await this.app.vault.process(newFile, () => mergedContent);
+							}
 						}
 					}
+				} catch (error) {
+					if (backupPath && existingFilePath === fullFilePath) {
+						await this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+					} else if (existingFilePath && existingFilePath !== fullFilePath) {
+						await this.fileHandler.deleteFile(fullFilePath);
+					}
+					const detail = `继承旧文件数据失败，已停止替换：${subject.title}`;
+					context.importError = detail;
+					syncStatus?.fail(subject.id, subject.title, detail);
+					log.error(`Failed to merge protected user data for ${subject.title}`, error);
+					return false;
 				}
+
 				if (existingFilePath && existingFilePath !== fullFilePath) {
-					// 仅在新文件成功写入并完成继承后删除旧文件
-					await this.fileHandler.deleteFile(existingFilePath);
-					// 从缓存中移除旧记录
-					syncStatus.removeFromExistingCache(subject.id);
+					try {
+						await this.fileHandler.deleteFile(existingFilePath);
+						syncStatus.removeFromExistingCache(subject.id);
+					} catch (error) {
+						syncStatus?.manualReview(
+							subject.id,
+							subject.title,
+							fullFilePath,
+							`旧文件删除失败，已保留新旧两个文件：${existingFilePath}`,
+						);
+						log.error(`Failed to delete old file after force sync: ${existingFilePath}`, error);
+						context.importError = `旧文件删除失败，已保留新旧两个文件：${existingFilePath}`;
+						return false;
+					}
 				}
 				if (exists) {
 					syncStatus != null ? syncStatus.replace(subject.id, subject.title, fullFilePath):null;
 				}else {
 					syncStatus != null ?syncStatus.create(subject.id, subject.title, fullFilePath):null;
 				}
+				return true;
 			}else {
 				const created:boolean = await this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate, false);
 				created ?syncStatus.create(subject.id, subject.title, fullFilePath):syncStatus.exists(subject.id, subject.title, fullFilePath);
+				if (!created) {
+					context.importError = `文件已存在：${fullFilePath}`;
+				}
+				return created;
 			}
 		}else {
 			await this.fileHandler.createNewNoteWithData(filePath, content, context.showAfterCreate);
+			return true;
 		}
 	}
 
@@ -171,7 +266,7 @@ export default class DoubanPlugin extends Plugin {
 		try {
 			this.showStatus(i18nHelper.getMessage('140201', searchTerm));
 			const result:SearchPage = await SearcherV2.search(searchTerm, searchType, 1, SEARCH_ITEM_PAGE_SIZE, this.settings, context.plugin.settingsManager);
-			this.showStatus(i18nHelper.getMessage('140202', result.list.toString()));
+			this.showStatus(i18nHelper.getMessage('140202', result.total));
 			context.searchPage = result;
 			new DoubanFuzzySuggester(this, context, searchTerm).showSearchPage(result);
 		} catch (e) {
@@ -224,8 +319,22 @@ export default class DoubanPlugin extends Plugin {
 					settings: this.settings,
 					userComponent: this.userComponent,
 				netFileHandler: this.netFileHandler,
-				showAfterCreate:true,
+				showAfterCreate:this.settings.showAfterCreate,
 				action: Action.SearchAndCrate}, this.settings.searchDefaultType),
+		});
+
+		this.addCommand({
+			id: "douban-batch-import-urls",
+			name: i18nHelper.getMessage('batchImportCommand'),
+			callback: () => new DoubanBatchImportModal(this.app, this, {
+				plugin: this,
+				mode: SearchHandleMode.FOR_CREATE,
+				settings: this.settings,
+				userComponent: this.userComponent,
+				netFileHandler: this.netFileHandler,
+				showAfterCreate: false,
+				action: Action.SearchAndCrate,
+			}).open(),
 		});
 
 		this.addCommand({
@@ -276,7 +385,7 @@ export default class DoubanPlugin extends Plugin {
 					settings: this.settings,
 					userComponent: this.userComponent,
 					netFileHandler: this.netFileHandler,
-					showAfterCreate:true,
+					showAfterCreate:this.settings.showAfterCreate,
 					action: Action.SearchAndCrate}, SupportType.movie),
 		});
 
@@ -289,7 +398,7 @@ export default class DoubanPlugin extends Plugin {
 					settings: this.settings,
 					userComponent: this.userComponent,
 					netFileHandler: this.netFileHandler,
-					showAfterCreate:true,
+					showAfterCreate:this.settings.showAfterCreate,
 					action: Action.SearchAndCrate}, SupportType.book),
 		});
 
@@ -302,7 +411,7 @@ export default class DoubanPlugin extends Plugin {
 					settings: this.settings,
 					userComponent: this.userComponent,
 					netFileHandler: this.netFileHandler,
-					showAfterCreate:true,
+					showAfterCreate:this.settings.showAfterCreate,
 					action: Action.SearchAndCrate}, SupportType.music),
 		});
 
@@ -315,7 +424,7 @@ export default class DoubanPlugin extends Plugin {
 					settings: this.settings,
 					userComponent: this.userComponent,
 					netFileHandler: this.netFileHandler,
-					showAfterCreate:true,
+					showAfterCreate:this.settings.showAfterCreate,
 					action: Action.SearchAndCrate}, SupportType.game),
 		});
 
@@ -323,6 +432,12 @@ export default class DoubanPlugin extends Plugin {
 			id: "douban-create-or-append-note",
 			name: i18nHelper.getMessage("110107"),
 			callback: () => this.doubanNoteManager?.createOrAppendForCurrentFile(),
+		});
+
+		this.addCommand({
+			id: "douban-link-existing-note",
+			name: i18nHelper.getMessage("110108"),
+			callback: () => this.doubanNoteManager?.linkExistingNoteForCurrentFile(),
 		});
 
 		this.addCommand({
@@ -362,7 +477,7 @@ export default class DoubanPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = sanitizeImportedSettings(await this.loadData());
 		this.migrateTemplateSettings();
 		this.doubanExtractHandler = new DoubanSearchChooseItemHandler(this.app, this);
 		this.fileHandler = new FileHandler(this.app);
@@ -376,6 +491,7 @@ export default class DoubanPlugin extends Plugin {
 			{ configKey: 'noteTemplateConfig' as const, fileKey: 'noteTemplateFile' as const },
 			{ configKey: 'gameTemplateConfig' as const, fileKey: 'gameTemplateFile' as const },
 			{ configKey: 'teleplayTemplateConfig' as const, fileKey: 'teleplayTemplateFile' as const },
+			{ configKey: 'theaterTemplateConfig' as const, fileKey: 'theaterTemplateFile' as const },
 		];
 		for (const { configKey, fileKey } of templateKeys) {
 			const existing = this.settings[configKey];

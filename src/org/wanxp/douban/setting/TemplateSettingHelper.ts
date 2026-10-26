@@ -3,6 +3,7 @@ import {ButtonComponent, SearchComponent, Setting, TFile} from "obsidian";
 import SettingsManager from "./SettingsManager";
 import {FileTreeSelectSuggest} from "./model/FileTreeSelectSuggest";
 import {FolderTreeSelectSuggest} from "./model/FolderTreeSelectSuggest";
+import {PathSuggest} from "./model/PathSuggest";
 import {CreateTemplateSelectParams} from "./model/CreateTemplateSelectParams";
 import {showFileExample} from "./OutputSettingsHelper";
 import {TemplateKey} from "../../constant/Constsant";
@@ -10,6 +11,8 @@ import {Notice, normalizePath} from "obsidian";
 import {TemplateConfig, TemplateSource, DoubanPluginSetting} from "./model/DoubanPluginSetting";
 import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
 import {TemplateEditorModal} from "../component/TemplateEditorModal";
+import FileHandler from "../../file/FileHandler";
+import {log} from "../../utils/Logutil";
 
 const TEMPLATE_TYPES: Array<{nameKey: string, configKey: keyof DoubanPluginSetting, templateKey: TemplateKey}> = [
 	{nameKey: '120101', configKey: 'movieTemplateConfig', templateKey: TemplateKey.movieTemplateFile},
@@ -18,6 +21,7 @@ const TEMPLATE_TYPES: Array<{nameKey: string, configKey: keyof DoubanPluginSetti
 	{nameKey: '120401', configKey: 'noteTemplateConfig', templateKey: TemplateKey.noteTemplateFile},
 	{nameKey: '121301', configKey: 'gameTemplateConfig', templateKey: TemplateKey.gameTemplateFile},
 	{nameKey: '121801', configKey: 'teleplayTemplateConfig', templateKey: TemplateKey.teleplayTemplateFile},
+	{nameKey: '121803', configKey: 'theaterTemplateConfig', templateKey: TemplateKey.theaterTemplateFile},
 ];
 
 export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsManager) {
@@ -29,6 +33,20 @@ export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsM
 	}
 
 	containerEl.createEl('h3', { text: i18nHelper.getMessage('121920') });
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('121924'))
+		.setDesc(i18nHelper.getMessage('121925'))
+		.addText((text) => {
+			text
+				.setPlaceholder('笔记')
+				.setValue(manager.getSettingStr('noteDefaultFolder'))
+				.onChange(async (value) => {
+					await manager.updateSetting('noteDefaultFolder', value);
+				});
+			text.inputEl.style.width = '100%';
+			new PathSuggest(manager.app, text.inputEl, 'folder');
+		});
+
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('121920'))
 		.setDesc(i18nHelper.getMessage('121921'))
@@ -107,18 +125,24 @@ function createTemplateSourceSetting(
 		const config = getConfig();
 		switch (config.source) {
 			case 'builtin': {
-				// Preview button
 				new ButtonComponent(actionContainer)
 					.setIcon('eye')
 					.setTooltip(i18nHelper.getMessage('121930'))
 					.onClick(() => {
 						const content = getDefaultBuiltinContent(templateKey);
-						new TemplateEditorModal(manager.app, templateKey, content, true).open();
+						new TemplateEditorModal(manager.app, templateKey, content, {
+							readOnly: true,
+							onSaveAs: async (targetPath, latestContent) => {
+								await saveTemplateContentAsFile(manager, targetPath, latestContent);
+								await manager.updateSetting(configKey, { source: 'file', filePath: targetPath });
+								refreshActionArea();
+								new Notice(i18nHelper.getMessage('121945'));
+							},
+						}).open();
 					});
 				break;
 			}
 			case 'file': {
-				// File path input with autocomplete
 				const fileInput = actionContainer.createEl('input', {type: 'text'});
 				fileInput.value = config.filePath || '';
 				fileInput.placeholder = i18nHelper.getMessage('121701');
@@ -130,10 +154,22 @@ function createTemplateSourceSetting(
 					cfg.filePath = fileInput.value;
 					await manager.updateSetting(configKey, cfg);
 				});
+				new ButtonComponent(actionContainer)
+					.setIcon('eye')
+					.setTooltip(i18nHelper.getMessage('121930'))
+					.onClick(async () => {
+						const content = await resolveTemplateContent(manager, templateKey, configKey);
+						new TemplateEditorModal(manager.app, templateKey, content, {
+							readOnly: true,
+							onSaveAs: async (targetPath, latestContent) => {
+								await saveTemplateContentAsFile(manager, targetPath, latestContent);
+								new Notice(i18nHelper.getMessage('121945'));
+							},
+						}).open();
+					});
 				break;
 			}
 			case 'custom': {
-				// Edit button
 				new ButtonComponent(actionContainer)
 					.setIcon('pencil')
 					.setTooltip(i18nHelper.getMessage('121931'))
@@ -143,10 +179,23 @@ function createTemplateSourceSetting(
 							manager.app,
 							templateKey,
 							cfg.customContent || getDefaultBuiltinContent(templateKey),
-							false,
-							async (newContent) => {
-								cfg.customContent = newContent;
-								await manager.updateSetting(configKey, cfg);
+							{
+								onSave: async (newContent) => {
+									cfg.customContent = newContent;
+									await manager.updateSetting(configKey, cfg);
+								},
+								onSaveAs: async (targetPath, latestContent) => {
+									await saveTemplateContentAsFile(manager, targetPath, latestContent);
+									await manager.updateSetting(configKey, { source: 'file', filePath: targetPath });
+									refreshActionArea();
+									new Notice(i18nHelper.getMessage('121945'));
+								},
+								onRestoreDefault: async () => {
+									const defaultContent = getDefaultBuiltinContent(templateKey);
+									cfg.customContent = defaultContent;
+									await manager.updateSetting(configKey, cfg);
+									return defaultContent;
+								},
 							}
 						).open();
 					});
@@ -167,7 +216,32 @@ function createTemplateSourceSetting(
 			});
 	});
 
+	setting.addExtraButton(button => {
+		button
+			.setIcon('reset')
+			.setTooltip(i18nHelper.getMessage('121946'))
+			.onClick(async () => {
+				await manager.updateSetting(configKey, { source: 'builtin' });
+				refreshActionArea();
+				new Notice(i18nHelper.getMessage('121947'));
+			});
+	});
+
 	refreshActionArea();
+}
+
+async function saveTemplateContentAsFile(
+	manager: SettingsManager,
+	targetPath: string,
+	content: string,
+) {
+	try {
+		const fileHandler = new FileHandler(manager.app);
+		await fileHandler.writeTextFile(targetPath, content, false);
+	} catch (error) {
+		log.error('Failed to save template content as file', error);
+		throw error;
+	}
 }
 
 export async function resolveTemplateContent(

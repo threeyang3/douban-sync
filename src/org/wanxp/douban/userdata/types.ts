@@ -1,3 +1,5 @@
+import { TFile } from 'obsidian';
+
 /**
  * 用户数据保护功能类型定义
  *
@@ -72,6 +74,31 @@ export interface MissingFieldDecision {
 	fieldName: string;
 	fieldValue: unknown;
 	decision: 'add' | 'skip' | null;
+}
+
+export type FieldStrategy = 'keep_local' | 'overwrite' | 'smart_merge';
+
+export interface FieldDiff {
+	fieldName: string;
+	sectionName?: '记录' | '感想';
+	localValue: unknown;
+	importValue: unknown;
+	strategy: FieldStrategy;
+}
+
+export interface EntryDiff {
+	doubanId: string;
+	title: string;
+	type: string;
+	localFile: TFile | null;
+	fieldDiffs: FieldDiff[];
+	identical: boolean;
+	selected: boolean;
+}
+
+export interface ImportAttributeSettings {
+	ignoredFields: string[];
+	fieldAliases: Record<string, string>;
 }
 
 export interface DataProtectionSettings {

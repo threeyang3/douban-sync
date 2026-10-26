@@ -4,10 +4,11 @@ import DoubanMusicSubject from '../model/DoubanMusicSubject';
 import DoubanPlugin from "../../../main";
 import DoubanSubject from '../model/DoubanSubject';
 import HandleContext from "../model/HandleContext";
-import {SupportType} from "../../../constant/Constsant";
+import {PropertyName, SupportType} from "../../../constant/Constsant";
 import {UserStateSubject} from "../model/UserStateSubject";
 import {moment} from "obsidian";
 import {DataField} from "../../../utils/model/DataField";
+import DoubanPageParser from "../../../utils/DoubanPageParser";
 
 export default class DoubanMusicLoadHandler extends DoubanAbstractLoadHandler<DoubanMusicSubject> {
 
@@ -36,13 +37,14 @@ export default class DoubanMusicLoadHandler extends DoubanAbstractLoadHandler<Do
 
 	analysisUser(html: CheerioAPI, context: HandleContext): {data:CheerioAPI ,  userState: UserStateSubject} {
 		const rate = html('input#n_rating').val();
-		const tagsStr = html('span#rating').next().next().text().trim();
-		const tags = tagsStr ? tagsStr.replace('标签:', '').trim().split(' ') : null;
+		const tags = DoubanPageParser.parseUserTags(html);
 		const stateWord = html('div#interest_sect_level > div.a_stars > span.mr10').text().trim();
 		const collectionDateStr = html('div#interest_sect_level > div.a_stars > span.mr10').next().text().trim();
 		const userState1 = DoubanAbstractLoadHandler.getUserState(stateWord);
-		let component = html('span#rating').next().next().next().next().text().trim();
-			component = this.filterCommentText(component);
+		const component = DoubanPageParser.parseUserComment(
+			html,
+			this.doubanPlugin.settingsManager.getSelector(this.getSupportType(), PropertyName.comment),
+		);
 
 		const userState: UserStateSubject = {
 			tags: tags,
@@ -56,23 +58,12 @@ export default class DoubanMusicLoadHandler extends DoubanAbstractLoadHandler<Do
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanMusicSubject {
 		const title = html(html("head > meta[property= 'og:title']").get(0)).attr("content");
-		// 获取简介：优先获取完整版（span.all.hidden），然后是summary元素
-		// 豆瓣页面可能同时存在折叠部分和完整部分，选择最长的避免重复
-		let desc = '';
-		// 先尝试获取完整版简介
-		const fullDesc = html("span.all.hidden").text().trim();
-		if (fullDesc) {
-			desc = fullDesc;
-		} else {
-			// 如果没有完整版，获取所有summary元素，选择最长的
-			const summaries = html("span[property='v:summary']").get();
-			for (const s of summaries) {
-				const text = html(s).text().trim();
-				if (text.length > desc.length) {
-					desc = text;
-				}
-			}
-		}
+		let desc = DoubanPageParser.extractLongestText(html, [
+			"#link-report span.all.hidden",
+			"#link-report .intro",
+			"span[property='v:summary']",
+			".related_info .intro",
+		]);
 		if (!desc) {
 			desc = html(html("head > meta[property= 'og:description']").get(0)).attr("content");
 		}

@@ -4,6 +4,7 @@ import {create} from "istanbul-reports";
 import DoubanPlugin from "../../main";
 import {logger} from "bs-logger";
 import {log} from "../../utils/Logutil";
+import { sanitizeImportedSettings } from "../setting/SettingsIO";
 
 export class ConfirmDialogModal extends Modal {
 	private promise:Promise<any>;
@@ -55,8 +56,8 @@ function createFileSelectModal(doubanPlugin: DoubanPlugin) {
 		const file = input.files[0];
 		const reader = new FileReader();
 		reader.onload = async () => {
-			const settings:object = JSON.parse(reader.result as string);
 			try {
+				const settings:object = sanitizeImportedSettings(JSON.parse(reader.result as string));
 				await doubanPlugin.settingsManager.loadAndSaveSettings(settings);
 			}catch (e) {
 				log.error(i18nHelper.getMessage('125043'), e);

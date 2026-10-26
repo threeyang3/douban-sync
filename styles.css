@@ -3,9 +3,8 @@
 	--obsidian-primary-color: var(--text-normal);
 	--obsidian-secondary-color: var(--background-primary);
 
-	/* 定义新的颜色，稍微调整亮度或饱和度 */
-	--plugin-primary-color: hsl(var(--obsidian-primary-color-h), var(--obsidian-primary-color-s), calc(var(--obsidian-primary-color-l) + 10%));
-	--plugin-secondary-color: hsl(var(--obsidian-secondary-color-h), var(--obsidian-secondary-color-s), calc(var(--obsidian-secondary-color-l) - 10%));
+	--plugin-primary-color: var(--background-secondary);
+	--plugin-secondary-color: var(--background-modifier-border);
 }
 
 
@@ -240,4 +239,356 @@
 .markdown-rendered .callout[data-callout="douban-info"] th:first-child {
 	width: 1%;
 	white-space: nowrap;
+}
+
+/* Import Preview Modal */
+.import-preview-modal .modal {
+	width: 80vw;
+	max-width: 900px;
+}
+
+.import-stats-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 4px;
+}
+
+.import-stats-text {
+	margin: 0;
+}
+
+.import-select-all-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+}
+
+.import-select-all-row input[type="checkbox"] {
+	margin: 0;
+}
+
+.import-select-all-row label {
+	cursor: pointer;
+	font-size: 0.9em;
+}
+
+.import-selected-count {
+	color: var(--text-muted);
+	font-size: 0.9em;
+	margin-bottom: 4px;
+}
+
+.import-preview-list {
+	max-height: 55vh;
+	overflow-y: auto;
+	margin: 8px 0;
+}
+
+.import-preview-item {
+	display: flex;
+	align-items: center;
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	gap: 8px;
+}
+
+.import-preview-item input[type="checkbox"] {
+	flex-shrink: 0;
+	margin: 0;
+}
+
+.import-preview-title {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.import-preview-badge {
+	font-size: 0.75em;
+	padding: 1px 6px;
+	border-radius: 4px;
+}
+
+.import-preview-badge.skip {
+	background: var(--text-error);
+	color: var(--text-on-accent);
+}
+
+.import-preview-badge.identical {
+	background: var(--text-success);
+	color: var(--text-on-accent);
+}
+
+.import-preview-badge.diff {
+	background: var(--text-accent);
+	color: var(--text-on-accent);
+}
+
+.import-preview-type {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.import-preview-props {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.import-diff-entry {
+	margin-bottom: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.import-diff-header {
+	padding: 6px 10px;
+	background: var(--background-secondary);
+	cursor: default;
+}
+
+.import-diff-body {
+	padding: 6px;
+}
+
+.import-diff-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.import-diff-table th,
+.import-diff-table td {
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.import-diff-table th {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.import-diff-table td:nth-child(2),
+.import-diff-table td:nth-child(3) {
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.import-diff-identical {
+	margin-top: 16px;
+	padding: 8px 10px;
+	background: var(--background-secondary);
+	border-radius: 4px;
+	color: var(--text-muted);
+	font-size: 0.9em;
+}
+
+.import-diff-identical-names {
+	margin-top: 4px;
+	word-break: break-all;
+}
+
+/* Attribute Settings Panel */
+.import-attr-panel {
+	margin: 12px 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.import-attr-header {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 10px;
+	background: var(--background-secondary);
+	cursor: pointer;
+	user-select: none;
+}
+
+.import-attr-collapse-icon {
+	font-size: 0.8em;
+	color: var(--text-muted);
+}
+
+.import-attr-body {
+	padding: 8px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.import-attr-body label {
+	font-size: 0.9em;
+	color: var(--text-muted);
+}
+
+.import-attr-textarea {
+	width: 100%;
+	resize: vertical;
+	font-family: var(--font-interface);
+	font-size: 0.85em;
+}
+
+.import-attr-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.import-attr-table th,
+.import-attr-table td {
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.import-attr-table th {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.import-attr-name {
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+}
+.obsidian_douban_qr_login {
+	text-align: center;
+}
+
+.obsidian_douban_qr_image_container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	margin: 16px 0;
+}
+
+.obsidian_douban_qr_image_container img {
+	width: min(280px, 80vw);
+	height: auto;
+	padding: 12px;
+	border-radius: 12px;
+	background: #fff;
+	image-rendering: pixelated;
+}
+
+.obsidian_douban_qr_status {
+	min-height: 1.5em;
+	color: var(--text-muted);
+}
+
+.obsidian_douban_qr_status.has_error {
+	color: var(--text-error);
+}
+
+.obsidian_douban_qr_controls {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.obsidian_douban_batch_urls {
+	width: 100%;
+	min-height: 180px;
+	resize: vertical;
+}
+
+.obsidian_douban_batch_controls {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.obsidian_douban_batch_progress {
+	min-height: 1.5em;
+	margin-top: 12px;
+	color: var(--text-muted);
+}
+
+.obsidian_douban_batch_summary {
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.obsidian_douban_batch_summary p {
+	white-space: pre-wrap;
+	user-select: text;
+}
+
+.obsidian_douban_settings_tab_headers {
+	flex-wrap: nowrap;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.obsidian_douban_settings_tab_header {
+	flex: 0 0 auto;
+}
+
+.obsidian_douban_settings_tab_content.active {
+	container-type: inline-size;
+	min-width: 0;
+}
+
+.obsidian_douban_settings_tab_content .setting-item {
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.obsidian_douban_settings_tab_content .setting-item-info,
+.obsidian_douban_settings_tab_content .setting-item-control {
+	min-width: 0;
+}
+
+.obsidian_douban_settings_tab_content .setting-item-control {
+	flex-wrap: wrap;
+	max-width: 100%;
+}
+
+.obsidian_douban_settings_tab_content table {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.obsidian_douban_variable_copy {
+	cursor: pointer;
+	font-family: var(--font-monospace);
+	background: var(--background-modifier-hover);
+}
+
+.obsidian_douban_variable_copy:hover {
+	color: var(--text-accent);
+}
+
+@container (max-width: 640px) {
+	.obsidian_douban_settings_tab_content .setting-item {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.obsidian_douban_settings_tab_content .setting-item-control {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.obsidian_douban_settings_tab_content .setting-item-control > * {
+		max-width: 100%;
+	}
+
+	.obsidian_douban_template_file_select {
+		width: 100%;
+	}
+
+	.obsidian_douban_batch_controls {
+		flex-wrap: wrap;
+	}
 }

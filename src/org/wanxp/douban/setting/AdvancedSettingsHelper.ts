@@ -11,6 +11,7 @@ import {ConfirmDialogModal} from "../component/ConfirmDialogModal";
 import {DoubanSearchModal} from "../data/search/DoubanSearchModal";
 import {DoubanPluginSetting} from "./model/DoubanPluginSetting";
 import TimeUtil from "../../utils/TimeUtil";
+import { PathSuggest } from "./model/PathSuggest";
 
 
 
@@ -72,17 +73,52 @@ function showAdvancedSettings(containerEl: HTMLElement, manager: SettingsManager
 				await manager.plugin.saveSettings();
 			}));
 
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('125108'))
+		.setDesc(i18nHelper.getMessage('125109'))
+		.addToggle(toggle => toggle
+			.setValue(manager.plugin.settings.syncBackupBeforeReplace)
+			.onChange(async (value) => {
+				manager.plugin.settings.syncBackupBeforeReplace = value;
+				await manager.plugin.saveSettings();
+			}));
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('125110'))
+		.setDesc(i18nHelper.getMessage('125111'))
+		.addSearch((search) => {
+			new PathSuggest(manager.app, search.inputEl, 'folder');
+			// @ts-ignore
+			search.setValue(manager.plugin.settings.syncBackupFolder || DEFAULT_SETTINGS.syncBackupFolder)
+				// @ts-ignore
+				.setPlaceholder(DEFAULT_SETTINGS.syncBackupFolder)
+				.onChange(async (value: string) => {
+					manager.plugin.settings.syncBackupFolder = value || DEFAULT_SETTINGS.syncBackupFolder;
+					await manager.plugin.saveSettings();
+				});
+		});
+
+	new Setting(containerEl)
+		.setName(i18nHelper.getMessage('125112'))
+		.setDesc(i18nHelper.getMessage('125113'))
+		.addToggle(toggle => toggle
+			.setValue(manager.plugin.settings.includeSensitiveInSettingExport)
+			.onChange(async (value) => {
+				manager.plugin.settings.includeSensitiveInSettingExport = value;
+				await manager.plugin.saveSettings();
+			}));
+
 
 	//导出
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('125034'))
-		.setDesc(i18nHelper.getMessage('125035'))
+		.setDesc(i18nHelper.getMessage('125114'))
 		.addButton((buttonComponent) => {
 			buttonComponent
 				.setIcon('folder')
 				.setButtonText(i18nHelper.getMessage('125047'))
 				.onClick(async (value) => {
-					const settings = manager.getSettings()
+					const settings = manager.getSettingsExportData(manager.plugin.settings.includeSensitiveInSettingExport);
 					const settingsString = JSON.stringify(settings, null, 2);
 					const blob = new Blob([settingsString], { type: 'application/json' });
 					const url = URL.createObjectURL(blob);
@@ -97,7 +133,7 @@ function showAdvancedSettings(containerEl: HTMLElement, manager: SettingsManager
 	//导入
 	new Setting(containerEl)
 		.setName(i18nHelper.getMessage('125036'))
-		.setDesc(i18nHelper.getMessage('125037'))
+		.setDesc(i18nHelper.getMessage('125115'))
 		.addButton((buttonComponent) => {
 			buttonComponent
 				.setIcon('document')

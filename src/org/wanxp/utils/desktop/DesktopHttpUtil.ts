@@ -1,172 +1,311 @@
-import SettingsManager from "../../douban/setting/SettingsManager";
-import {i18nHelper} from "../../lang/helper";
-import {LoginUtil} from "../LoginUtil";
-import DoubanHumanCheckModel from "../../douban/component/DoubanHumanCheckModel";
-import HttpUtil from "../HttpUtil";
+import type SettingsManager from "../../douban/setting/SettingsManager";
 import {HttpResponse} from "../model/HttpResponse";
+import {
+	DEFAULT_HTTP_TIMEOUT_MS,
+	getHttpRetryDelay,
+	HttpRequestError,
+	HttpRequestErrorKind,
+	isIdempotentHttpMethod,
+	isRetryableHttpError,
+	isRetryableHttpStatus,
+	MAX_HTTP_REDIRECTS,
+	MAX_HTTP_RETRIES,
+	normalizeHttpMethod,
+	sanitizeRedirectHeaders,
+	sanitizeHttpUrlForLog,
+} from "../HttpRequestPolicy";
 
-var https: any = null;
-var http: any = null;
+let httpsClient: any = null;
+let httpClient: any = null;
+
+export interface DesktopRequestOptions {
+	method?: string;
+	body?: string | Buffer;
+	headers?: Record<string, any>;
+	timeoutMs?: number;
+	retryCount?: number;
+	[key: string]: any;
+}
 
 export default class DesktopHttpUtil {
-
-	/**
-	 * get请求
-	 * @param url 请求地址
-	 * @param headers 请求参数
-	 * @param settingsManager 设置管理器
-	 */
-	// Cookie: 'll="108296"; bid=xHRJLeWBrjQ; _pk_id.100001.8cb4=f8f83e81ec224a1a.1691572669.; __utmv=30149280.13103; __yadk_uid=ce95W7OsgT0iKFceWgbMSUdw1oOqxNTk; __gads=ID=62585f60f3f637d0-2234f63fc6e200a5:T=1691572672:RT=1691572672:S=ALNI_MaIqTxSWHsfpnX9nAmMHcPQEsaezg; __gpi=UID=00000c29a9f98e5b:T=1691572672:RT=1691572672:S=ALNI_MbLAq8XNoKrRPKNqGCMdgXSPZvidw; ap_v=0,6.0; __utma=30149280.135860784.1691572641.1691572641.1694509646.2; __utmc=30149280; __utmz=30149280.1694509646.2.2.utmcsr=baidu|utmccn=(organic)|utmcmd=organic; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1694509648%2C%22https%3A%2F%2Fmovie.douban.com%2Ftv%2F%22%5D; _pk_ses.100001.8cb4=1; __utmt=1; dbcl2="131038721:LUssju34QFw"; ck=dCQj; push_noty_num=0; push_doumail_num=0; __utmb=30149280.3.10.1694509646'
-	public static request(url: string, headers: any, settingsManager?: SettingsManager, options?: any): Promise<HttpResponse> {
-
-		const {['Accept-Encoding']: acceptEncoding, ...headersInner} = headers;
-		const optionsInner = {
-			headers: headersInner,
-			...options
-		}
-		return new Promise((resolve, rejects) => {
-			this.httpRequest(url, optionsInner, 0, resolve, rejects, settingsManager);
-		})
+	public static request(
+		url: string,
+		headers: Record<string, any>,
+		settingsManager?: SettingsManager,
+		options: DesktopRequestOptions = {},
+	): Promise<HttpResponse> {
+		return this.requestWithRetry(url, headers, settingsManager, options, false);
 	}
 
-	private static httpRequest(url: string, options: any, times: number, resolve: any, rejects: any, settingsManager?: SettingsManager) {
-		settingsManager.debug(`Obsidian-Douban:从网络获取json开始:\nurl:${url}\nheaders:${JSON.stringify(options)}`);
+	public static requestBuffer(
+		url: string,
+		headers: Record<string, any>,
+		settingsManager?: SettingsManager,
+		options: DesktopRequestOptions = {},
+	): Promise<HttpResponse> {
+		return this.requestWithRetry(url, headers, settingsManager, options, true);
+	}
 
-		var method = options.method;
-		if (method == null) {
-			method = "GET";
+	private static async requestWithRetry(
+		url: string,
+		headers: Record<string, any>,
+		settingsManager: SettingsManager | undefined,
+		options: DesktopRequestOptions,
+		asBuffer: boolean,
+	): Promise<HttpResponse> {
+		const requestHeaders: Record<string, string> = {};
+		Object.entries(headers || {}).forEach(([key, value]) => {
+			const lowerKey = key.toLowerCase();
+			if (
+				value != null
+				&& value !== ''
+				&& lowerKey !== 'accept-encoding'
+				&& lowerKey !== 'host'
+				&& lowerKey !== 'content-length'
+			) {
+				requestHeaders[key] = String(value);
+			}
+		});
+
+		const {
+			timeoutMs = DEFAULT_HTTP_TIMEOUT_MS,
+			retryCount,
+			...nativeOptions
+		} = options || {};
+		const method = normalizeHttpMethod(nativeOptions.method);
+		const maxRetries = isIdempotentHttpMethod(method)
+			? Math.max(0, retryCount == null ? MAX_HTTP_RETRIES : retryCount)
+			: 0;
+		const requestOptions: DesktopRequestOptions = {
+			...nativeOptions,
+			method,
+			headers: requestHeaders,
+		};
+
+		let lastError: unknown;
+		for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+			settingsManager?.debug(
+				`Obsidian-Douban:HTTP ${method} ${sanitizeHttpUrlForLog(url)} (attempt ${attempt}/${maxRetries + 1})`,
+			);
+			try {
+				const response = await this.requestOnce(
+					url,
+					requestOptions,
+					Math.max(1, timeoutMs),
+					asBuffer,
+				);
+				if (isRetryableHttpStatus(response.status)) {
+					if (attempt <= maxRetries) {
+						await this.delay(getHttpRetryDelay(attempt));
+						continue;
+					}
+					throw new HttpRequestError(
+						HttpRequestErrorKind.httpStatus,
+						`HTTP ${response.status}`,
+						{status: response.status, attempts: attempt},
+					);
+				}
+				return response;
+			} catch (error) {
+				lastError = this.toRequestError(error);
+				const canRetry = attempt <= maxRetries
+					&& isIdempotentHttpMethod(method)
+					&& isRetryableHttpError(lastError);
+				if (canRetry) {
+					await this.delay(getHttpRetryDelay(attempt));
+					continue;
+				}
+				if (lastError instanceof HttpRequestError) {
+					throw lastError;
+				}
+				throw new HttpRequestError(
+					HttpRequestErrorKind.network,
+					String(lastError),
+					{attempts: attempt, cause: lastError},
+				);
+			}
 		}
-		if (method.toUpperCase() == "POST") {
-			const {protocol, host, port, path} = HttpUtil.parse(url);
+		throw this.toRequestError(lastError);
+	}
 
-			const optionsInner = {
-				hostname: host,
-				port: port,
-				path: path,
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
+	private static requestOnce(
+		url: string,
+		options: DesktopRequestOptions,
+		timeoutMs: number,
+		asBuffer: boolean,
+	): Promise<HttpResponse> {
+		return new Promise((resolve, reject) => {
+			const {body, ...requestOptions} = options;
+			const headers = {...(requestOptions.headers || {})};
+			if (body && !this.findHeader(headers, 'content-length')) {
+				this.setHeader(headers, 'Content-Length', String(Buffer.byteLength(body)));
+			}
+			let currentUrl = url;
+			let currentCookie = this.findHeader(headers, 'cookie');
+			requestOptions.headers = headers;
+			requestOptions.maxRedirects = MAX_HTTP_REDIRECTS;
+			requestOptions.beforeRedirect = (redirectOptions: any, response: any) => {
+				const nextHeaders = {...(redirectOptions.headers || {})};
+				const nextUrl = this.buildRedirectUrl(redirectOptions);
+				const setCookie = this.findHeader(response?.headers || {}, 'set-cookie');
+				if (setCookie && this.isDoubanUrl(currentUrl) && this.isDoubanUrl(nextUrl)) {
+					currentCookie = this.mergeCookies(currentCookie, this.toArray(setCookie));
+					this.setHeader(nextHeaders, 'Cookie', currentCookie);
+				}
+				redirectOptions.headers = sanitizeRedirectHeaders(nextHeaders, currentUrl, nextUrl);
+				currentUrl = nextUrl;
+			};
+
+			let settled = false;
+			let timer: ReturnType<typeof setTimeout>;
+			const finishResolve = (response: HttpResponse) => {
+				if (!settled) {
+					settled = true;
+					clearTimeout(timer);
+					resolve(response);
 				}
 			};
-			let req = null;
+			const finishReject = (error: unknown) => {
+				if (!settled) {
+					settled = true;
+					clearTimeout(timer);
+					reject(this.toRequestError(error));
+				}
+			};
+			let request: any;
+			timer = setTimeout(() => {
+				const timeoutError = new HttpRequestError(
+					HttpRequestErrorKind.timeout,
+					`请求在 ${timeoutMs}ms 后超时`,
+				);
+				finishReject(timeoutError);
+				request?.destroy(timeoutError);
+			}, timeoutMs);
+
 			try {
-
-				req = DesktopHttpUtil.getHttpClient(url).request(optionsInner, function (response: any) {
-					let chunks: any = [],
-						size = 0;
-					if (settingsManager) {
-						settingsManager.debug(`Obsidian-Douban:从网络获取JSON完成${times}:url:\n${url}`);
-						settingsManager.debug(`Obsidian-Douban:从网络获取JSON完成${times}:header:\n${JSON.stringify(response.headers)}`);
-						settingsManager.debug(`Obsidian-Douban:从网络获取JSON完成${times}:body:\n${response.text}`);
-					}
-
-					response.on("data", function (chunk: any) {
-						chunks.push(chunk)
-						size += chunk.length
-					})
-
-					response.on("end", function () {
-						const data = Buffer.concat(chunks, size)
-						const html = data.toString()
-						resolve(new HttpResponse(response.statusCode, response.headers, html))
-					})
+				request = this.getHttpClient(url).request(url, requestOptions, (response: any) => {
+					const chunks: Buffer[] = [];
+					let size = 0;
+					response.on('data', (chunk: Buffer) => {
+						const buffer = Buffer.from(chunk);
+						chunks.push(buffer);
+						size += buffer.length;
+					});
+					response.on('aborted', () => finishReject(
+						new HttpRequestError(HttpRequestErrorKind.network, '响应连接被中断'),
+					));
+					response.on('error', finishReject);
+					response.on('end', () => {
+						if (settled) {
+							return;
+						}
+						const data = Buffer.concat(chunks, size);
+						finishResolve(new HttpResponse(
+							response.statusCode,
+							response.headers,
+							asBuffer ? data : data.toString(),
+						));
+					});
 				});
-			} catch (e) {
-				rejects(e);
-			}
-			if (req) {
-				const body = options.body;
+				request.on('error', finishReject);
 				if (body) {
-					req.write(body);
-				} else {
-					req.write('');
+					request.write(body);
 				}
-				req.end();
+				request.end();
+			} catch (error) {
+				finishReject(error);
 			}
-		} else {
-			try {
-
-				this.getHttpClient(url).get(url, {...options}, function (response: any) {
-					let chunks: any = [],
-						size = 0;
-					if (settingsManager) {
-						settingsManager.debug(`Obsidian-Douban:从网络获取JSON完成${times}:url:\n${url}`);
-						settingsManager.debug(`Obsidian-Douban:从网络获取JSON完成${times}:header:\n${JSON.stringify(response.headers)}`);
-						settingsManager.debug(`Obsidian-Douban:从网络获取JSON完成${times}:body:\n${response.text}`);
-					}
-
-					response.on("data", function (chunk: any) {
-						chunks.push(chunk)
-						size += chunk.length
-					})
-
-					response.on("end", function () {
-						const data = Buffer.concat(chunks, size)
-						const html = data.toString()
-						resolve(new HttpResponse(response.statusCode, response.headers, html))
-					})
-				});
-			} catch (e) {
-				rejects(e);
-			}
-		}
-
+		});
 	}
 
-	private static getHttpClient(url?: string) {
-		if (url && url.startsWith("https")) {
-			if (!https) {
-				https = require("follow-redirects").https;
-			}
-			return https;
-		} else {
-			if (!http) {
-				http = require("follow-redirects").http;
-			}
-			return http;
+	private static toRequestError(error: unknown): HttpRequestError {
+		if (error instanceof HttpRequestError) {
+			return error;
 		}
-
+		const code = String((error as {code?: string})?.code || '');
+		if (code === 'ETIMEDOUT' || /timed?\s*out/i.test(String(error))) {
+			return new HttpRequestError(
+				HttpRequestErrorKind.timeout,
+				'请求超时',
+				{cause: error},
+			);
+		}
+		const message = error instanceof Error ? error.message : String(error);
+		return new HttpRequestError(
+			HttpRequestErrorKind.network,
+			message || '网络请求失败',
+			{cause: error},
+		);
 	}
 
-	/**
-	 * get请求
-	 * @param url 请求地址
-	 * @param headers 请求参数
-	 * @param settingsManager 设置管理器
-	 */
-	public static requestBuffer(url: string, headers: any, settingsManager?: SettingsManager): Promise<HttpResponse> {
-		let options = {
-			headers: headers
+	private static buildRedirectUrl(options: any): string {
+		if (options?.href) {
+			return String(options.href);
 		}
-
-		return new Promise((resolve, rejects) => {
-			this.httpRequestGetBufferInner(url, options, 0, resolve, rejects, settingsManager);
-		})
+		const protocol = options?.protocol || 'https:';
+		const hostname = options?.hostname || options?.host || '';
+		const port = options?.port ? `:${options.port}` : '';
+		const path = options?.path || '/';
+		return `${protocol}//${hostname}${port}${path}`;
 	}
 
-	private static httpRequestGetBufferInner(url: string, options: any, times: number, resolve: any, rejects: any, settingsManager?: SettingsManager) {
-		if (settingsManager) {
-			settingsManager.debug(`Obsidian-Douban:从网络获取文件开始:\n${url}\nheaders:${JSON.stringify(options)}`);
-
-			this.getHttpClient(url).get(url, {...options}, function (response: any) {
-				let chunks: any = [],
-					size = 0;
-				if (settingsManager) {
-					settingsManager.debug(`Obsidian-Douban:从网络获取文件完成${times}:url:\n${url}`);
-					settingsManager.debug(`Obsidian-Douban:从网络获取文件完成${times}:header:\n${JSON.stringify(response.headers)}`);
-				}
-
-				response.on("data", function (chunk: any) {
-					chunks.push(chunk)
-					size += chunk.length
-				})
-
-				response.on("end", function () {
-					const data = Buffer.concat(chunks, size)
-					resolve(new HttpResponse(response.statusCode, response.headers, data))
-				})
-			})
+	private static isDoubanUrl(url: string): boolean {
+		try {
+			const hostname = new URL(url).hostname.toLowerCase();
+			return hostname === 'douban.com' || hostname.endsWith('.douban.com');
+		} catch (_) {
+			return false;
 		}
 	}
 
+	private static findHeader(headers: Record<string, any>, target: string): string {
+		const key = Object.keys(headers || {}).find(item => item.toLowerCase() === target);
+		return key ? String(headers[key]) : '';
+	}
+
+	private static setHeader(headers: Record<string, any>, name: string, value: string): void {
+		Object.keys(headers).forEach(key => {
+			if (key.toLowerCase() === name.toLowerCase()) {
+				delete headers[key];
+			}
+		});
+		if (value) {
+			headers[name] = value;
+		}
+	}
+
+	private static mergeCookies(existingCookie: string, setCookies: string[]): string {
+		const cookies = new Map<string, string>();
+		const addCookie = (cookie: string) => {
+			const pair = String(cookie || '').split(';', 1)[0].trim();
+			const separator = pair.indexOf('=');
+			if (separator > 0) {
+				cookies.set(pair.substring(0, separator).trim(), pair.substring(separator + 1).trim());
+			}
+		};
+		String(existingCookie || '').split(';').forEach(addCookie);
+		setCookies.forEach(addCookie);
+		return Array.from(cookies.entries()).map(([name, value]) => `${name}=${value}`).join('; ');
+	}
+
+	private static toArray(value: unknown): string[] {
+		return Array.isArray(value) ? value.map(item => String(item)) : [String(value)];
+	}
+
+	private static delay(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	private static getHttpClient(url?: string): any {
+		if (url && url.startsWith('https')) {
+			if (!httpsClient) {
+				httpsClient = require('follow-redirects').https;
+			}
+			return httpsClient;
+		}
+		if (!httpClient) {
+			httpClient = require('follow-redirects').http;
+		}
+		return httpClient;
+	}
 }
