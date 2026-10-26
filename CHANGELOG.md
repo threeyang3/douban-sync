@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Import previews preserve unchecked entries and apply custom-property aliases before comparing fields.
+- Records and thoughts participate in the import diff and support keep, overwrite, and smart merge strategies.
+- Imports update the latest file content atomically, preserving edits made after preview.
+- Frontmatter updates preserve adjacent fields, replace complete block values, and safely serialize string values and quoted keys.
+- Text-file writes preserve the requested extension; backup recovery also works from hidden directories.
+- Force sync checks ownership again when an ID-suffixed filename is already occupied.
+
 ## 2.2.1 - 2026-10-27
 
 ### Fixed

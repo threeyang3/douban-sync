@@ -211,9 +211,11 @@ export default class FileHandler {
 	async writeTextFile(filePath: string, data: string, overwrite = true): Promise<void> {
 		const {vault} = this._app;
 		const {adapter} = vault;
-		const prependDirInput = FileUtil.join("", filePath);
-		const {dir, name, extension} = FileUtil.parse(prependDirInput);
-		const normalizedPath = FileUtil.join(dir, `${name}${extension ? `.${extension}` : ''}`);
+		const path = normalizePath(filePath.replace(/\\/g, '/')).replace(/^\/+/, '');
+		const slash = path.lastIndexOf('/');
+		const dir = slash < 0 ? '' : path.slice(0, slash);
+		const name = FileUtil.replaceSpecialCharactersForFileName(path.slice(slash + 1));
+		const normalizedPath = dir ? FileUtil.join(dir, name) : name;
 
 		if (dir !== '') {
 			await this.createDirectory(dir);
@@ -249,11 +251,10 @@ export default class FileHandler {
 
 	async restoreMarkdownFile(targetPath: string, backupPath: string): Promise<void> {
 		const {vault} = this._app;
-		const backupFile = vault.getAbstractFileByPath(backupPath);
-		if (!(backupFile instanceof TFile)) {
+		if (!await vault.adapter.exists(backupPath)) {
 			throw new Error(`Backup file not found: ${backupPath}`);
 		}
-		const backupContent = await vault.read(backupFile);
+		const backupContent = await vault.adapter.read(backupPath);
 		await this.writeTextFile(targetPath, backupContent, true);
 	}
 

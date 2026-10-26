@@ -6268,7 +6268,7 @@ var DoubanSearchResultSubject_TIP_EMPTY = {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian51 = __toModule(require("obsidian"));
+var import_obsidian52 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/types.ts
 var DOUBAN_FIELDS = new Set([
@@ -26586,9 +26586,11 @@ var FileHandler = class {
     return __async(this, null, function* () {
       const { vault } = this._app;
       const { adapter: adapter2 } = vault;
-      const prependDirInput = FileUtil.join("", filePath);
-      const { dir, name, extension } = FileUtil.parse(prependDirInput);
-      const normalizedPath = FileUtil.join(dir, `${name}${extension ? `.${extension}` : ""}`);
+      const path = (0, import_obsidian24.normalizePath)(filePath.replace(/\\/g, "/")).replace(/^\/+/, "");
+      const slash = path.lastIndexOf("/");
+      const dir = slash < 0 ? "" : path.slice(0, slash);
+      const name = FileUtil.replaceSpecialCharactersForFileName(path.slice(slash + 1));
+      const normalizedPath = dir ? FileUtil.join(dir, name) : name;
       if (dir !== "") {
         yield this.createDirectory(dir);
       }
@@ -26622,11 +26624,10 @@ var FileHandler = class {
   restoreMarkdownFile(targetPath, backupPath) {
     return __async(this, null, function* () {
       const { vault } = this._app;
-      const backupFile = vault.getAbstractFileByPath(backupPath);
-      if (!(backupFile instanceof import_obsidian24.TFile)) {
+      if (!(yield vault.adapter.exists(backupPath))) {
         throw new Error(`Backup file not found: ${backupPath}`);
       }
-      const backupContent = yield vault.read(backupFile);
+      const backupContent = yield vault.adapter.read(backupPath);
       yield this.writeTextFile(targetPath, backupContent, true);
     });
   }
@@ -31565,6 +31566,7 @@ function extractSection(content, sectionName) {
 }
 
 // src/org/wanxp/douban/userdata/UserDataMerger.ts
+var import_obsidian46 = __toModule(require("obsidian"));
 function parseFrontmatter(content) {
   const match = content.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)([\s\S]*)$/);
   if (!match)
@@ -31604,10 +31606,10 @@ var UserDataMerger = class {
     const fieldRegex = buildFrontmatterFieldRegex(field);
     let newBody;
     if (fieldRegex.test(parts.body)) {
-      newBody = parts.body.replace(fieldRegex, `${field}: ${formattedValue}`);
+      newBody = parts.body.replace(fieldRegex, () => `${formatFrontmatterKey(field)}: ${formattedValue}`);
     } else {
       newBody = `${parts.body}
-${field}: ${formattedValue}`;
+${formatFrontmatterKey(field)}: ${formattedValue}`;
     }
     return parts.prefix + newBody + parts.suffix + parts.rest;
   }
@@ -31617,42 +31619,31 @@ ${field}: ${formattedValue}`;
       return content;
     const formattedValue = formatFrontmatterValue(value);
     const newBody = `${parts.body}
-${field}: ${formattedValue}`;
+${formatFrontmatterKey(field)}: ${formattedValue}`;
     return parts.prefix + newBody + parts.suffix + parts.rest;
   }
   hasFrontmatterField(content, field) {
     const parts = parseFrontmatter(content);
     if (!parts)
       return false;
-    const fieldRegex = new RegExp(`^${escapeRegExp(field)}:`, "m");
-    return fieldRegex.test(parts.body);
+    return buildFrontmatterFieldRegex(field).test(parts.body);
   }
   getFrontmatterValue(content, field) {
     const parts = parseFrontmatter(content);
     if (!parts)
       return void 0;
-    const lines = parts.body.split("\n");
-    const fieldPrefix = `${field}:`;
-    const startIndex = lines.findIndex((line) => line.startsWith(fieldPrefix));
-    if (startIndex === -1)
-      return void 0;
-    const inlineValue = lines[startIndex].slice(fieldPrefix.length).trim();
-    if (inlineValue)
-      return stripQuotedValue(inlineValue);
-    const listItems = [];
-    for (let i = startIndex + 1; i < lines.length; i++) {
-      const line = lines[i];
-      if (/^[^-\s][^:]*:/.test(line))
-        break;
-      const listMatch = line.match(/^\s*-\s*(.*)$/);
-      if (listMatch) {
-        listItems.push(stripQuotedValue(listMatch[1].trim()));
-        continue;
-      }
-      if (line.trim() && !/^\s/.test(line))
-        break;
-    }
-    return listItems.length > 0 ? listItems.join(", ") : "";
+    const values = (0, import_obsidian46.parseYaml)(parts.body);
+    return values && typeof values === "object" ? values[field] : void 0;
+  }
+  getSection(content, sectionName) {
+    const lines = content.replace(/\r\n/g, "\n").split("\n");
+    const start2 = lines.findIndex((line) => line.trim() === `## ${sectionName}`);
+    if (start2 < 0)
+      return "";
+    let end3 = lines.findIndex((line, index2) => index2 > start2 && /^#{1,2}\s+/.test(line));
+    if (end3 < 0)
+      end3 = lines.length;
+    return lines.slice(start2 + 1, end3).join("\n").trim();
   }
   updateSection(content, sectionName, sectionContent) {
     const normalizedContent = content.replace(/\r\n/g, "\n");
@@ -31662,7 +31653,7 @@ ${field}: ${formattedValue}`;
     if (startIndex !== -1) {
       let endIndex = lines.length;
       for (let i = startIndex + 1; i < lines.length; i++) {
-        if (/^##\s+/.test(lines[i])) {
+        if (/^#{1,2}\s+/.test(lines[i])) {
           endIndex = i;
           break;
         }
@@ -31685,8 +31676,8 @@ ${sectionContent.trim()}
 };
 function formatFrontmatterValue(value) {
   if (typeof value === "string") {
-    if (value.includes(":") || value.includes("#") || value.includes("\n") || value.includes('"') || value.includes("'") || value.includes("[") || value.includes("{")) {
-      return `"${value.replace(/"/g, '\\"')}"`;
+    if (value.includes(":") || value.includes("#") || value.includes("\n") || value.includes('"') || value.includes("'") || value.includes("[") || value.includes("{") || value.includes("\\") || !value.trim() || value.trim() !== value || /^(?:true|false|null|~)$/i.test(value) || /^[+-]?(?:\d|\.\d|\.inf|\.nan)/i.test(value) || /^[*&!>|%@`,?\]}-]/.test(value)) {
+      return JSON.stringify(value);
     }
     return value;
   }
@@ -31704,23 +31695,21 @@ ${value.map((item) => `  - ${formatFrontmatterValue(item)}`).join("\n")}`;
   return String(value);
 }
 function buildFrontmatterFieldRegex(field) {
-  return new RegExp(`^${escapeRegExp(field)}:\\s*.*(?:\\n  - .*?)*$`, "m");
+  const keys = [field, JSON.stringify(field), `'${field.replace(/'/g, "''")}'`];
+  return new RegExp(`^(?:${keys.map(escapeRegExp).join("|")}):[\\t ]*[^\\r\\n]*(?:\\r?\\n(?:[\\t ]+[^\\r\\n]*|-[\\t ]+[^\\r\\n]*))*`, "m");
+}
+function formatFrontmatterKey(field) {
+  return /^[\w\u4e00-\u9fff-]+$/.test(field) ? field : JSON.stringify(field);
 }
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-function stripQuotedValue(value) {
-  if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
-    return value.slice(1, -1);
-  }
-  return value;
-}
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var import_obsidian49 = __toModule(require("obsidian"));
+var import_obsidian50 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataExporter.ts
-var import_obsidian46 = __toModule(require("obsidian"));
+var import_obsidian47 = __toModule(require("obsidian"));
 var UserDataExporter = class {
   constructor(app) {
     this.app = app;
@@ -31747,7 +31736,7 @@ var UserDataExporter = class {
             items
           };
           const fileName = `douban-user-data-${typeLabel}.json`;
-          const filePath = (0, import_obsidian46.normalizePath)(`${outputDir}/${fileName}`);
+          const filePath = (0, import_obsidian47.normalizePath)(`${outputDir}/${fileName}`);
           yield this.saveFile(filePath, JSON.stringify(exportData, null, 2));
           files.push(filePath);
         }
@@ -31770,7 +31759,7 @@ var UserDataExporter = class {
   }
   ensureDirectory(path) {
     return __async(this, null, function* () {
-      const normalizedPath = (0, import_obsidian46.normalizePath)(path);
+      const normalizedPath = (0, import_obsidian47.normalizePath)(path);
       const exists = yield this.app.vault.adapter.exists(normalizedPath);
       if (!exists) {
         yield this.app.vault.createFolder(normalizedPath);
@@ -31779,9 +31768,9 @@ var UserDataExporter = class {
   }
   saveFile(path, content) {
     return __async(this, null, function* () {
-      const normalizedPath = (0, import_obsidian46.normalizePath)(path);
+      const normalizedPath = (0, import_obsidian47.normalizePath)(path);
       const existing = this.app.vault.getAbstractFileByPath(normalizedPath);
-      if (existing instanceof import_obsidian46.TFile) {
+      if (existing instanceof import_obsidian47.TFile) {
         yield this.app.vault.process(existing, () => content);
       } else {
         yield this.app.vault.create(normalizedPath, content);
@@ -31791,10 +31780,10 @@ var UserDataExporter = class {
 };
 
 // src/org/wanxp/douban/userdata/ImportPreviewModal.ts
-var import_obsidian48 = __toModule(require("obsidian"));
+var import_obsidian49 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/userdata/UserDataImporter.ts
-var import_obsidian47 = __toModule(require("obsidian"));
+var import_obsidian48 = __toModule(require("obsidian"));
 var UserDataImporter = class {
   constructor(app) {
     this.fileCache = null;
@@ -31804,7 +31793,7 @@ var UserDataImporter = class {
   importFromFile(filePath, options, onProgress) {
     return __async(this, null, function* () {
       const file = this.app.vault.getAbstractFileByPath(filePath);
-      if (!(file instanceof import_obsidian47.TFile)) {
+      if (!(file instanceof import_obsidian48.TFile)) {
         throw new Error("Import file not found");
       }
       const content = yield this.app.vault.read(file);
@@ -31813,110 +31802,126 @@ var UserDataImporter = class {
   }
   parseImportContent(fileName, content) {
     try {
-      return JSON.parse(content);
+      const data2 = JSON.parse(content);
+      if (!data2 || typeof data2 !== "object" || !data2.items || typeof data2.items !== "object" || Array.isArray(data2.items)) {
+        throw new Error("Invalid import data: missing items");
+      }
+      for (const item of Object.values(data2.items)) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          throw new Error("Invalid import item");
+        }
+        const entry = item;
+        if (entry.customProperties != null && (typeof entry.customProperties !== "object" || Array.isArray(entry.customProperties))) {
+          throw new Error("Invalid custom properties");
+        }
+        if (entry.bodySections != null && (typeof entry.bodySections !== "object" || Array.isArray(entry.bodySections) || Object.values(entry.bodySections).some((value) => typeof value !== "string"))) {
+          throw new Error("Invalid body sections");
+        }
+      }
+      return data2;
     } catch (error) {
       throw new Error(`Failed to parse import file ${fileName}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   buildDiffs(importData, attrSettings) {
-    var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
-    this.fileCache = scanVaultForDoubanIds(this.app);
-    const results = [];
-    const ignoredSet = new Set((_a5 = attrSettings == null ? void 0 : attrSettings.ignoredFields) != null ? _a5 : []);
-    const aliasMap = (_b = attrSettings == null ? void 0 : attrSettings.fieldAliases) != null ? _b : {};
-    for (const [doubanId, userData] of Object.entries(importData.items)) {
-      const localEntry = (_c = this.fileCache.get(doubanId)) != null ? _c : null;
-      const localFile = (_d = localEntry == null ? void 0 : localEntry.file) != null ? _d : null;
-      if (!localFile) {
+    return __async(this, null, function* () {
+      var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
+      this.fileCache = scanVaultForDoubanIds(this.app);
+      const results = [];
+      const ignoredSet = new Set((_a5 = attrSettings == null ? void 0 : attrSettings.ignoredFields) != null ? _a5 : []);
+      const aliasMap = (_b = attrSettings == null ? void 0 : attrSettings.fieldAliases) != null ? _b : {};
+      for (const [doubanId, userData] of Object.entries(importData.items)) {
+        const localEntry = (_c = this.fileCache.get(doubanId)) != null ? _c : null;
+        const localFile = (_d = localEntry == null ? void 0 : localEntry.file) != null ? _d : null;
+        if (!localFile) {
+          results.push({
+            doubanId,
+            title: (_f = (_e = userData.identifier) == null ? void 0 : _e.title) != null ? _f : doubanId,
+            type: (_h = (_g = userData.identifier) == null ? void 0 : _g.type) != null ? _h : "",
+            localFile: null,
+            fieldDiffs: [],
+            identical: false,
+            selected: true
+          });
+          continue;
+        }
+        const localFrontmatter = (_i = localEntry.frontmatter) != null ? _i : {};
+        const importCustom = {};
+        for (const [key, value] of Object.entries((_j = userData.customProperties) != null ? _j : {})) {
+          if (DOUBAN_FIELDS.has(key) || ignoredSet.has(key))
+            continue;
+          const target = ((_k = aliasMap[key]) == null ? void 0 : _k.trim()) || key;
+          if (DOUBAN_FIELDS.has(target))
+            continue;
+          Object.defineProperty(importCustom, target, { value, enumerable: true, configurable: true });
+        }
+        const localFm = localFrontmatter;
+        const fieldDiffs = [];
+        let identical = true;
+        const allFieldNames = new Set();
+        for (const key of Object.keys(importCustom)) {
+          if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key))
+            allFieldNames.add(key);
+        }
+        for (const key of Object.keys(localFm)) {
+          if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key))
+            allFieldNames.add(key);
+        }
+        for (const fieldName of allFieldNames) {
+          const localValue = localFm[fieldName];
+          const importValue = importCustom[fieldName];
+          const localEmpty = this.isEmptyValue(localValue);
+          const importEmpty = this.isEmptyValue(importValue);
+          if (localEmpty && importEmpty)
+            continue;
+          if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
+            continue;
+          if (!localEmpty && importEmpty)
+            continue;
+          identical = false;
+          const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
+          fieldDiffs.push({
+            fieldName,
+            localValue,
+            importValue,
+            strategy
+          });
+        }
+        if (userData.bodySections) {
+          const content = yield this.app.vault.read(localFile);
+          for (const [key, sectionName] of [["record", "\u8BB0\u5F55"], ["thoughts", "\u611F\u60F3"]]) {
+            const importValue = (_l = userData.bodySections[key]) == null ? void 0 : _l.trim();
+            if (!importValue)
+              continue;
+            const localValue = this.merger.getSection(content, sectionName);
+            if (localValue === importValue)
+              continue;
+            identical = false;
+            fieldDiffs.push({
+              fieldName: `## ${sectionName}`,
+              sectionName,
+              localValue,
+              importValue,
+              strategy: localValue ? "smart_merge" : "overwrite"
+            });
+          }
+        }
         results.push({
           doubanId,
-          title: (_f = (_e = userData.identifier) == null ? void 0 : _e.title) != null ? _f : doubanId,
-          type: (_h = (_g = userData.identifier) == null ? void 0 : _g.type) != null ? _h : "",
-          localFile: null,
-          fieldDiffs: [],
-          identical: false,
+          title: (_n = (_m = userData.identifier) == null ? void 0 : _m.title) != null ? _n : doubanId,
+          type: (_p = (_o = userData.identifier) == null ? void 0 : _o.type) != null ? _p : "",
+          localFile,
+          fieldDiffs,
+          identical,
           selected: true
         });
-        continue;
       }
-      const localFrontmatter = (_i = localEntry.frontmatter) != null ? _i : {};
-      const importCustom = (_j = userData.customProperties) != null ? _j : {};
-      const localFm = localFrontmatter;
-      const fieldDiffs = [];
-      let identical = true;
-      const allFieldNames = new Set();
-      for (const key of Object.keys(importCustom)) {
-        if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key))
-          allFieldNames.add(key);
-      }
-      for (const key of Object.keys(localFm)) {
-        if (!DOUBAN_FIELDS.has(key) && !ignoredSet.has(key))
-          allFieldNames.add(key);
-      }
-      for (const fieldName of allFieldNames) {
-        const localValue = localFm[fieldName];
-        const importValue = importCustom[fieldName];
-        const localEmpty = this.isEmptyValue(localValue);
-        const importEmpty = this.isEmptyValue(importValue);
-        if (localEmpty && importEmpty)
-          continue;
-        if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
-          continue;
-        if (!localEmpty && importEmpty)
-          continue;
-        identical = false;
-        const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
-        fieldDiffs.push({
-          fieldName,
-          localValue,
-          importValue,
-          strategy
-        });
-      }
-      for (const [importFieldName, localFieldName] of Object.entries(aliasMap)) {
-        if (ignoredSet.has(importFieldName))
-          continue;
-        if (!Object.prototype.hasOwnProperty.call(importCustom, importFieldName))
-          continue;
-        if (DOUBAN_FIELDS.has(importFieldName))
-          continue;
-        if (allFieldNames.has(importFieldName))
-          continue;
-        const importValue = importCustom[importFieldName];
-        const localValue = localFm[localFieldName];
-        const localEmpty = this.isEmptyValue(localValue);
-        const importEmpty = this.isEmptyValue(importValue);
-        if (localEmpty && importEmpty)
-          continue;
-        if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue))
-          continue;
-        if (!localEmpty && importEmpty)
-          continue;
-        identical = false;
-        const strategy = localEmpty && !importEmpty ? "overwrite" : "smart_merge";
-        fieldDiffs.push({
-          fieldName: localFieldName,
-          localValue,
-          importValue,
-          strategy
-        });
-      }
-      results.push({
-        doubanId,
-        title: (_l = (_k = userData.identifier) == null ? void 0 : _k.title) != null ? _l : doubanId,
-        type: (_n = (_m = userData.identifier) == null ? void 0 : _m.type) != null ? _n : "",
-        localFile,
-        fieldDiffs,
-        identical,
-        selected: true
-      });
-    }
-    this.fileCache = null;
-    return results;
+      this.fileCache = null;
+      return results;
+    });
   }
   applyDiffs(diffs, onProgress) {
     return __async(this, null, function* () {
-      var _a5, _b;
       const result = {
         success: 0,
         skipped: 0,
@@ -31937,31 +31942,26 @@ var UserDataImporter = class {
           continue;
         }
         try {
-          const content = yield this.app.vault.read(entry.localFile);
-          let updatedContent = content;
           let changed = false;
-          for (const diff of entry.fieldDiffs) {
-            if (diff.strategy === "keep_local")
-              continue;
-            if (diff.strategy === "overwrite") {
-              updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName) ? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue) : this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
-              changed = true;
-            } else {
-              if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
-                const merged = [...new Set([...diff.localValue, ...diff.importValue])];
-                if (JSON.stringify(merged) !== JSON.stringify(diff.localValue)) {
-                  updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
-                  changed = true;
-                }
-              } else {
-                const merged = String((_a5 = diff.localValue) != null ? _a5 : "") + " / " + String((_b = diff.importValue) != null ? _b : "");
-                updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
-                changed = true;
+          yield this.app.vault.process(entry.localFile, (content) => {
+            var _a5;
+            let updatedContent = content;
+            for (const diff of entry.fieldDiffs) {
+              if (diff.strategy === "keep_local")
+                continue;
+              const localValue = diff.sectionName ? this.merger.getSection(updatedContent, diff.sectionName) : this.merger.getFrontmatterValue(updatedContent, diff.fieldName);
+              if (JSON.stringify(localValue) === JSON.stringify(diff.importValue))
+                continue;
+              let value = diff.importValue;
+              if (diff.strategy === "smart_merge" && !this.isEmptyValue(localValue)) {
+                value = Array.isArray(localValue) && Array.isArray(diff.importValue) ? [...new Set([...localValue, ...diff.importValue])] : `${localValue}${diff.sectionName ? "\n\n" : " / "}${(_a5 = diff.importValue) != null ? _a5 : ""}`;
               }
+              updatedContent = diff.sectionName ? this.merger.updateSection(updatedContent, diff.sectionName, String(value)) : this.merger.updateFrontmatterField(updatedContent, diff.fieldName, value);
             }
-          }
+            changed = updatedContent !== content;
+            return updatedContent;
+          });
           if (changed) {
-            yield this.app.vault.process(entry.localFile, () => updatedContent);
             result.success++;
           } else {
             result.skipped++;
@@ -32045,7 +32045,7 @@ var UserDataImporter = class {
       const items = [];
       for (const filePath of filePaths) {
         const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (file instanceof import_obsidian47.TFile) {
+        if (file instanceof import_obsidian48.TFile) {
           items.push({ name: filePath, content: yield this.app.vault.read(file) });
         }
       }
@@ -32174,7 +32174,7 @@ var UserDataImporter = class {
 };
 
 // src/org/wanxp/douban/userdata/ImportPreviewModal.ts
-var ImportPreviewModal = class extends import_obsidian48.Modal {
+var ImportPreviewModal = class extends import_obsidian49.Modal {
   constructor(app) {
     super(app);
     this.importData = null;
@@ -32183,6 +32183,8 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
     this.importResult = null;
     this.attrActions = new Map();
     this.importAttrNames = [];
+    this.refreshOverview = null;
+    this.rebuildVersion = 0;
     this.importer = new UserDataImporter(app);
   }
   onOpen() {
@@ -32204,6 +32206,7 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
       const content = yield file.text();
       try {
         this.importData = this.importer.parseImportContent(file.name, content);
+        yield this.rebuildDiffs();
       } catch (error) {
         this.contentEl.createEl("p", {
           text: error instanceof Error ? error.message : String(error),
@@ -32211,7 +32214,6 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
         });
         return;
       }
-      this.rebuildDiffs();
       this.currentStep = "overview";
       this.contentEl.empty();
       this.renderStep();
@@ -32219,11 +32221,23 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
     input.click();
   }
   rebuildDiffs() {
-    if (!this.importData)
-      return;
-    this.collectImportAttributes();
-    const settings = this.parseAttributeSettings();
-    this.diffs = this.importer.buildDiffs(this.importData, settings);
+    return __async(this, null, function* () {
+      var _a5;
+      if (!this.importData)
+        return;
+      const version = ++this.rebuildVersion;
+      this.collectImportAttributes();
+      const settings = this.parseAttributeSettings();
+      const rebuilt = yield this.importer.buildDiffs(this.importData, settings);
+      if (version !== this.rebuildVersion)
+        return;
+      const previous = new Map(this.diffs.map((entry) => [entry.doubanId, entry]));
+      this.diffs = rebuilt.map((entry) => {
+        const old = previous.get(entry.doubanId);
+        return old ? Object.assign(old, entry, { selected: old.selected }) : entry;
+      });
+      (_a5 = this.refreshOverview) == null ? void 0 : _a5.call(this);
+    });
   }
   collectImportAttributes() {
     if (!this.importData)
@@ -32245,13 +32259,14 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
     for (const [fieldName, action] of this.attrActions) {
       if (action === "ignore") {
         ignoredFields.push(fieldName);
-      } else if (action !== "keep" && typeof action === "string") {
+      } else if (action !== "keep" && typeof action === "string" && action.trim()) {
         fieldAliases[fieldName] = action;
       }
     }
     return { ignoredFields, fieldAliases };
   }
   renderStep() {
+    this.refreshOverview = null;
     this.contentEl.empty();
     switch (this.currentStep) {
       case "overview":
@@ -32301,8 +32316,8 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
     this.renderAttributeSettingsPanel();
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    const nextBtn = new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => {
-      this.rebuildDiffs();
+    const nextBtn = new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130242")).setCta().setDisabled(true).onClick(() => __async(this, null, function* () {
+      yield this.rebuildDiffs();
       for (const diff of this.diffs) {
         if (diff.localFile === null || diff.identical) {
           diff.selected = false;
@@ -32310,15 +32325,23 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
       }
       this.currentStep = "diffs";
       this.renderStep();
-    }).setClass("obsidian_douban_search_button");
-    new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    })).setClass("obsidian_douban_search_button");
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
     const updateSelectedCount = () => {
       const count = this.diffs.filter((d) => d.selected).length;
       selectedCountEl.setText(i18nHelper.getMessage("130265", count));
       selectAllCb.checked = this.diffs.length > 0 && this.diffs.every((d) => d.selected);
       const hasDiff = this.diffs.some((d) => d.selected && d.localFile !== null && !d.identical);
       nextBtn.setDisabled(!hasDiff);
+      listEl.querySelectorAll(".import-preview-item").forEach((row, index2) => {
+        const diff = this.diffs[index2];
+        const badge = row.querySelector(".import-preview-badge");
+        if (diff.localFile && badge) {
+          badge.textContent = diff.identical ? "=" : String(diff.fieldDiffs.length);
+        }
+      });
     };
+    this.refreshOverview = updateSelectedCount;
     selectAllCb.addEventListener("change", () => {
       const checked = selectAllCb.checked;
       for (const diff of this.diffs) {
@@ -32364,20 +32387,19 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
       row.createEl("td", { text: attrName, cls: "import-attr-name" });
       const actionCell = row.createEl("td");
       const currentAction = (_a5 = this.attrActions.get(attrName)) != null ? _a5 : "keep";
-      new import_obsidian48.Setting(actionCell).addDropdown((dropdown) => {
-        dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267")).addOption("alias", i18nHelper.getMessage("130268")).setValue(currentAction === "keep" || currentAction === "ignore" ? currentAction : "alias").onChange((value) => {
+      new import_obsidian49.Setting(actionCell).addDropdown((dropdown) => {
+        dropdown.addOption("keep", i18nHelper.getMessage("130266")).addOption("ignore", i18nHelper.getMessage("130267")).addOption("alias", i18nHelper.getMessage("130268")).setValue(currentAction === "keep" || currentAction === "ignore" ? currentAction : "alias").onChange((value) => __async(this, null, function* () {
           var _a6;
           if (value === "alias") {
             const textInput = actionCell.querySelector(".import-alias-input");
             const aliasTarget = ((_a6 = textInput == null ? void 0 : textInput.value) == null ? void 0 : _a6.trim()) || "";
-            this.attrActions.set(attrName, aliasTarget || "alias");
+            this.attrActions.set(attrName, aliasTarget);
           } else {
             this.attrActions.set(attrName, value);
           }
-          this.rebuildDiffs();
-          this.refreshListCheckboxes(true);
+          yield this.rebuildDiffs();
           this.reRenderAttributePanel();
-        });
+        }));
       });
       const isAlias = currentAction !== "keep" && currentAction !== "ignore";
       if (isAlias) {
@@ -32386,10 +32408,11 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
           attr: { type: "text", placeholder: i18nHelper.getMessage("130269") }
         });
         aliasInput.value = currentAction;
-        aliasInput.addEventListener("input", () => {
+        aliasInput.addEventListener("input", () => __async(this, null, function* () {
           const val2 = aliasInput.value.trim();
-          this.attrActions.set(attrName, val2 || "alias");
-        });
+          this.attrActions.set(attrName, val2);
+          yield this.rebuildDiffs();
+        }));
       }
     }
   }
@@ -32424,7 +32447,7 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
         row.createEl("td", { text: String((_a5 = diff.localValue) != null ? _a5 : "") });
         row.createEl("td", { text: String((_b = diff.importValue) != null ? _b : "") });
         const strategyCell = row.createEl("td");
-        new import_obsidian48.Setting(strategyCell).addDropdown((dropdown) => {
+        new import_obsidian49.Setting(strategyCell).addDropdown((dropdown) => {
           dropdown.addOption("keep_local", i18nHelper.getMessage("130244")).addOption("overwrite", i18nHelper.getMessage("130245")).addOption("smart_merge", i18nHelper.getMessage("130246")).setValue(diff.strategy).onChange((value) => {
             diff.strategy = value;
           });
@@ -32444,8 +32467,8 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
     }
     const controls = this.contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
-    new import_obsidian48.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130247")).setCta().onClick(() => this.doImport()).setClass("obsidian_douban_search_button");
+    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   renderResult() {
     const result = this.importResult;
@@ -32463,7 +32486,7 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
         errorList.createEl("li", { text: `... ${result.errors.length - 10} more` });
       }
     }
-    new import_obsidian48.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
+    new import_obsidian49.ButtonComponent(this.contentEl).setButtonText(i18nHelper.getMessage("110005")).setCta().onClick(() => this.close()).setClass("obsidian_douban_search_button");
   }
   doImport() {
     return __async(this, null, function* () {
@@ -32484,7 +32507,7 @@ var ImportPreviewModal = class extends import_obsidian48.Modal {
 };
 
 // src/org/wanxp/douban/userdata/UserDataModal.ts
-var UserDataExportModal = class extends import_obsidian49.Modal {
+var UserDataExportModal = class extends import_obsidian50.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -32497,10 +32520,10 @@ var UserDataExportModal = class extends import_obsidian49.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130201", folderPath) });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
+    new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130202")).setCta().onClick(() => __async(this, null, function* () {
       yield this.doExport(folderPath, outputDir);
     })).setClass("obsidian_douban_search_button");
-    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   doExport(folderPath, outputDir) {
     return __async(this, null, function* () {
@@ -32524,7 +32547,7 @@ var UserDataExportModal = class extends import_obsidian49.Modal {
     this.contentEl.empty();
   }
 };
-var UserDataImportModal = class extends import_obsidian49.Modal {
+var UserDataImportModal = class extends import_obsidian50.Modal {
   constructor(plugin) {
     super(plugin.app);
     this.plugin = plugin;
@@ -32535,11 +32558,11 @@ var UserDataImportModal = class extends import_obsidian49.Modal {
     contentEl.createEl("p", { text: i18nHelper.getMessage("130211") });
     const controls = contentEl.createDiv("controls");
     controls.addClass("obsidian_douban_search_controls");
-    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
+    new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("130216")).setCta().onClick(() => {
       this.close();
       new ImportPreviewModal(this.app).open();
     }).setClass("obsidian_douban_search_button");
-    new import_obsidian49.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
+    new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => this.close()).setClass("obsidian_douban_cancel_button");
   }
   onClose() {
     this.contentEl.empty();
@@ -32547,10 +32570,10 @@ var UserDataImportModal = class extends import_obsidian49.Modal {
 };
 
 // src/org/wanxp/main.ts
-var import_obsidian52 = __toModule(require("obsidian"));
+var import_obsidian53 = __toModule(require("obsidian"));
 
 // src/org/wanxp/douban/component/DoubanBatchImportModal.ts
-var import_obsidian50 = __toModule(require("obsidian"));
+var import_obsidian51 = __toModule(require("obsidian"));
 
 // src/org/wanxp/utils/DoubanUrlUtil.ts
 var DoubanUrlUtil = class {
@@ -32639,7 +32662,7 @@ var DoubanUrlUtil = class {
 };
 
 // src/org/wanxp/douban/component/DoubanBatchImportModal.ts
-var DoubanBatchImportModal = class extends import_obsidian50.Modal {
+var DoubanBatchImportModal = class extends import_obsidian51.Modal {
   constructor(app, plugin, context) {
     super(app);
     this.plugin = plugin;
@@ -32654,14 +32677,14 @@ var DoubanBatchImportModal = class extends import_obsidian50.Modal {
     contentEl.addClass("obsidian_douban_batch_import");
     contentEl.createEl("h2", { text: i18nHelper.getMessage("batchImportTitle") });
     contentEl.createEl("p", { text: i18nHelper.getMessage("batchImportDesc") });
-    this.textarea = new import_obsidian50.TextAreaComponent(contentEl).setPlaceholder("https://movie.douban.com/subject/3742360/\nhttps://book.douban.com/subject/2567698/").onChange((value) => {
+    this.textarea = new import_obsidian51.TextAreaComponent(contentEl).setPlaceholder("https://movie.douban.com/subject/3742360/\nhttps://book.douban.com/subject/2567698/").onChange((value) => {
       this.value = value;
     });
     this.textarea.inputEl.rows = 10;
     this.textarea.inputEl.addClass("obsidian_douban_batch_urls");
     const controls = contentEl.createDiv("obsidian_douban_batch_controls");
-    this.startButton = new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("batchImportStart")).setCta().onClick(() => void this.startImport());
-    this.cancelButton = new import_obsidian50.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
+    this.startButton = new import_obsidian51.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("batchImportStart")).setCta().onClick(() => void this.startImport());
+    this.cancelButton = new import_obsidian51.ButtonComponent(controls).setButtonText(i18nHelper.getMessage("110005")).onClick(() => {
       if (this.running) {
         this.cancelRequested = true;
         this.cancelButton.setButtonText(i18nHelper.getMessage("batchImportStopping"));
@@ -32733,7 +32756,7 @@ var DoubanBatchImportModal = class extends import_obsidian50.Modal {
 ` : "");
       this.setProgress(summary);
       this.renderFailures(failures, remaining);
-      new import_obsidian50.Notice(summary);
+      new import_obsidian51.Notice(summary);
       this.plugin.clearStatusBarDelay();
       this.running = false;
       this.startButton.setDisabled(false);
@@ -32761,7 +32784,7 @@ ${failure.reason}` });
 };
 
 // src/org/wanxp/main.ts
-var DoubanPlugin = class extends import_obsidian51.Plugin {
+var DoubanPlugin = class extends import_obsidian52.Plugin {
   putToObsidian(context, extract3) {
     return __async(this, null, function* () {
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
@@ -32847,9 +32870,13 @@ var DoubanPlugin = class extends import_obsidian51.Plugin {
         const targetExists = yield this.app.vault.adapter.exists(fullFilePath);
         const targetOwnerId = syncStatus == null ? void 0 : syncStatus.getDoubanIdForFilePath(fullFilePath);
         if (targetExists && targetOwnerId !== subject.id) {
-          const collisionSafePath = `${filePath} (${subject.id})`;
-          filePath = collisionSafePath;
-          fullFilePath = `${collisionSafePath}.md`;
+          const basePath = `${filePath} (${subject.id})`;
+          filePath = basePath;
+          let suffix = 2;
+          while ((yield this.app.vault.adapter.exists(`${filePath}.md`)) && (syncStatus == null ? void 0 : syncStatus.getDoubanIdForFilePath(`${filePath}.md`)) !== subject.id) {
+            filePath = `${basePath} (${suffix++})`;
+          }
+          fullFilePath = `${filePath}.md`;
         }
         if (context.syncStatusHolder.syncStatus.syncConfig.force) {
           const existingFilePath = syncStatus.getExistingFilePath(subject.id);
@@ -32869,7 +32896,7 @@ var DoubanPlugin = class extends import_obsidian51.Plugin {
             }
             try {
               const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
-              if (existingFile instanceof import_obsidian52.TFile) {
+              if (existingFile instanceof import_obsidian53.TFile) {
                 const extractor = new UserDataExtractor(this.app);
                 localUserData = yield extractor.extractFromFileAsync(existingFile);
               }
@@ -32897,7 +32924,7 @@ var DoubanPlugin = class extends import_obsidian51.Plugin {
           try {
             if (localUserData && ((_a5 = context.syncConfig) == null ? void 0 : _a5.inheritOldFields)) {
               const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-              if (newFile instanceof import_obsidian52.TFile) {
+              if (newFile instanceof import_obsidian53.TFile) {
                 const merger = new UserDataMerger();
                 const currentContent = yield this.app.vault.read(newFile);
                 const mergedContent = merger.mergeUserData(currentContent, localUserData, this.settings.dataProtection);
@@ -33233,13 +33260,13 @@ var DoubanPlugin = class extends import_obsidian51.Plugin {
         if (!result) {
           return;
         }
-        new import_obsidian51.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
+        new import_obsidian52.Notice(i18nHelper.getMessage("140301", SyncTypeRecords[syncConfig.syncType]));
         this.initSyncDefaultSettings(syncConfig);
         context.syncStatusHolder.initHandledData();
         this.showStatus(i18nHelper.getMessage("140203", SyncTypeRecords[syncConfig.syncType]));
         const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
         yield syncHandler.sync();
-        new import_obsidian51.Notice(i18nHelper.getMessage("140302"));
+        new import_obsidian52.Notice(i18nHelper.getMessage("140302"));
       } catch (e) {
         log.error(i18nHelper.getMessage("140206", e.message), e);
       } finally {
@@ -33261,7 +33288,7 @@ var DoubanPlugin = class extends import_obsidian51.Plugin {
       }
       if (!uc.isLogin()) {
         this.settingsManager.debug("\u4E3B\u754C\u9762:\u540C\u6B65\u65F6\u7684\u767B\u5F55\u72B6\u6001\u68C0\u6D4B\u5B8C\u6210: \u5C1D\u8BD5\u83B7\u53D6\u7528\u6237\u4FE1\u606F\u5931\u8D25");
-        new import_obsidian51.Notice(i18nHelper.getMessage("140303"));
+        new import_obsidian52.Notice(i18nHelper.getMessage("140303"));
         return false;
       }
       return true;

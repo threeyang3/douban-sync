@@ -141,9 +141,14 @@ export default class DoubanPlugin extends Plugin {
 			if (targetExists && targetOwnerId !== subject.id) {
 				// The title may be the same while the Douban IDs differ. Preserve both
 				// subjects instead of treating the second item as already synced.
-				const collisionSafePath = `${filePath} (${subject.id})`;
-				filePath = collisionSafePath;
-				fullFilePath = `${collisionSafePath}.md`;
+				const basePath = `${filePath} (${subject.id})`;
+				filePath = basePath;
+				let suffix = 2;
+				while (await this.app.vault.adapter.exists(`${filePath}.md`)
+					&& syncStatus?.getDoubanIdForFilePath(`${filePath}.md`) !== subject.id) {
+					filePath = `${basePath} (${suffix++})`;
+				}
+				fullFilePath = `${filePath}.md`;
 			}
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);

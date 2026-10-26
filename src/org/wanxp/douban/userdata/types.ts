@@ -80,6 +80,7 @@ export type FieldStrategy = 'keep_local' | 'overwrite' | 'smart_merge';
 
 export interface FieldDiff {
 	fieldName: string;
+	sectionName?: '记录' | '感想';
 	localValue: unknown;
 	importValue: unknown;
 	strategy: FieldStrategy;

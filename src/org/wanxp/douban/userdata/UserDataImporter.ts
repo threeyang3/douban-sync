@@ -49,7 +49,24 @@ export class UserDataImporter {
 	 */
 	parseImportContent(fileName: string, content: string): UserDataExport {
 		try {
-			return JSON.parse(content) as UserDataExport;
+			const data = JSON.parse(content);
+			if (!data || typeof data !== 'object' || !data.items || typeof data.items !== 'object' || Array.isArray(data.items)) {
+				throw new Error('Invalid import data: missing items');
+			}
+			for (const item of Object.values(data.items)) {
+				if (!item || typeof item !== 'object' || Array.isArray(item)) {
+					throw new Error('Invalid import item');
+				}
+				const entry = item as DoubanUserData;
+				if (entry.customProperties != null && (typeof entry.customProperties !== 'object' || Array.isArray(entry.customProperties))) {
+					throw new Error('Invalid custom properties');
+				}
+				if (entry.bodySections != null && (typeof entry.bodySections !== 'object' || Array.isArray(entry.bodySections)
+					|| Object.values(entry.bodySections).some(value => typeof value !== 'string'))) {
+					throw new Error('Invalid body sections');
+				}
+			}
+			return data as UserDataExport;
 		} catch (error: unknown) {
 			throw new Error(`Failed to parse import file ${fileName}: ${error instanceof Error ? error.message : String(error)}`);
 		}
@@ -58,7 +75,7 @@ export class UserDataImporter {
 	/**
 	 * 仅构建差异列表，不写入
 	 */
-	buildDiffs(importData: UserDataExport, attrSettings?: ImportAttributeSettings): EntryDiff[] {
+	async buildDiffs(importData: UserDataExport, attrSettings?: ImportAttributeSettings): Promise<EntryDiff[]> {
 		this.fileCache = scanVaultForDoubanIds(this.app);
 		const results: EntryDiff[] = [];
 
@@ -83,7 +100,13 @@ export class UserDataImporter {
 			}
 
 			const localFrontmatter = localEntry.frontmatter ?? {};
-			const importCustom = userData.customProperties ?? {};
+			const importCustom: Record<string, unknown> = {};
+			for (const [key, value] of Object.entries(userData.customProperties ?? {})) {
+				if (DOUBAN_FIELDS.has(key) || ignoredSet.has(key)) continue;
+				const target = aliasMap[key]?.trim() || key;
+				if (DOUBAN_FIELDS.has(target)) continue;
+				Object.defineProperty(importCustom, target, {value, enumerable: true, configurable: true});
+			}
 			const localFm = localFrontmatter as Record<string, unknown>;
 			const fieldDiffs: FieldDiff[] = [];
 			let identical = true;
@@ -119,33 +142,17 @@ export class UserDataImporter {
 				});
 			}
 
-			// 应用别名映射：导入中存在但本地不存在的字段，尝试用别名映射到本地字段名
-			for (const [importFieldName, localFieldName] of Object.entries(aliasMap)) {
-				if (ignoredSet.has(importFieldName)) continue;
-				if (!Object.prototype.hasOwnProperty.call(importCustom, importFieldName)) continue;
-				if (DOUBAN_FIELDS.has(importFieldName)) continue;
-
-				// 如果已经通过原名匹配过了，跳过
-				if (allFieldNames.has(importFieldName)) continue;
-
-				const importValue = importCustom[importFieldName];
-				const localValue = localFm[localFieldName];
-				const localEmpty = this.isEmptyValue(localValue);
-				const importEmpty = this.isEmptyValue(importValue);
-
-				if (localEmpty && importEmpty) continue;
-				if (!localEmpty && !importEmpty && JSON.stringify(localValue) === JSON.stringify(importValue)) continue;
-				// 本地有值但导入为空 → 保留本地
-				if (!localEmpty && importEmpty) continue;
-
-				identical = false;
-				const strategy: FieldStrategy = localEmpty && !importEmpty ? 'overwrite' : 'smart_merge';
-				fieldDiffs.push({
-					fieldName: localFieldName,
-					localValue,
-					importValue,
-					strategy,
-				});
+			if (userData.bodySections) {
+				const content = await this.app.vault.read(localFile);
+				for (const [key, sectionName] of [['record', '记录'], ['thoughts', '感想']] as const) {
+					const importValue = userData.bodySections[key]?.trim();
+					if (!importValue) continue;
+					const localValue = this.merger.getSection(content, sectionName);
+					if (localValue === importValue) continue;
+					identical = false;
+					fieldDiffs.push({fieldName: `## ${sectionName}`, sectionName, localValue, importValue,
+						strategy: localValue ? 'smart_merge' : 'overwrite'});
+				}
 			}
 
 			results.push({
@@ -191,38 +198,30 @@ export class UserDataImporter {
 			}
 
 			try {
-				const content = await this.app.vault.read(entry.localFile);
-				let updatedContent = content;
 				let changed = false;
-
-				for (const diff of entry.fieldDiffs) {
-					if (diff.strategy === 'keep_local') continue;
-
-					if (diff.strategy === 'overwrite') {
-						updatedContent = this.merger.hasFrontmatterField(updatedContent, diff.fieldName)
-							? this.merger.updateFrontmatterField(updatedContent, diff.fieldName, diff.importValue)
-							: this.merger.addFrontmatterField(updatedContent, diff.fieldName, diff.importValue);
-						changed = true;
-					} else {
-						// smart_merge
-						if (Array.isArray(diff.localValue) && Array.isArray(diff.importValue)) {
-							// 数组合并去重
-							const merged = [...new Set([...diff.localValue, ...diff.importValue])];
-							if (JSON.stringify(merged) !== JSON.stringify(diff.localValue)) {
-								updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
-								changed = true;
-							}
-						} else {
-							// 字符串/其他类型：拼接两者
-							const merged = String(diff.localValue ?? '') + ' / ' + String(diff.importValue ?? '');
-							updatedContent = this.merger.updateFrontmatterField(updatedContent, diff.fieldName, merged);
-							changed = true;
+				await this.app.vault.process(entry.localFile, content => {
+					let updatedContent = content;
+					for (const diff of entry.fieldDiffs) {
+						if (diff.strategy === 'keep_local') continue;
+						const localValue = diff.sectionName
+							? this.merger.getSection(updatedContent, diff.sectionName)
+							: this.merger.getFrontmatterValue(updatedContent, diff.fieldName);
+						if (JSON.stringify(localValue) === JSON.stringify(diff.importValue)) continue;
+						let value = diff.importValue;
+						if (diff.strategy === 'smart_merge' && !this.isEmptyValue(localValue)) {
+							value = Array.isArray(localValue) && Array.isArray(diff.importValue)
+								? [...new Set([...localValue, ...diff.importValue])]
+								: `${localValue}${diff.sectionName ? '\n\n' : ' / '}${diff.importValue ?? ''}`;
 						}
+						updatedContent = diff.sectionName
+							? this.merger.updateSection(updatedContent, diff.sectionName, String(value))
+							: this.merger.updateFrontmatterField(updatedContent, diff.fieldName, value);
 					}
-				}
+					changed = updatedContent !== content;
+					return updatedContent;
+				});
 
 				if (changed) {
-					await this.app.vault.process(entry.localFile, () => updatedContent);
 					result.success++;
 				} else {
 					result.skipped++;

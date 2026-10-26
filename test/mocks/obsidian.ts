@@ -3,6 +3,7 @@ export const moment = {
 };
 
 export const requestUrl = jest.fn();
+export const parseYaml = (text: string): unknown => require('js-yaml').load(text);
 
 export function normalizePath(path: string): string {
 	return String(path ?? '')

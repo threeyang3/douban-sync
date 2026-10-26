@@ -31,6 +31,8 @@ export class ImportPreviewModal extends Modal {
 	private attrActions = new Map<string, AttrAction>();
 	// 导入数据中发现的所有自定义属性名（去重排序）
 	private importAttrNames: string[] = [];
+	private refreshOverview: (() => void) | null = null;
+	private rebuildVersion = 0;
 
 	constructor(app: App) {
 		super(app);
@@ -57,6 +59,7 @@ export class ImportPreviewModal extends Modal {
 			const content = await file.text();
 			try {
 				this.importData = this.importer.parseImportContent(file.name, content);
+				await this.rebuildDiffs();
 			} catch (error) {
 				this.contentEl.createEl('p', {
 					text: error instanceof Error ? error.message : String(error),
@@ -65,7 +68,6 @@ export class ImportPreviewModal extends Modal {
 				return;
 			}
 
-			this.rebuildDiffs();
 			this.currentStep = 'overview';
 			this.contentEl.empty();
 			this.renderStep();
@@ -73,11 +75,19 @@ export class ImportPreviewModal extends Modal {
 		input.click();
 	}
 
-	private rebuildDiffs() {
+	private async rebuildDiffs() {
 		if (!this.importData) return;
+		const version = ++this.rebuildVersion;
 		this.collectImportAttributes();
 		const settings = this.parseAttributeSettings();
-		this.diffs = this.importer.buildDiffs(this.importData, settings);
+		const rebuilt = await this.importer.buildDiffs(this.importData, settings);
+		if (version !== this.rebuildVersion) return;
+		const previous = new Map(this.diffs.map(entry => [entry.doubanId, entry]));
+		this.diffs = rebuilt.map(entry => {
+			const old = previous.get(entry.doubanId);
+			return old ? Object.assign(old, entry, {selected: old.selected}) : entry;
+		});
+		this.refreshOverview?.();
 	}
 
 	private collectImportAttributes() {
@@ -99,7 +109,7 @@ export class ImportPreviewModal extends Modal {
 		for (const [fieldName, action] of this.attrActions) {
 			if (action === 'ignore') {
 				ignoredFields.push(fieldName);
-			} else if (action !== 'keep' && typeof action === 'string') {
+			} else if (action !== 'keep' && typeof action === 'string' && action.trim()) {
 				fieldAliases[fieldName] = action;
 			}
 		}
@@ -108,6 +118,7 @@ export class ImportPreviewModal extends Modal {
 	}
 
 	private renderStep() {
+		this.refreshOverview = null;
 		this.contentEl.empty();
 		switch (this.currentStep) {
 			case 'overview':
@@ -179,8 +190,8 @@ export class ImportPreviewModal extends Modal {
 			.setButtonText(i18nHelper.getMessage('130242'))
 			.setCta()
 			.setDisabled(true)
-			.onClick(() => {
-				this.rebuildDiffs();
+			.onClick(async () => {
+				await this.rebuildDiffs();
 				for (const diff of this.diffs) {
 					if (diff.localFile === null || diff.identical) {
 						diff.selected = false;
@@ -203,7 +214,15 @@ export class ImportPreviewModal extends Modal {
 			selectAllCb.checked = this.diffs.length > 0 && this.diffs.every(d => d.selected);
 			const hasDiff = this.diffs.some(d => d.selected && d.localFile !== null && !d.identical);
 			nextBtn.setDisabled(!hasDiff);
+			listEl.querySelectorAll('.import-preview-item').forEach((row, index) => {
+				const diff = this.diffs[index];
+				const badge = row.querySelector('.import-preview-badge');
+				if (diff.localFile && badge) {
+					badge.textContent = diff.identical ? '=' : String(diff.fieldDiffs.length);
+				}
+			});
 		};
+		this.refreshOverview = updateSelectedCount;
 
 		selectAllCb.addEventListener('change', () => {
 			const checked = selectAllCb.checked;
@@ -268,16 +287,15 @@ export class ImportPreviewModal extends Modal {
 						.addOption('ignore', i18nHelper.getMessage('130267'))
 						.addOption('alias', i18nHelper.getMessage('130268'))
 						.setValue(currentAction === 'keep' || currentAction === 'ignore' ? currentAction : 'alias')
-						.onChange((value) => {
+						.onChange(async (value) => {
 							if (value === 'alias') {
 								const textInput = actionCell.querySelector('.import-alias-input') as HTMLInputElement | null;
 								const aliasTarget = textInput?.value?.trim() || '';
-								this.attrActions.set(attrName, aliasTarget || 'alias');
+								this.attrActions.set(attrName, aliasTarget);
 							} else {
 								this.attrActions.set(attrName, value);
 							}
-							this.rebuildDiffs();
-							this.refreshListCheckboxes(true);
+							await this.rebuildDiffs();
 							this.reRenderAttributePanel();
 						});
 				});
@@ -290,9 +308,10 @@ export class ImportPreviewModal extends Modal {
 					attr: { type: 'text', placeholder: i18nHelper.getMessage('130269') },
 				});
 				aliasInput.value = currentAction;
-				aliasInput.addEventListener('input', () => {
+				aliasInput.addEventListener('input', async () => {
 					const val = aliasInput.value.trim();
-					this.attrActions.set(attrName, val || 'alias');
+					this.attrActions.set(attrName, val);
+					await this.rebuildDiffs();
 				});
 			}
 		}

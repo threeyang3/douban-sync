@@ -5,6 +5,7 @@
  */
 
 import { DoubanUserData, DataProtectionSettings, DEFAULT_DATA_PROTECTION_SETTINGS } from './types';
+import {parseYaml} from 'obsidian';
 
 interface FrontmatterParts {
 	prefix: string;
@@ -63,9 +64,9 @@ export class UserDataMerger {
 
 		let newBody: string;
 		if (fieldRegex.test(parts.body)) {
-			newBody = parts.body.replace(fieldRegex, `${field}: ${formattedValue}`);
+			newBody = parts.body.replace(fieldRegex, () => `${formatFrontmatterKey(field)}: ${formattedValue}`);
 		} else {
-			newBody = `${parts.body}\n${field}: ${formattedValue}`;
+			newBody = `${parts.body}\n${formatFrontmatterKey(field)}: ${formattedValue}`;
 		}
 
 		return parts.prefix + newBody + parts.suffix + parts.rest;
@@ -76,7 +77,7 @@ export class UserDataMerger {
 		if (!parts) return content;
 
 		const formattedValue = formatFrontmatterValue(value);
-		const newBody = `${parts.body}\n${field}: ${formattedValue}`;
+		const newBody = `${parts.body}\n${formatFrontmatterKey(field)}: ${formattedValue}`;
 
 		return parts.prefix + newBody + parts.suffix + parts.rest;
 	}
@@ -85,35 +86,23 @@ export class UserDataMerger {
 		const parts = parseFrontmatter(content);
 		if (!parts) return false;
 
-		const fieldRegex = new RegExp(`^${escapeRegExp(field)}:`, 'm');
-		return fieldRegex.test(parts.body);
+		return buildFrontmatterFieldRegex(field).test(parts.body);
 	}
 
-	getFrontmatterValue(content: string, field: string): string | undefined {
+	getFrontmatterValue(content: string, field: string): unknown {
 		const parts = parseFrontmatter(content);
 		if (!parts) return undefined;
+		const values = parseYaml(parts.body);
+		return values && typeof values === 'object' ? values[field] : undefined;
+	}
 
-		const lines = parts.body.split('\n');
-		const fieldPrefix = `${field}:`;
-		const startIndex = lines.findIndex(line => line.startsWith(fieldPrefix));
-		if (startIndex === -1) return undefined;
-
-		const inlineValue = lines[startIndex].slice(fieldPrefix.length).trim();
-		if (inlineValue) return stripQuotedValue(inlineValue);
-
-		const listItems: string[] = [];
-		for (let i = startIndex + 1; i < lines.length; i++) {
-			const line = lines[i];
-			if (/^[^-\s][^:]*:/.test(line)) break;
-			const listMatch = line.match(/^\s*-\s*(.*)$/);
-			if (listMatch) {
-				listItems.push(stripQuotedValue(listMatch[1].trim()));
-				continue;
-			}
-			if (line.trim() && !/^\s/.test(line)) break;
-		}
-
-		return listItems.length > 0 ? listItems.join(', ') : '';
+	getSection(content: string, sectionName: string): string {
+		const lines = content.replace(/\r\n/g, '\n').split('\n');
+		const start = lines.findIndex(line => line.trim() === `## ${sectionName}`);
+		if (start < 0) return '';
+		let end = lines.findIndex((line, index) => index > start && /^#{1,2}\s+/.test(line));
+		if (end < 0) end = lines.length;
+		return lines.slice(start + 1, end).join('\n').trim();
 	}
 
 	updateSection(content: string, sectionName: string, sectionContent: string): string {
@@ -125,7 +114,7 @@ export class UserDataMerger {
 		if (startIndex !== -1) {
 			let endIndex = lines.length;
 			for (let i = startIndex + 1; i < lines.length; i++) {
-				if (/^##\s+/.test(lines[i])) {
+				if (/^#{1,2}\s+/.test(lines[i])) {
 					endIndex = i;
 					break;
 				}
@@ -148,9 +137,12 @@ function formatFrontmatterValue(value: unknown): string {
 	if (typeof value === 'string') {
 		if (
 			value.includes(':') || value.includes('#') || value.includes('\n') ||
-			value.includes('"') || value.includes("'") || value.includes('[') || value.includes('{')
+			value.includes('"') || value.includes("'") || value.includes('[') || value.includes('{') ||
+			value.includes('\\') || !value.trim() || value.trim() !== value ||
+			/^(?:true|false|null|~)$/i.test(value) || /^[+-]?(?:\d|\.\d|\.inf|\.nan)/i.test(value) ||
+			/^[*&!>|%@`,?\]}-]/.test(value)
 		) {
-			return `"${value.replace(/"/g, '\\"')}"`;
+			return JSON.stringify(value);
 		}
 		return value;
 	}
@@ -170,19 +162,14 @@ function formatFrontmatterValue(value: unknown): string {
 }
 
 function buildFrontmatterFieldRegex(field: string): RegExp {
-	return new RegExp(`^${escapeRegExp(field)}:\\s*.*(?:\\n  - .*?)*$`, 'm');
+	const keys = [field, JSON.stringify(field), `'${field.replace(/'/g, "''")}'`];
+	return new RegExp(`^(?:${keys.map(escapeRegExp).join('|')}):[\\t ]*[^\\r\\n]*(?:\\r?\\n(?:[\\t ]+[^\\r\\n]*|-[\\t ]+[^\\r\\n]*))*`, 'm');
+}
+
+function formatFrontmatterKey(field: string): string {
+	return /^[\w\u4e00-\u9fff-]+$/.test(field) ? field : JSON.stringify(field);
 }
 
 function escapeRegExp(value: string): string {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function stripQuotedValue(value: string): string {
-	if (
-		(value.startsWith('"') && value.endsWith('"')) ||
-		(value.startsWith("'") && value.endsWith("'"))
-	) {
-		return value.slice(1, -1);
-	}
-	return value;
 }
