@@ -23521,6 +23521,7 @@ var DoubanBookLoadHandler = class extends DoubanAbstractLoadHandler {
   }
   parseSubjectFromHtml(html3, context) {
     let desc = DoubanPageParser.extractText(html3, [
+      "#link-report .all.hidden .intro p",
       "#link-report > .intro > span.all.hidden",
       "#link-report .intro > span.all.hidden",
       "#link-report .intro p",

@@ -87,6 +87,7 @@ export default class DoubanBookLoadHandler extends DoubanAbstractLoadHandler<Dou
 
 	parseSubjectFromHtml(html: CheerioAPI, context: HandleContext): DoubanBookSubject {
 		let desc = DoubanPageParser.extractText(html, [
+			"#link-report .all.hidden .intro p",
 			"#link-report > .intro > span.all.hidden",
 			"#link-report .intro > span.all.hidden",
 			"#link-report .intro p",

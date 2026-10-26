@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.2.1 - 2026-10-27
+
+### Fixed
+
+- Book descriptions now prefer the expanded summary on current Douban pages, avoiding duplicated short/full paragraphs and the expand control text.
+
+### Validation
+
+- Added three regression tests for current expanded summaries, legacy expanded summaries, and descriptions without a collapsed version.
+- 23 test suites and 101 tests pass; TypeScript checking and production build pass.
+- Validated real search and batch imports in the local Obsidian Sandbox, including cover downloads and invalid/duplicate/existing-file handling.
+- Redeployed the fix and reimported a book and a theater entry successfully; no runtime errors were captured during verification.
+
 ## 2.2.0 - 2026-10-25
 
 ### Added

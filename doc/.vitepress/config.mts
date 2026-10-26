@@ -36,6 +36,7 @@ export default defineConfig({
       { text: '免责声明', link: '/80_others_disclaimer' },
       { text: '开发调试', link: '/70_develop' },
       { text: '开发计划', link: '/90_development_plan' },
+      { text: '2.2.1 发布说明', link: '/95_release_2.2.1' },
       { text: '2.2.0 发布说明', link: '/95_release_2.2.0' },
       { text: '反馈建议', link: '/97_issues' },
 
