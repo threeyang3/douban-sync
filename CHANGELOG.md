@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2.3.0 - 2026-10-28
+
+### Added
+
+- Live template previews with sample data for all seven subject types, using the import formatter and current Obsidian theme.
+- Side-by-side source and rendered output, property inspection, parse warnings, and in-place file-template editing with concurrent-change protection.
 
 ### Fixed
 

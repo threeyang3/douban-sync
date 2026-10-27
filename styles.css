@@ -559,6 +559,47 @@
 	overflow-x: auto;
 }
 
+.douban-template-editor.modal {
+	width: min(1180px, 94vw);
+	max-width: 94vw;
+	max-height: 92vh;
+}
+
+.douban-template-editor .modal-content { display: flex; flex-direction: column; min-height: 0; }
+.douban-template-editor-header h2 { margin: 0 0 6px; }
+.douban-template-editor-header p { color: var(--text-muted); font-size: var(--font-ui-small); margin: 0 0 18px; }
+.douban-template-workspace { display: flex; flex-wrap: wrap; gap: 16px; min-height: 0; container-type: inline-size; }
+.douban-template-source, .douban-template-preview {
+	flex: 1 1 320px; min-width: 0; border: 1px solid var(--background-modifier-border);
+	border-radius: 8px; overflow: hidden; background: var(--background-primary);
+}
+.douban-template-pane-heading {
+	display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+	padding: 10px 14px; border-bottom: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-small); font-weight: var(--font-semibold); background: var(--background-secondary);
+}
+.douban-template-mode, .douban-template-preview-status { color: var(--text-muted); font-size: var(--font-ui-smaller); font-weight: normal; }
+.douban-template-editor textarea.douban-template-textarea {
+	display: block; width: 100%; height: clamp(280px, 54vh, 600px); min-height: 180px; margin: 0;
+	padding: 16px; border: 0; border-radius: 0; resize: vertical;
+	font: 13px/1.7 var(--font-monospace); tab-size: 2; background: var(--background-primary);
+}
+.douban-template-editor textarea.douban-template-textarea[readonly] { color: var(--text-muted); }
+.douban-template-preview-scroll { height: clamp(280px, 54vh, 600px); overflow: auto; padding: 18px; }
+.douban-template-preview-body { font-family: var(--font-text); font-size: var(--font-text-size); overflow-wrap: anywhere; }
+.douban-template-preview-body > :first-child { margin-top: 0; }
+.douban-template-preview-body .callout { margin-top: 12px; }
+.douban-template-preview-body img { max-width: 100%; }
+.douban-template-preview-properties { margin-bottom: 18px; color: var(--text-muted); font-size: var(--font-ui-small); }
+.douban-template-preview-properties dl { display: grid; grid-template-columns: minmax(80px, 1fr) minmax(0, 2fr); gap: 8px 12px; }
+.douban-template-preview-properties dt, .douban-template-preview-properties dd { margin: 0; overflow-wrap: anywhere; }
+.douban-template-preview-properties dd { color: var(--text-normal); }
+.douban-template-preview-warning { padding: 10px 12px; margin-bottom: 12px; border-left: 3px solid var(--text-warning); background: var(--background-secondary); overflow-wrap: anywhere; font-size: var(--font-ui-small); white-space: pre-wrap; }
+.douban-template-preview-empty { color: var(--text-muted); padding: 32px 0; text-align: center; }
+.douban-template-variable-reference { margin-top: 14px; font-size: var(--font-ui-small); color: var(--text-muted); }
+.douban-template-variable-reference code { display: block; margin-top: 8px; white-space: normal; line-height: 1.8; }
+.douban-template-editor-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
 .obsidian_douban_variable_copy {
 	cursor: pointer;
 	font-family: var(--font-monospace);
