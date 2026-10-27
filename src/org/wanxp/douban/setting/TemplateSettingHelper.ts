@@ -13,6 +13,7 @@ import {getDefaultTemplateContent} from "../../constant/DefaultTemplateContent";
 import {TemplateEditorModal} from "../component/TemplateEditorModal";
 import FileHandler from "../../file/FileHandler";
 import {log} from "../../utils/Logutil";
+import {renderTemplatePreview} from './TemplatePreview';
 
 const TEMPLATE_TYPES: Array<{nameKey: string, configKey: keyof DoubanPluginSetting, templateKey: TemplateKey}> = [
 	{nameKey: '120101', configKey: 'movieTemplateConfig', templateKey: TemplateKey.movieTemplateFile},
@@ -72,6 +73,13 @@ export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsM
 				});
 			text.inputEl.style.width = '100%';
 			text.inputEl.style.minHeight = '150px';
+			const controls = text.inputEl.parentElement.createDiv();
+			new ButtonComponent(controls).setIcon('panel-right').setButtonText(i18nHelper.getMessage('templateEditPreview')).onClick(() => {
+				new TemplateEditorModal(manager.app, TemplateKey.noteTemplateFile, text.getValue(), {
+					onPreview: content => renderTemplatePreview(content, TemplateKey.noteTemplateFile, manager),
+					onSave: async content => { await manager.updateSetting('noteTemplateContent', content); text.setValue(content); },
+				}).open();
+			});
 		});
 }
 
@@ -96,6 +104,8 @@ function createTemplateSourceSetting(
 
 	const setting = new Setting(containerEl);
 	setting.setName(i18nHelper.getMessage(nameKey));
+	const describeSource = () => setting.setDesc(i18nHelper.getMessage(`templateSource_${getConfig().source}`));
+	const onPreview = (content: string) => renderTemplatePreview(content, templateKey, manager);
 	setting.controlEl.addClass('obsidian_douban_template_file_select');
 
 	// Source dropdown
@@ -122,16 +132,19 @@ function createTemplateSourceSetting(
 
 	const refreshActionArea = () => {
 		actionContainer.empty();
+		describeSource();
 		const config = getConfig();
 		switch (config.source) {
 			case 'builtin': {
 				new ButtonComponent(actionContainer)
 					.setIcon('eye')
+					.setButtonText(i18nHelper.getMessage('templateLivePreview'))
 					.setTooltip(i18nHelper.getMessage('121930'))
 					.onClick(() => {
 						const content = getDefaultBuiltinContent(templateKey);
 						new TemplateEditorModal(manager.app, templateKey, content, {
 							readOnly: true,
+							onPreview,
 							onSaveAs: async (targetPath, latestContent) => {
 								await saveTemplateContentAsFile(manager, targetPath, latestContent);
 								await manager.updateSetting(configKey, { source: 'file', filePath: targetPath });
@@ -156,11 +169,25 @@ function createTemplateSourceSetting(
 				});
 				new ButtonComponent(actionContainer)
 					.setIcon('eye')
+					.setButtonText(i18nHelper.getMessage('templateEditPreview'))
 					.setTooltip(i18nHelper.getMessage('121930'))
 					.onClick(async () => {
-						const content = await resolveTemplateContent(manager, templateKey, configKey);
+						const filePath = getConfig().filePath;
+						if (!filePath || !manager.app.metadataCache.getFirstLinkpathDest(filePath, '')) {
+							new Notice(i18nHelper.getMessage('templatePreviewMissingFile'));
+							return;
+						}
+						const file = manager.app.metadataCache.getFirstLinkpathDest(filePath, '');
+						const content = await manager.app.vault.read(file);
 						new TemplateEditorModal(manager.app, templateKey, content, {
-							readOnly: true,
+							onPreview,
+							sourcePath: file.path,
+							onSave: async latestContent => {
+								await manager.app.vault.process(file, current => {
+									if (current !== content) throw new Error(i18nHelper.getMessage('templatePreviewFileChanged'));
+									return latestContent;
+								});
+							},
 							onSaveAs: async (targetPath, latestContent) => {
 								await saveTemplateContentAsFile(manager, targetPath, latestContent);
 								new Notice(i18nHelper.getMessage('121945'));
@@ -172,6 +199,7 @@ function createTemplateSourceSetting(
 			case 'custom': {
 				new ButtonComponent(actionContainer)
 					.setIcon('pencil')
+					.setButtonText(i18nHelper.getMessage('templateEditPreview'))
 					.setTooltip(i18nHelper.getMessage('121931'))
 					.onClick(() => {
 						const cfg = getConfig();
@@ -180,6 +208,7 @@ function createTemplateSourceSetting(
 							templateKey,
 							cfg.customContent || getDefaultBuiltinContent(templateKey),
 							{
+								onPreview,
 								onSave: async (newContent) => {
 									cfg.customContent = newContent;
 									await manager.updateSetting(configKey, cfg);
@@ -191,10 +220,7 @@ function createTemplateSourceSetting(
 									new Notice(i18nHelper.getMessage('121945'));
 								},
 								onRestoreDefault: async () => {
-									const defaultContent = getDefaultBuiltinContent(templateKey);
-									cfg.customContent = defaultContent;
-									await manager.updateSetting(configKey, cfg);
-									return defaultContent;
+									return getDefaultBuiltinContent(templateKey);
 								},
 							}
 						).open();
