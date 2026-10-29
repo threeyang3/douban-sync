@@ -1,5 +1,5 @@
 import {i18nHelper} from "../../lang/helper";
-import {ButtonComponent, SearchComponent, Setting, TFile} from "obsidian";
+import {App, ButtonComponent, SearchComponent, Setting, TFile} from "obsidian";
 import SettingsManager from "./SettingsManager";
 import {FileTreeSelectSuggest} from "./model/FileTreeSelectSuggest";
 import {FolderTreeSelectSuggest} from "./model/FolderTreeSelectSuggest";
@@ -24,6 +24,13 @@ const TEMPLATE_TYPES: Array<{nameKey: string, configKey: keyof DoubanPluginSetti
 	{nameKey: '121801', configKey: 'teleplayTemplateConfig', templateKey: TemplateKey.teleplayTemplateFile},
 	{nameKey: '121803', configKey: 'theaterTemplateConfig', templateKey: TemplateKey.theaterTemplateFile},
 ];
+
+export async function saveTemplateIfUnchanged(app: App, file: TFile, original: string, updated: string): Promise<void> {
+	await app.vault.process(file, current => {
+		if (current !== original) throw new Error(i18nHelper.getMessage('templatePreviewFileChanged'));
+		return updated;
+	});
+}
 
 export function constructTemplateUI(containerEl: HTMLElement, manager: SettingsManager) {
 	containerEl.createEl('p', { text: i18nHelper.getMessage('1204') });
@@ -183,10 +190,7 @@ function createTemplateSourceSetting(
 							onPreview,
 							sourcePath: file.path,
 							onSave: async latestContent => {
-								await manager.app.vault.process(file, current => {
-									if (current !== content) throw new Error(i18nHelper.getMessage('templatePreviewFileChanged'));
-									return latestContent;
-								});
+								await saveTemplateIfUnchanged(manager.app, file, content, latestContent);
 							},
 							onSaveAs: async (targetPath, latestContent) => {
 								await saveTemplateContentAsFile(manager, targetPath, latestContent);

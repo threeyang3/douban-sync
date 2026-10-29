@@ -1,5 +1,10 @@
 //简体中文
 export default {
+	'sync_report_failed': 'Report could not be saved: {0}',
+	'sync_outcome_success': "Sync completed",
+	'sync_outcome_partial': "Sync partially completed; see errors in the sync report",
+	'sync_outcome_failed': "Sync failed; see errors in the sync report",
+	'sync_outcome_cancelled': "Sync cancelled",
 	//main.ts
 	'110001': 'search by current file name',
 	'110002': 'search and import to current file',
@@ -46,7 +51,7 @@ PS: This file could be delete if you want to.
 `,
 	'110038': `DoubanSyncResult`,
 	'110039': `Incremental Sync:`,
-	'110040': `Only sync that haven't been synced yet. if not enabled, will sync all the subject'`,
+	'110040': `Skip previously handled entries even when replacement is enabled. Disable incremental sync to refresh them.`,
 	'110041': `IncrementalSync`,
 	'110042': `EstimateTime`,
 	'110043': `Loading Menu`,

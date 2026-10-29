@@ -29,9 +29,6 @@ export default abstract class DoubanAbstractListHandler
 			return SearchPage.emptyWithNoType();
 		}
 		let subjectListItemSearchPageTypeOf = await this.getPageList(url, context);
-		if (subjectListItemSearchPageTypeOf && context.plugin.statusHolder.syncStatus) {
-			context.plugin.statusHolder.syncStatus.setAllTotal(subjectListItemSearchPageTypeOf.total)
-		}
 		return subjectListItemSearchPageTypeOf;
 	}
 
@@ -75,7 +72,7 @@ export default abstract class DoubanAbstractListHandler
 					.replace("{0}", detail),
 				e,
 			);
-			return SearchPage.emptyWithNoType();
+			throw e;
 		}
 	}
 
@@ -83,9 +80,13 @@ export default abstract class DoubanAbstractListHandler
 		dataHtml: CheerioAPI,
 		context: HandleContext,
 	): SearchPageTypeOf<SubjectListItem> {
-		const items = dataHtml(".item-show")
+		const rawItems = dataHtml(".item-show");
+		if (!rawItems.length && !dataHtml('.subject-num').length) {
+			throw new Error('Unrecognized Douban list structure');
+		}
+		const items = rawItems
 			.get()
-			.map((i: any) => {
+			.map((i: any, index: number) => {
 				const item = dataHtml(i);
 				const linkValue: string = item
 					.find("div.title > a")
@@ -102,14 +103,27 @@ export default abstract class DoubanAbstractListHandler
 					console.error(e);
 					log.info("parse date error:" + titleValue);
 				}
-				let idPattern = /(\d){5,10}/g;
+				const idPattern = /\/(?:subject|game|note)\/(\d{5,10})(?:\/|$)/;
 				let ececResult = idPattern.exec(linkValue);
-				return !ececResult ? null : {id: ececResult[0], url: linkValue, title: titleValue, updateDate: updateDate};
-				// return linkValue;
-			});
+				if (!ececResult) {
+					log.info(`Skipping invalid list entry at offset ${context.syncOffset}, index ${index}`);
+					return null;
+				}
+				return {id: ececResult[1], url: linkValue, title: titleValue, updateDate: updateDate};
+			})
+			.filter((item): item is SubjectListItem => item !== null);
 		const subjectNumText = dataHtml(".subject-num").text().trim();
 		const totalNumMatch = subjectNumText.match(/\/\s*(\d+)/);
+		if (!totalNumMatch && (rawItems.length > 0 || subjectNumText !== '0')) {
+			throw new Error('Unable to read Douban list pagination total');
+		}
 		const totalNum = totalNumMatch ? parseInt(totalNumMatch[1], 10) : 0;
+		if (!Number.isSafeInteger(totalNum) || (rawItems.length > 0 && totalNum < context.syncOffset + rawItems.length)) {
+			throw new Error('Inconsistent Douban list pagination total');
+		}
+		if ((rawItems.length && !items.length) || (!rawItems.length && totalNum > context.syncOffset)) {
+			throw new Error('Douban list contains no readable entries before the expected end');
+		}
 		return new SearchPage(
 			totalNum,
 			Math.floor(context.syncOffset / PAGE_SIZE) + 1,

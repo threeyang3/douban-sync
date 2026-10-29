@@ -30,11 +30,11 @@ export default class NetFileHandler {
 					}
 					return response.textArrayBuffer;
 				})
-			.then((buffer) => {
+			.then(async (buffer) => {
 				if (!buffer || buffer.byteLength == 0) {
 					return 0;
 				}
-				this.fileHandler.creatAttachmentWithData(filePath, buffer, overwrite);
+				await this.fileHandler.creatAttachmentWithData(filePath, buffer, overwrite);
 				return buffer.byteLength;
 			}).then((size) => {
 				if (size == 0) {
@@ -44,7 +44,7 @@ export default class NetFileHandler {
 			})
 			.catch(e => {
 				if (showError) {
-					return log
+					log
 						.error(
 							i18nHelper.getMessage('130101')
 								.replace('{0}',  e.toString())
@@ -52,6 +52,7 @@ export default class NetFileHandler {
 				}else {
 					console.error(e);
 				}
+				return {success: false, error: String(e), filepath: null};
 			});
 		;
 	}

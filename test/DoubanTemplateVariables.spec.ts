@@ -2,6 +2,17 @@ import {load} from 'cheerio';
 import DoubanBookLoadHandler from '../src/org/wanxp/douban/data/handler/DoubanBookLoadHandler';
 
 describe('Douban template variables', () => {
+	it('uses different cover filenames for different IDs sharing the same title', async () => {
+		const handler = new DoubanBookLoadHandler({} as any) as any;
+		jest.spyOn(handler, 'parsePartPath').mockImplementation((path: string) => path);
+		const save = jest.spyOn(handler, 'handleImage').mockImplementation(async (_url, folder, name) => ({success: true, filepath: folder + '/' + name}));
+		const context = {settings: {cacheImage: true, attachmentPath: 'covers', attachmentFileName: 'Demo'},
+			plugin: {app: {vault: {getAbstractFileByPath: (): null => null}}, settingsManager: {getHeaders: () => ({})}},
+			userComponent: {isLogin: () => false}};
+		await handler.saveImage({id: '123', image: 'https://example.com/a.jpg'}, context, new Map());
+		await handler.saveImage({id: '456', image: 'https://example.com/b.jpg'}, context, new Map());
+		expect(save.mock.calls.map(call => call[2])).toEqual(['Demo (123).jpg', 'Demo (456).jpg']);
+	});
 	it('exposes the local image basename', () => {
 		const handler = new DoubanBookLoadHandler({} as any);
 		const variableMap = new Map<string, any>();

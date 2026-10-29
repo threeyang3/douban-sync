@@ -20,21 +20,19 @@ import {SearchPageTypeOf} from "../../data/model/SearchPageTypeOf";
 import SyncStatusHolder from "../model/SyncStatusHolder";
 import {SyncPreviewEntry, SyncPreviewResult} from "../model/SyncPreviewResult";
 
-function toDateList(dataList: SubjectListItem[]): Date[] {
-	const dateList = dataList
-		.map((item) => item.updateDate)
-		.sort((a, b) => {
-			try {
-				return a.getTime() - b.getTime();
-			} catch (e) {
-			}
-			return 0;
-		});
-	return dateList;
-}
-
 function isPreviewMode(context: HandleContext): boolean {
 	return !!context.syncPreviewMode;
+}
+
+interface ScopeRun {
+	handler: DoubanListHandler;
+	index: number;
+	shared: {
+		seen: Set<string>;
+		sourceTotals: number[];
+		selectedTotals: number[];
+		duplicates: number;
+	};
 }
 
 export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
@@ -43,6 +41,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	private plugin: DoubanPlugin;
 	private doubanSubjectLoadHandler: DoubanSubjectLoadHandler<T>;
 	private doubanListHandlers: DoubanListHandler[];
+	private scopeRuns = new WeakMap<HandleContext, ScopeRun>();
 
 	constructor(
 		plugin: DoubanPlugin,
@@ -66,7 +65,14 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			syncConfig,
 			syncPreviewMode: true,
 		};
-		const items = await this.collectItems(syncConfig, previewContext);
+		const items: SubjectListItem[] = [];
+		const seen = new Set<string>();
+		await this.visitScopes(syncConfig, previewContext, async scopedContext => {
+			for (const item of await this.collectItems(syncConfig, scopedContext)) {
+				const key = `${this.getSyncType()}:${item.id}`;
+				if (!seen.has(key)) { seen.add(key); items.push(item); }
+			}
+		});
 		const previewStatus = new SyncStatusHolder(syncConfig, this.plugin.app);
 		previewStatus.initSyncHandledData(this.plugin.settings.syncHandledDataArray);
 		await previewStatus.buildExistingFilesCache(syncConfig?.dataFilePath || '');
@@ -126,6 +132,35 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	}
 
 	async sync(syncConfig: SyncConfig, context: HandleContext): Promise<void> {
+		await this.visitScopes(syncConfig, context, scopedContext => this.syncScope(syncConfig, scopedContext));
+	}
+
+	private async visitScopes(syncConfig: SyncConfig, context: HandleContext,
+		visit: (scopedContext: HandleContext) => Promise<void>): Promise<void> {
+		const handlers = this.doubanListHandlers.filter(handler => handler.support(syncConfig));
+		if (!handlers.length) throw new Error(`No list handler for scope ${syncConfig.scope}`);
+		const shared: ScopeRun['shared'] = {seen: new Set(), sourceTotals: [], selectedTotals: [], duplicates: 0};
+		if (!isPreviewMode(context)) {
+			await context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || '');
+		}
+		for (let index = 0; index < handlers.length; index++) {
+			if (this.isStopped(context)) break;
+			const handler = handlers[index];
+			const scopedContext = {...context, syncConfig, syncOffset: 0};
+			this.scopeRuns.set(scopedContext, {handler, index, shared});
+			try {
+				await visit(scopedContext);
+			} catch (error) {
+				const detail = `Scope ${handler.getDoType?.() || index + 1}: ${error instanceof Error ? error.message : String(error)}`;
+				if (isPreviewMode(context) || handlers.length === 1) throw new Error(detail);
+				context.syncStatusHolder.syncStatus.recordError(detail);
+			} finally {
+				this.scopeRuns.delete(scopedContext);
+			}
+		}
+	}
+
+	private async syncScope(syncConfig: SyncConfig, context: HandleContext): Promise<void> {
 		if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
 			await this.syncByTimeLimit(syncConfig, context);
 		} else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
@@ -150,103 +185,28 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			log.warn(i18nHelper.getMessage("110081"));
 			return [];
 		}
-		const cacheList = new Map<number, SearchPageTypeOf<SubjectListItem>>();
-		const searchPage = await this.getItems(syncConfig, context);
-		if (!searchPage) {
-			return [];
-		}
-		const total = searchPage.total;
-		const lastPage = total / PAGE_SIZE + 1;
-		if (lastPage == 1) {
-			return searchPage.list;
-		}
-		let leftPage = 1;
-		let startPage = 1;
-		let rightPage = lastPage;
-		let endPage = lastPage;
-		let currentPage = 1;
-		cacheList.set(currentPage, searchPage);
-		if (startDate != null) {
-			do {
-				if (this.isStopped(context)) {
-					break;
+		// Fixed offsets avoid relying on list date ordering or valid dates on every item.
+		const needHandleItems: SubjectListItem[] = [];
+		const seen = new Set<string>();
+		context.syncOffset = 0;
+		while (!this.isStopped(context)) {
+			const page = await this.getItems(syncConfig, context);
+			if (this.isStopped(context) || !page?.list?.length) break;
+			for (const item of page.list) {
+				if (!item || seen.has(item.id)) continue;
+				seen.add(item.id);
+				const date = item.updateDate;
+				if (date && Number.isFinite(date.getTime())
+					&& (!startDate || date >= startDate) && (!endDate || date <= endDate)) {
+					needHandleItems.push(item);
 				}
-				let page = cacheList.get(currentPage);
-				if (!page) {
-					page = await this.getItems(syncConfig, context);
-					if (!page) {
-						break;
-					}
-					cacheList.set(currentPage, page);
-				}
-				const pageItems = page.list;
-				const pageDateList = toDateList(pageItems);
-				if (pageDateList[pageDateList.length - 1] >= startDate) {
-					leftPage = currentPage;
-					endPage = currentPage;
-					currentPage = Math.ceil((leftPage + rightPage) / 2);
-				}else {
-					rightPage = currentPage;
-					endPage = currentPage;
-					currentPage = Math.floor((leftPage + rightPage) / 2);
-				}
-				if (currentPage == leftPage || currentPage == rightPage) {
-					break;
-				}
-			} while (currentPage < lastPage);
-		}
-		leftPage = 1;
-		rightPage = lastPage;
-		currentPage = 1;
-		if (endDate != null) {
-			do {
-				if (this.isStopped(context)) {
-					break;
-				}
-				let page = cacheList.get(currentPage);
-				if (!page) {
-					page = await this.getItems(syncConfig, context);
-					if (!page) {
-						break;
-					}
-					cacheList.set(currentPage, page);
-				}
-				const pageItems = page.list;
-				const pageDateList = toDateList(pageItems);
-				if (pageDateList[0] <= endDate) {
-					rightPage = currentPage;
-					startPage = currentPage;
-					currentPage = Math.ceil((leftPage + rightPage) / 2);
-				}else {
-					leftPage = currentPage;
-					startPage = currentPage;
-					currentPage = Math.floor((leftPage + rightPage) / 2);
-				}
-				if (currentPage == leftPage || currentPage == rightPage) {
-					break;
-				}
-			} while (currentPage < lastPage);
-		}
-		let needHandleItems:SubjectListItem[] = [];
-		for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-			if (this.isStopped(context)) {
-				break;
 			}
-			let page = cacheList.get(pageNum);
-			if (!page) {
-				page = await this.getItems(syncConfig, context);
-				if (!page) {
-					break;
-				}
-				cacheList.set(pageNum, page);
+			context.syncOffset += PAGE_SIZE;
+			if (context.syncOffset >= page.total) break;
+			if (!isPreviewMode(context)) {
+				await sleepRange(BasicConst.CALL_DOUBAN_DELAY,
+					BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
 			}
-			const pageItems = page.list;
-			needHandleItems = needHandleItems.concat(pageItems
-				.filter((item) => {
-					const itemDate = item.updateDate;
-					return (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
-				}),
-			);
 		}
 		return needHandleItems;
 	}
@@ -289,8 +249,9 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		syncConfig: SyncConfig,
 		context: HandleContext,
 	): Promise<SearchPageTypeOf<SubjectListItem>> {
-		const supportHandlers: DoubanListHandler[] = this.doubanListHandlers.filter((h) => h.support(syncConfig));
-		const handler = supportHandlers[0];
+		const run = this.scopeRuns.get(context);
+		const handler = run?.handler || this.doubanListHandlers.find(handler => handler.support(syncConfig));
+		if (!handler) throw new Error(`No list handler for scope ${syncConfig.scope}`);
 		if (this.isStopped(context)) {
 			return SearchPage.emptyWithNoType();
 		}
@@ -298,7 +259,13 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		if (this.isStopped(context)) {
 			return SearchPage.emptyWithNoType();
 		}
-		return item;
+		if (!isPreviewMode(context) && item) {
+			if (run) run.shared.sourceTotals[run.index] = item.total;
+			context.syncStatusHolder.syncStatus.setAllTotal(run
+				? run.shared.sourceTotals.reduce((sum, total) => sum + total, 0) : item.total);
+		}
+		return item ? new SearchPageTypeOf(item.total, item.pageNum, item.pageSize, item.type,
+			item.list?.filter(entry => entry?.id) || []) : SearchPage.emptyWithNoType();
 	}
 
 	private async removeExists(
@@ -316,18 +283,28 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		searchPage: SearchPage,
 		items: SubjectListItem[],
 		context: HandleContext,
+		cacheReady = false,
 	): Promise<void> {
-		if (!items || items.length == 0) {
-			return;
-		}
 		const {syncStatus} = context.syncStatusHolder;
 		const {syncConfig} = context;
-		syncStatus.totalNum(searchPage.total);
+		const run = this.scopeRuns.get(context);
+		let total = searchPage.total;
+		if (run) {
+			run.shared.selectedTotals[run.index] = total;
+			items = items.filter(item => {
+				const key = `${this.getSyncType()}:${item.id}`;
+				if (run.shared.seen.has(key)) { run.shared.duplicates++; return false; }
+				run.shared.seen.add(key);
+				return true;
+			});
+			total = run.shared.selectedTotals.reduce((sum, value) => sum + value, 0) - run.shared.duplicates;
+		}
+		syncStatus.totalNum(total);
 		const needHandled: number = syncStatus.getTotal() - syncStatus.getHasHandle();
 		syncStatus.setNeedHandled(needHandled);
 
 		const dataFilePath = syncConfig?.dataFilePath || '';
-		await syncStatus.buildExistingFilesCache(dataFilePath);
+		if (!cacheReady && !run) await syncStatus.buildExistingFilesCache(dataFilePath);
 
 		for (const item of items) {
 			if (this.isStopped(context)) {
@@ -440,21 +417,16 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	}
 
 	private async syncAll(syncConfig: SyncConfig, context: HandleContext) {
-		const items = await this.collectAll(syncConfig, context);
-		if (!items.length) {
-			return;
+		if (!this.scopeRuns.has(context)) {
+			await context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || '');
 		}
-		const page = new SearchPageTypeOf<SubjectListItem>(
-			items.length,
-			1,
-			items.length,
-			null,
-			items,
-		);
-		await this.handleItems(page, items, context);
+		await this.collectAll(syncConfig, context, async page => {
+			await this.handleItems(page, page.list, context, true);
+		});
 	}
 
-	private async collectAll(syncConfig: SyncConfig, context: HandleContext): Promise<SubjectListItem[]> {
+	private async collectAll(syncConfig: SyncConfig, context: HandleContext,
+		onPage?: (page: SearchPageTypeOf<SubjectListItem>) => Promise<void>): Promise<SubjectListItem[]> {
 		context.syncOffset = 0;
 		let handleCount = 0;
 		let totalForHandle = 0;
@@ -476,7 +448,11 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			}
 			handleCount += list.length;
 			const subjectListItems = await this.removeExists(list, syncConfig, context);
-			result.push(...subjectListItems);
+			if (onPage) {
+				await onPage(new SearchPageTypeOf(totalForHandle, searchPage.pageNum, PAGE_SIZE, searchPage.type, subjectListItems));
+			} else {
+				result.push(...subjectListItems);
+			}
 			context.syncOffset = context.syncOffset + PAGE_SIZE;
 			if (!isPreviewMode(context)) {
 				await sleepRange(
@@ -484,7 +460,7 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 					BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE,
 				);
 			}
-		} while (handleCount <= totalForHandle);
+		} while (context.syncOffset < totalForHandle);
 		return result;
 	}
 

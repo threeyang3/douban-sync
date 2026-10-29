@@ -121,14 +121,18 @@ export function sanitizeRedirectHeaders(
 
 	let fromHost = '';
 	let toHost = '';
+	let secure = false;
 	try {
-		fromHost = new URL(fromUrl).hostname;
-		toHost = new URL(toUrl).hostname;
+		const from = new URL(fromUrl);
+		const to = new URL(toUrl);
+		fromHost = from.hostname;
+		toHost = to.hostname;
+		secure = from.protocol === 'https:' && to.protocol === 'https:';
 	} catch (_) {
 		// If a redirect URL cannot be parsed, do not forward credentials.
 	}
 
-	const sameTrustedDoubanOrigin = isDoubanHost(fromHost) && isDoubanHost(toHost);
+	const sameTrustedDoubanOrigin = secure && isDoubanHost(fromHost) && isDoubanHost(toHost);
 	if (sameTrustedDoubanOrigin) {
 		return result;
 	}

@@ -4224,6 +4224,11 @@ __export(exports, {
 
 // src/org/wanxp/lang/locale/en.ts
 var en_default = {
+  "sync_report_failed": "Report could not be saved: {0}",
+  "sync_outcome_success": "Sync completed",
+  "sync_outcome_partial": "Sync partially completed; see errors in the sync report",
+  "sync_outcome_failed": "Sync failed; see errors in the sync report",
+  "sync_outcome_cancelled": "Sync cancelled",
   "110001": "search by current file name",
   "110002": "search and import to current file",
   "110003": `Enter Search Term:`,
@@ -4268,7 +4273,7 @@ PS: This file could be delete if you want to.
 `,
   "110038": `DoubanSyncResult`,
   "110039": `Incremental Sync:`,
-  "110040": `Only sync that haven't been synced yet. if not enabled, will sync all the subject'`,
+  "110040": `Skip previously handled entries even when replacement is enabled. Disable incremental sync to refresh them.`,
   "110041": `IncrementalSync`,
   "110042": `EstimateTime`,
   "110043": `Loading Menu`,
@@ -4992,6 +4997,11 @@ PS: This file could be delete if you want to.
 
 // src/org/wanxp/lang/locale/zh-cn.ts
 var zh_cn_default = {
+  "sync_report_failed": "\u540C\u6B65\u62A5\u544A\u4FDD\u5B58\u5931\u8D25\uFF1A{0}",
+  "sync_outcome_success": "\u540C\u6B65\u5B8C\u6210",
+  "sync_outcome_partial": "\u540C\u6B65\u90E8\u5206\u5B8C\u6210\uFF0C\u8BF7\u67E5\u770B\u540C\u6B65\u62A5\u544A\u4E2D\u7684\u9519\u8BEF",
+  "sync_outcome_failed": "\u540C\u6B65\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u540C\u6B65\u62A5\u544A\u4E2D\u7684\u9519\u8BEF",
+  "sync_outcome_cancelled": "\u540C\u6B65\u5DF2\u53D6\u6D88",
   "110001": "\u641C\u7D22\u5F53\u524D\u6587\u6863\u540D\u5E76\u5199\u5165",
   "110002": "\u641C\u7D22\u5E76\u5199\u5165\u5F53\u524D\u6587\u6863",
   "110003": `\u8F93\u5165\u641C\u7D22\u5185\u5BB9:`,
@@ -5058,7 +5068,7 @@ var zh_cn_default = {
 `,
   "110038": `\u8C46\u74E3\u540C\u6B65\u7ED3\u679C`,
   "110039": `\u589E\u91CF\u540C\u6B65:`,
-  "110040": `\u4EC5\u540C\u6B65\u6700\u8FD1\u65B0\u589E/\u540C\u6B65\u5931\u8D25/\u672A\u540C\u6B65\u7684\u90E8\u5206,\u589E\u91CF\u9002\u5408\u4E4B\u524D\u540C\u6B65\u4E2D\u9014\u5931\u8D25\u505C\u6B62\u6216\u6700\u8FD1\u6709\u8C46\u74E3\u65B0\u589E\u4E86\u5185\u5BB9,\u5168\u91CF\u540C\u6B65\u9002\u5408\u4FEE\u6539\u4E86\u6A21\u677F\u6216\u4FEE\u6539\u4E86\u5B58\u653E\u8DEF\u5F84\u60C5\u51B5\u4E0B\u8FDB\u884C.`,
+  "110040": `\u8DF3\u8FC7\u5386\u53F2\u5DF2\u5904\u7406\u6761\u76EE\uFF0C\u5373\u4F7F\u5F00\u542F\u66FF\u6362\u540C\u540D\u6587\u6863\u3002\u8981\u5237\u65B0\u5386\u53F2\u6761\u76EE\uFF0C\u8BF7\u5173\u95ED\u589E\u91CF\u540C\u6B65\u3002`,
   "110041": `\u4F7F\u7528\u589E\u91CF`,
   "110042": `\u9884\u8BA1\u5904\u7406\u65F6\u95F4`,
   "110043": `\u6B63\u5728\u83B7\u53D6\u9700\u8981\u540C\u6B65\u7684\u5217\u8868, \u8BF7\u7A0D\u540E`,
@@ -6653,12 +6663,16 @@ function sanitizeRedirectHeaders(headers, fromUrl, toUrl) {
   });
   let fromHost = "";
   let toHost = "";
+  let secure = false;
   try {
-    fromHost = new URL(fromUrl).hostname;
-    toHost = new URL(toUrl).hostname;
+    const from = new URL(fromUrl);
+    const to = new URL(toUrl);
+    fromHost = from.hostname;
+    toHost = to.hostname;
+    secure = from.protocol === "https:" && to.protocol === "https:";
   } catch (_) {
   }
-  const sameTrustedDoubanOrigin = isDoubanHost(fromHost) && isDoubanHost(toHost);
+  const sameTrustedDoubanOrigin = secure && isDoubanHost(fromHost) && isDoubanHost(toHost);
   if (sameTrustedDoubanOrigin) {
     return result;
   }
@@ -23210,7 +23224,7 @@ var DoubanAbstractLoadHandler = class {
         fileNameSuffix = ".jpg";
       }
       fileName = this.parsePartPath(fileName, extract3, context, variableMap);
-      fileName = fileName + fileNameSuffix;
+      fileName = fileName + (extract3.id ? ` (${extract3.id})` : "") + fileNameSuffix;
       const overwriteCoverImage = syncConfig ? (_a5 = syncConfig.overwriteCoverImage) != null ? _a5 : false : context.settings.overwriteCoverImage;
       if (!overwriteCoverImage) {
         const existingPath = folder.replace(/\\/g, "/") + "/" + fileName;
@@ -27162,22 +27176,29 @@ var FileHandler = class {
       const prependDirInput = FileUtil.join("", originalFilePath);
       const { dir, name } = FileUtil.parse(prependDirInput);
       const filePath = FileUtil.join(dir, `${name}`);
-      try {
-        const fileExists = yield adapter2.exists(filePath);
-        if (fileExists) {
-          if (overwrite) {
-            yield adapter2.remove(filePath);
-          } else {
-            return;
+      const fileExists = yield adapter2.exists(filePath);
+      if (fileExists) {
+        if (!overwrite)
+          return;
+        const file = vault.getAbstractFileByPath(filePath);
+        if (!(file instanceof import_obsidian25.TFile))
+          throw new Error(`Attachment is not a file: ${filePath}`);
+        const original = yield vault.readBinary(file);
+        try {
+          yield vault.modifyBinary(file, data2);
+        } catch (error) {
+          try {
+            yield vault.modifyBinary(file, original);
+          } catch (rollbackError) {
+            throw new Error(`Attachment write and rollback failed: ${filePath}: ${String(error)}; ${String(rollbackError)}`);
           }
+          throw error;
         }
-        if (dir !== "") {
-          yield this.createDirectory(dir);
-        }
-        yield vault.createBinary(filePath, data2);
-      } catch (error) {
-        log.error(error.toString(), error);
+        return;
       }
+      if (dir !== "")
+        yield this.createDirectory(dir);
+      yield vault.createBinary(filePath, data2);
     });
   }
   createNewNote(originalFilePath) {
@@ -27330,6 +27351,15 @@ var TEMPLATE_TYPES = [
   { nameKey: "121801", configKey: "teleplayTemplateConfig", templateKey: TemplateKey.teleplayTemplateFile },
   { nameKey: "121803", configKey: "theaterTemplateConfig", templateKey: TemplateKey.theaterTemplateFile }
 ];
+function saveTemplateIfUnchanged(app, file, original, updated) {
+  return __async(this, null, function* () {
+    yield app.vault.process(file, (current) => {
+      if (current !== original)
+        throw new Error(i18nHelper.getMessage("templatePreviewFileChanged"));
+      return updated;
+    });
+  });
+}
 function constructTemplateUI(containerEl, manager) {
   containerEl.createEl("p", { text: i18nHelper.getMessage("1204") });
   new import_obsidian26.Setting(containerEl).setDesc(i18nHelper.getMessage("1205"));
@@ -27442,11 +27472,7 @@ function createTemplateSourceSetting(containerEl, manager, nameKey, configKey, t
             onPreview,
             sourcePath: file.path,
             onSave: (latestContent) => __async(this, null, function* () {
-              yield manager.app.vault.process(file, (current) => {
-                if (current !== content)
-                  throw new Error(i18nHelper.getMessage("templatePreviewFileChanged"));
-                return latestContent;
-              });
+              yield saveTemplateIfUnchanged(manager.app, file, content, latestContent);
             }),
             onSaveAs: (targetPath, latestContent) => __async(this, null, function* () {
               yield saveTemplateContentAsFile(manager, targetPath, latestContent);
@@ -29492,6 +29518,9 @@ function extractDoubanId(frontmatter) {
 // src/org/wanxp/douban/sync/model/SyncStatusHolder.ts
 var SyncStatusHolder = class {
   constructor(syncConfig, app) {
+    this.outcome = "success";
+    this.errors = [];
+    this.reportErrors = [];
     this.syncResultMap = new Map();
     this.statusHandleMap = new Map([
       [SyncItemStatus.exists, 0],
@@ -29511,6 +29540,18 @@ var SyncStatusHolder = class {
     this.handle = 0;
     this.needHandled = 0;
     this.key = this.getKey(syncConfig);
+  }
+  recordError(error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    this.errors.push(detail);
+    this.setMessage(detail);
+  }
+  finish(cancelled) {
+    const results = Array.from(this.syncResultMap.values());
+    const failed = this.errors.length > 0 || results.some((item) => [SyncItemStatus.fail, SyncItemStatus.manualReview, SyncItemStatus.failByDiffType].includes(item.status));
+    const succeeded = results.some((item) => [SyncItemStatus.create, SyncItemStatus.replace, SyncItemStatus.exists, SyncItemStatus.unHandle].includes(item.status));
+    this.outcome = cancelled ? "cancelled" : failed ? succeeded ? "partial" : "failed" : "success";
+    return this.outcome;
   }
   handled(num) {
     this.handle = this.handle + num;
@@ -29570,9 +29611,14 @@ var SyncStatusHolder = class {
     this.updateResult(id, title, SyncItemStatus.manualReview, fileName, detailMsg);
   }
   updateResult(id, title, status, fileName, detailMsg) {
+    const previous = this.syncResultMap.get(id);
+    if (previous) {
+      this.statusHandleMap.set(previous.status, this.statusHandleMap.get(previous.status) - 1);
+    }
     this.syncResultMap.set(id, { id, title, status, fileName, detailMsg });
     this.statusHandleMap.set(status, this.statusHandleMap.get(status) + 1);
-    this.handled(1);
+    if (!previous)
+      this.handled(1);
   }
   setTotal(total) {
     this.totalNum(total);
@@ -29588,7 +29634,8 @@ var SyncStatusHolder = class {
     this.handledData.get(key).add(id);
   }
   shouldSync(id) {
-    return this.handledData.get(this.key) ? !this.handledData.get(this.key).has(id) : true;
+    var _a5, _b;
+    return !((_b = (_a5 = this.handledData) == null ? void 0 : _a5.get(this.key)) == null ? void 0 : _b.has(id));
   }
   buildExistingFilesCache(dataFilePath) {
     return __async(this, null, function* () {
@@ -29746,21 +29793,12 @@ var SyncStatusHolder = class {
 };
 
 // src/org/wanxp/douban/sync/handler/DoubanAbstractSyncHandler.ts
-function toDateList(dataList) {
-  const dateList = dataList.map((item) => item.updateDate).sort((a, b) => {
-    try {
-      return a.getTime() - b.getTime();
-    } catch (e) {
-    }
-    return 0;
-  });
-  return dateList;
-}
 function isPreviewMode(context) {
   return !!context.syncPreviewMode;
 }
 var DoubanAbstractSyncHandler = class {
   constructor(plugin, doubanSubjectLoadHandler, doubanListHandlers) {
+    this.scopeRuns = new WeakMap();
     this.plugin = plugin;
     this.doubanSubjectLoadHandler = doubanSubjectLoadHandler;
     this.doubanListHandlers = doubanListHandlers;
@@ -29774,7 +29812,17 @@ var DoubanAbstractSyncHandler = class {
         syncConfig,
         syncPreviewMode: true
       });
-      const items = yield this.collectItems(syncConfig, previewContext);
+      const items = [];
+      const seen = new Set();
+      yield this.visitScopes(syncConfig, previewContext, (scopedContext) => __async(this, null, function* () {
+        for (const item of yield this.collectItems(syncConfig, scopedContext)) {
+          const key = `${this.getSyncType()}:${item.id}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            items.push(item);
+          }
+        }
+      }));
       const previewStatus = new SyncStatusHolder(syncConfig, this.plugin.app);
       previewStatus.initSyncHandledData(this.plugin.settings.syncHandledDataArray);
       yield previewStatus.buildExistingFilesCache((syncConfig == null ? void 0 : syncConfig.dataFilePath) || "");
@@ -29830,6 +29878,40 @@ var DoubanAbstractSyncHandler = class {
   }
   sync(syncConfig, context) {
     return __async(this, null, function* () {
+      yield this.visitScopes(syncConfig, context, (scopedContext) => this.syncScope(syncConfig, scopedContext));
+    });
+  }
+  visitScopes(syncConfig, context, visit) {
+    return __async(this, null, function* () {
+      var _a5;
+      const handlers = this.doubanListHandlers.filter((handler) => handler.support(syncConfig));
+      if (!handlers.length)
+        throw new Error(`No list handler for scope ${syncConfig.scope}`);
+      const shared = { seen: new Set(), sourceTotals: [], selectedTotals: [], duplicates: 0 };
+      if (!isPreviewMode(context)) {
+        yield context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || "");
+      }
+      for (let index2 = 0; index2 < handlers.length; index2++) {
+        if (this.isStopped(context))
+          break;
+        const handler = handlers[index2];
+        const scopedContext = __spreadProps(__spreadValues({}, context), { syncConfig, syncOffset: 0 });
+        this.scopeRuns.set(scopedContext, { handler, index: index2, shared });
+        try {
+          yield visit(scopedContext);
+        } catch (error) {
+          const detail = `Scope ${((_a5 = handler.getDoType) == null ? void 0 : _a5.call(handler)) || index2 + 1}: ${error instanceof Error ? error.message : String(error)}`;
+          if (isPreviewMode(context) || handlers.length === 1)
+            throw new Error(detail);
+          context.syncStatusHolder.syncStatus.recordError(detail);
+        } finally {
+          this.scopeRuns.delete(scopedContext);
+        }
+      }
+    });
+  }
+  syncScope(syncConfig, context) {
+    return __async(this, null, function* () {
       if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
         yield this.syncByTimeLimit(syncConfig, context);
       } else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
@@ -29845,107 +29927,35 @@ var DoubanAbstractSyncHandler = class {
   }
   getByTimeLimit(syncConfig, context) {
     return __async(this, null, function* () {
+      var _a5;
       const startDate = syncConfig.syncConditionDateFromValue ? new Date(syncConfig.syncConditionDateFromValue) : null;
       const endDate = syncConfig.syncConditionDateToValue ? new Date(syncConfig.syncConditionDateToValue) : null;
       if (!startDate && !endDate) {
         log.warn(i18nHelper.getMessage("110081"));
         return [];
       }
-      const cacheList = new Map();
-      const searchPage = yield this.getItems(syncConfig, context);
-      if (!searchPage) {
-        return [];
-      }
-      const total = searchPage.total;
-      const lastPage = total / PAGE_SIZE + 1;
-      if (lastPage == 1) {
-        return searchPage.list;
-      }
-      let leftPage = 1;
-      let startPage = 1;
-      let rightPage = lastPage;
-      let endPage = lastPage;
-      let currentPage = 1;
-      cacheList.set(currentPage, searchPage);
-      if (startDate != null) {
-        do {
-          if (this.isStopped(context)) {
-            break;
-          }
-          let page = cacheList.get(currentPage);
-          if (!page) {
-            page = yield this.getItems(syncConfig, context);
-            if (!page) {
-              break;
-            }
-            cacheList.set(currentPage, page);
-          }
-          const pageItems = page.list;
-          const pageDateList = toDateList(pageItems);
-          if (pageDateList[pageDateList.length - 1] >= startDate) {
-            leftPage = currentPage;
-            endPage = currentPage;
-            currentPage = Math.ceil((leftPage + rightPage) / 2);
-          } else {
-            rightPage = currentPage;
-            endPage = currentPage;
-            currentPage = Math.floor((leftPage + rightPage) / 2);
-          }
-          if (currentPage == leftPage || currentPage == rightPage) {
-            break;
-          }
-        } while (currentPage < lastPage);
-      }
-      leftPage = 1;
-      rightPage = lastPage;
-      currentPage = 1;
-      if (endDate != null) {
-        do {
-          if (this.isStopped(context)) {
-            break;
-          }
-          let page = cacheList.get(currentPage);
-          if (!page) {
-            page = yield this.getItems(syncConfig, context);
-            if (!page) {
-              break;
-            }
-            cacheList.set(currentPage, page);
-          }
-          const pageItems = page.list;
-          const pageDateList = toDateList(pageItems);
-          if (pageDateList[0] <= endDate) {
-            rightPage = currentPage;
-            startPage = currentPage;
-            currentPage = Math.ceil((leftPage + rightPage) / 2);
-          } else {
-            leftPage = currentPage;
-            startPage = currentPage;
-            currentPage = Math.floor((leftPage + rightPage) / 2);
-          }
-          if (currentPage == leftPage || currentPage == rightPage) {
-            break;
-          }
-        } while (currentPage < lastPage);
-      }
-      let needHandleItems = [];
-      for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-        if (this.isStopped(context)) {
+      const needHandleItems = [];
+      const seen = new Set();
+      context.syncOffset = 0;
+      while (!this.isStopped(context)) {
+        const page = yield this.getItems(syncConfig, context);
+        if (this.isStopped(context) || !((_a5 = page == null ? void 0 : page.list) == null ? void 0 : _a5.length))
           break;
-        }
-        let page = cacheList.get(pageNum);
-        if (!page) {
-          page = yield this.getItems(syncConfig, context);
-          if (!page) {
-            break;
+        for (const item of page.list) {
+          if (!item || seen.has(item.id))
+            continue;
+          seen.add(item.id);
+          const date = item.updateDate;
+          if (date && Number.isFinite(date.getTime()) && (!startDate || date >= startDate) && (!endDate || date <= endDate)) {
+            needHandleItems.push(item);
           }
-          cacheList.set(pageNum, page);
         }
-        const pageItems = page.list;
-        needHandleItems = needHandleItems.concat(pageItems.filter((item) => {
-          const itemDate = item.updateDate;
-          return (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
-        }));
+        context.syncOffset += PAGE_SIZE;
+        if (context.syncOffset >= page.total)
+          break;
+        if (!isPreviewMode(context)) {
+          yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
+        }
       }
       return needHandleItems;
     });
@@ -29980,8 +29990,11 @@ var DoubanAbstractSyncHandler = class {
   }
   getItems(syncConfig, context) {
     return __async(this, null, function* () {
-      const supportHandlers = this.doubanListHandlers.filter((h) => h.support(syncConfig));
-      const handler = supportHandlers[0];
+      var _a5;
+      const run = this.scopeRuns.get(context);
+      const handler = (run == null ? void 0 : run.handler) || this.doubanListHandlers.find((handler2) => handler2.support(syncConfig));
+      if (!handler)
+        throw new Error(`No list handler for scope ${syncConfig.scope}`);
       if (this.isStopped(context)) {
         return SearchPage.emptyWithNoType();
       }
@@ -29989,7 +30002,12 @@ var DoubanAbstractSyncHandler = class {
       if (this.isStopped(context)) {
         return SearchPage.emptyWithNoType();
       }
-      return item;
+      if (!isPreviewMode(context) && item) {
+        if (run)
+          run.shared.sourceTotals[run.index] = item.total;
+        context.syncStatusHolder.syncStatus.setAllTotal(run ? run.shared.sourceTotals.reduce((sum, total) => sum + total, 0) : item.total);
+      }
+      return item ? new SearchPageTypeOf(item.total, item.pageNum, item.pageSize, item.type, ((_a5 = item.list) == null ? void 0 : _a5.filter((entry) => entry == null ? void 0 : entry.id)) || []) : SearchPage.emptyWithNoType();
     });
   }
   removeExists(items, syncConfig, context) {
@@ -30000,18 +30018,31 @@ var DoubanAbstractSyncHandler = class {
       return items;
     });
   }
-  handleItems(searchPage, items, context) {
+  handleItems(searchPage, items, context, cacheReady = false) {
     return __async(this, null, function* () {
-      if (!items || items.length == 0) {
-        return;
-      }
       const { syncStatus } = context.syncStatusHolder;
       const { syncConfig } = context;
-      syncStatus.totalNum(searchPage.total);
+      const run = this.scopeRuns.get(context);
+      let total = searchPage.total;
+      if (run) {
+        run.shared.selectedTotals[run.index] = total;
+        items = items.filter((item) => {
+          const key = `${this.getSyncType()}:${item.id}`;
+          if (run.shared.seen.has(key)) {
+            run.shared.duplicates++;
+            return false;
+          }
+          run.shared.seen.add(key);
+          return true;
+        });
+        total = run.shared.selectedTotals.reduce((sum, value) => sum + value, 0) - run.shared.duplicates;
+      }
+      syncStatus.totalNum(total);
       const needHandled = syncStatus.getTotal() - syncStatus.getHasHandle();
       syncStatus.setNeedHandled(needHandled);
       const dataFilePath = (syncConfig == null ? void 0 : syncConfig.dataFilePath) || "";
-      yield syncStatus.buildExistingFilesCache(dataFilePath);
+      if (!cacheReady && !run)
+        yield syncStatus.buildExistingFilesCache(dataFilePath);
       for (const item of items) {
         if (this.isStopped(context)) {
           return;
@@ -30111,15 +30142,15 @@ var DoubanAbstractSyncHandler = class {
   }
   syncAll(syncConfig, context) {
     return __async(this, null, function* () {
-      const items = yield this.collectAll(syncConfig, context);
-      if (!items.length) {
-        return;
+      if (!this.scopeRuns.has(context)) {
+        yield context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || "");
       }
-      const page = new SearchPageTypeOf(items.length, 1, items.length, null, items);
-      yield this.handleItems(page, items, context);
+      yield this.collectAll(syncConfig, context, (page) => __async(this, null, function* () {
+        yield this.handleItems(page, page.list, context, true);
+      }));
     });
   }
-  collectAll(syncConfig, context) {
+  collectAll(syncConfig, context, onPage) {
     return __async(this, null, function* () {
       context.syncOffset = 0;
       let handleCount = 0;
@@ -30141,12 +30172,16 @@ var DoubanAbstractSyncHandler = class {
         }
         handleCount += list.length;
         const subjectListItems = yield this.removeExists(list, syncConfig, context);
-        result.push(...subjectListItems);
+        if (onPage) {
+          yield onPage(new SearchPageTypeOf(totalForHandle, searchPage.pageNum, PAGE_SIZE, searchPage.type, subjectListItems));
+        } else {
+          result.push(...subjectListItems);
+        }
         context.syncOffset = context.syncOffset + PAGE_SIZE;
         if (!isPreviewMode(context)) {
           yield sleepRange(BasicConst.CALL_DOUBAN_DELAY, BasicConst.CALL_DOUBAN_DELAY + BasicConst.CALL_DOUBAN_DELAY_RANGE);
         }
-      } while (handleCount <= totalForHandle);
+      } while (context.syncOffset < totalForHandle);
       return result;
     });
   }
@@ -30192,9 +30227,6 @@ var DoubanAbstractListHandler = class {
         return SearchPage.emptyWithNoType();
       }
       let subjectListItemSearchPageTypeOf = yield this.getPageList(url, context);
-      if (subjectListItemSearchPageTypeOf && context.plugin.statusHolder.syncStatus) {
-        context.plugin.statusHolder.syncStatus.setAllTotal(subjectListItemSearchPageTypeOf.total);
-      }
       return subjectListItemSearchPageTypeOf;
     });
   }
@@ -30219,12 +30251,16 @@ var DoubanAbstractListHandler = class {
         const detail = DoubanPageGuard.describeError(e);
         (_b = (_a5 = context.plugin.statusHolder) == null ? void 0 : _a5.syncStatus) == null ? void 0 : _b.setMessage(detail);
         log.error(i18nHelper.getMessage("130101").replace("{0}", detail), e);
-        return SearchPage.emptyWithNoType();
+        throw e;
       }
     });
   }
   parseSubjectFromHtml(dataHtml, context) {
-    const items = dataHtml(".item-show").get().map((i) => {
+    const rawItems = dataHtml(".item-show");
+    if (!rawItems.length && !dataHtml(".subject-num").length) {
+      throw new Error("Unrecognized Douban list structure");
+    }
+    const items = rawItems.get().map((i, index2) => {
       const item = dataHtml(i);
       const linkValue = item.find("div.title > a").attr("href");
       const titleValue = item.find("div.title > a").text().trim();
@@ -30236,13 +30272,26 @@ var DoubanAbstractListHandler = class {
         console.error(e);
         log.info("parse date error:" + titleValue);
       }
-      let idPattern = /(\d){5,10}/g;
+      const idPattern = /\/(?:subject|game|note)\/(\d{5,10})(?:\/|$)/;
       let ececResult = idPattern.exec(linkValue);
-      return !ececResult ? null : { id: ececResult[0], url: linkValue, title: titleValue, updateDate };
-    });
+      if (!ececResult) {
+        log.info(`Skipping invalid list entry at offset ${context.syncOffset}, index ${index2}`);
+        return null;
+      }
+      return { id: ececResult[1], url: linkValue, title: titleValue, updateDate };
+    }).filter((item) => item !== null);
     const subjectNumText = dataHtml(".subject-num").text().trim();
     const totalNumMatch = subjectNumText.match(/\/\s*(\d+)/);
+    if (!totalNumMatch && (rawItems.length > 0 || subjectNumText !== "0")) {
+      throw new Error("Unable to read Douban list pagination total");
+    }
     const totalNum = totalNumMatch ? parseInt(totalNumMatch[1], 10) : 0;
+    if (!Number.isSafeInteger(totalNum) || rawItems.length > 0 && totalNum < context.syncOffset + rawItems.length) {
+      throw new Error("Inconsistent Douban list pagination total");
+    }
+    if (rawItems.length && !items.length || !rawItems.length && totalNum > context.syncOffset) {
+      throw new Error("Douban list contains no readable entries before the expected end");
+    }
     return new SearchPage(totalNum, Math.floor(context.syncOffset / PAGE_SIZE) + 1, PAGE_SIZE, null, items);
   }
   support(config) {
@@ -31030,23 +31079,24 @@ var NetFileHandler = class {
           throw new Error(i18nHelper.getMessage("130105"));
         }
         return response.textArrayBuffer;
-      }).then((buffer) => {
+      }).then((buffer) => __async(this, null, function* () {
         if (!buffer || buffer.byteLength == 0) {
           return 0;
         }
-        this.fileHandler.creatAttachmentWithData(filePath, buffer, overwrite);
+        yield this.fileHandler.creatAttachmentWithData(filePath, buffer, overwrite);
         return buffer.byteLength;
-      }).then((size) => {
+      })).then((size) => {
         if (size == 0) {
           return { success: false, size, error: "\u6587\u4EF6\u4E3A\u7A7A", filepath: null };
         }
         return { success: true, size, error: "", filepath: filePath };
       }).catch((e) => {
         if (showError) {
-          return log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e);
+          log.error(i18nHelper.getMessage("130101").replace("{0}", e.toString()), e);
         } else {
           console.error(e);
         }
+        return { success: false, error: String(e), filepath: null };
       });
       ;
     });
@@ -31126,23 +31176,36 @@ var SyncHandler = class {
   }
   sync() {
     return __async(this, null, function* () {
-      if (this.syncConfig && this.syncConfig.syncType && this.syncConfig.scope) {
-        if (this.checkSyncConfig()) {
-          this.context.syncStatusHolder.syncStatus.setMessage(this.checkSyncConfig());
-          return;
-        }
-        const syncHandler = this.syncHandlers.find((handler) => handler.support(this.syncConfig.syncType));
-        if (syncHandler) {
-          yield syncHandler.sync(this.syncConfig, this.context);
+      const status = this.context.syncStatusHolder.syncStatus;
+      try {
+        if (this.syncConfig && this.syncConfig.syncType && this.syncConfig.scope) {
+          if (this.checkSyncConfig()) {
+            throw new Error(this.checkSyncConfig());
+          }
+          const syncHandler = this.syncHandlers.find((handler) => handler.support(this.syncConfig.syncType));
+          if (syncHandler) {
+            yield syncHandler.sync(this.syncConfig, this.context);
+          } else {
+            yield this.defaultSyncHandler.sync(this.syncConfig, this.context);
+          }
         } else {
-          yield this.defaultSyncHandler.sync(this.syncConfig, this.context);
+          throw new Error("Missing sync type or scope");
         }
+      } catch (error) {
+        status.recordError(error);
       }
-      yield this.showResult();
+      const outcome = status.finish(!this.plugin.statusHolder.syncing());
+      try {
+        yield this.showResult();
+      } catch (error) {
+        status.reportErrors.push(String(error));
+      }
+      return outcome;
     });
   }
   showResult() {
     return __async(this, null, function* () {
+      var _a5, _b;
       const { syncStatusHolder } = this.context;
       const { syncStatus } = syncStatusHolder;
       const { statusHandleMap } = syncStatus;
@@ -31152,7 +31215,7 @@ var SyncHandler = class {
       if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
         extendCondition = `${syncConfig.syncConditionCountFromValue} - ${syncConfig.syncConditionCountToValue}`;
       } else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
-        extendCondition = `${syncConfig.syncConditionDateFromValue.toISOString().substring(0, 10)} - ${syncConfig.syncConditionDateToValue.toISOString().substring(0, 10)}`;
+        extendCondition = `${((_a5 = syncConfig.syncConditionDateFromValue) == null ? void 0 : _a5.toISOString().substring(0, 10)) || "*"} - ${((_b = syncConfig.syncConditionDateToValue) == null ? void 0 : _b.toISOString().substring(0, 10)) || "*"}`;
       }
       const condition = `
 1. ${i18nHelper.getMessage("110030")} \`${syncStatus.getTypeName()}\`
@@ -31202,74 +31265,59 @@ var SyncHandler = class {
       }
       const reportTime = (0, import_obsidian43.moment)(new Date()).format("YYYYMMDDHHmmss");
       const reportPath = `${this.plugin.fileHandler.getTmpPath()}/sync-report-${reportTime}.json`;
-      yield this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
-        generatedAt: new Date().toISOString(),
-        condition: {
-          type: syncStatus.getTypeName(),
-          scope: syncStatus.getScopeName(),
-          syncCondition: syncStatus.getSyncConditionName(),
-          incrementalUpdate: syncConfig.incrementalUpdate,
-          force: syncConfig.force
-        },
-        summary: Object.fromEntries(statusHandleMap.entries()),
-        results: Array.from(syncResultMap.values())
-      }, null, 2));
+      try {
+        yield this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
+          generatedAt: new Date().toISOString(),
+          outcome: syncStatus.outcome,
+          errors: syncStatus.errors,
+          condition: {
+            type: syncStatus.getTypeName(),
+            scope: syncStatus.getScopeName(),
+            syncCondition: syncStatus.getSyncConditionName(),
+            incrementalUpdate: syncConfig.incrementalUpdate,
+            force: syncConfig.force
+          },
+          summary: Object.fromEntries(statusHandleMap.entries()),
+          results: Array.from(syncResultMap.values())
+        }, null, 2));
+      } catch (error) {
+        syncStatus.reportErrors.push(`JSON: ${String(error)}`);
+      }
       let analysis = "";
       try {
-        const folderPath = this.syncConfig.dataFilePath || "";
-        const allMdFiles = this.app.vault.getMarkdownFiles();
-        const normalizedFolder = folderPath.replace(/\\/g, "/");
-        const actualFileCount = allMdFiles.filter((f) => {
-          const fp = f.path.replace(/\\/g, "/");
-          return normalizedFolder ? fp.startsWith(normalizedFolder + "/") || fp.startsWith(normalizedFolder) : true;
-        }).length;
-        const createdCount = statusHandleMap.get(SyncItemStatus.create) || 0;
-        const replacedCount = statusHandleMap.get(SyncItemStatus.replace) || 0;
-        const existsCount = statusHandleMap.get(SyncItemStatus.exists) || 0;
-        const failCount = statusHandleMap.get(SyncItemStatus.fail) || 0;
-        const diffTypeCount = statusHandleMap.get(SyncItemStatus.failByDiffType) || 0;
-        const expectedCreated = createdCount + replacedCount + existsCount;
-        if (expectedCreated !== actualFileCount) {
-          const diff = expectedCreated - actualFileCount;
+        const entries = scanVaultForDoubanIds(this.app, this.syncConfig.dataFilePath || "");
+        const expected = Array.from(syncResultMap.values()).filter((item) => [SyncItemStatus.create, SyncItemStatus.replace, SyncItemStatus.exists].includes(item.status));
+        const paths = new Set(this.app.vault.getMarkdownFiles().map((file) => file.path));
+        const missing = expected.filter((item) => item.fileName ? !paths.has(item.fileName) : !entries.has(item.id));
+        if (missing.length) {
           analysis = "\n### \u6587\u4EF6\u6570\u91CF\u5206\u6790\n\n";
-          analysis += `- \u9884\u671F\u672C\u5730\u6761\u76EE\u6587\u4EF6\u6570: **${expectedCreated}**\uFF08\u521B\u5EFA ${createdCount} + \u66FF\u6362 ${replacedCount} + \u5DF2\u5B58\u5728 ${existsCount}\uFF09
-`;
-          analysis += `- \u5B9E\u9645\u672C\u5730\u6587\u4EF6\u6570: **${actualFileCount}**
-`;
-          analysis += `- \u5DEE\u989D: **${diff}** \u4E2A
-`;
-          if (diff === diffTypeCount + failCount) {
-            analysis += `
-\u5DEE\u989D\u4E0E\u5931\u8D25\u6761\u76EE\u6570\u4E00\u81F4\uFF08\u7C7B\u578B\u4E0D\u5339\u914D ${diffTypeCount} + \u5931\u8D25 ${failCount}\uFF09\uFF0C\u539F\u56E0\uFF1A
-`;
-            if (diffTypeCount > 0) {
-              analysis += `- \u7C7B\u578B\u4E0D\u5339\u914D\u7684 ${diffTypeCount} \u4E2A\u6761\u76EE\u5DF2\u88AB\u8DF3\u8FC7\uFF08\u8BE6\u89C1\u4E0A\u65B9\u660E\u7EC6\u4E2D\u6807\u8BB0\u4E3A [\u7C7B\u578B\u4E0D\u5339\u914D] \u7684\u6761\u76EE\uFF09
-`;
-            }
-            if (failCount > 0) {
-              analysis += `- ${failCount} \u4E2A\u6761\u76EE\u540C\u6B65\u5931\u8D25\uFF08\u8BE6\u89C1\u4E0A\u65B9\u660E\u7EC6\u4E2D\u6807\u8BB0\u4E3A [\u5DF2\u5931\u8D25] \u7684\u6761\u76EE\uFF09
-`;
-            }
-          } else {
-            analysis += `
-\u5DEE\u989D\u4E0E\u5931\u8D25\u7EDF\u8BA1\u4E0D\u5B8C\u5168\u5339\u914D\uFF0C\u53EF\u80FD\u539F\u56E0\uFF1A
-`;
-            analysis += `- \u90E8\u5206\u6761\u76EE\u751F\u6210\u7684\u6587\u4EF6\u540D\u53EF\u80FD\u4E0E\u73B0\u6709\u6587\u4EF6\u51B2\u7A81\u6216\u88AB\u8986\u76D6
-`;
-            analysis += `- \u624B\u52A8\u5220\u9664\u6216\u79FB\u52A8\u8FC7\u90E8\u5206\u6761\u76EE\u6587\u4EF6
-`;
-          }
+          analysis += "- \u672C\u6B21\u9884\u671F\u6761\u76EE\u6587\u4EF6\u6570: **" + expected.length + "**\n";
+          analysis += "- \u672C\u6B21\u6838\u9A8C\u5B58\u5728\u6761\u76EE\u6570: **" + (expected.length - missing.length) + "**\n";
+          analysis += "- \u672A\u627E\u5230\u6587\u4EF6\u7684\u8C46\u74E3 ID: " + missing.map((item) => item.id).join(", ") + "\n";
         }
       } catch (_) {
       }
-      const result = i18nHelper.getMessage("110037", condition, summary, `${details + analysis}
+      const outcomeSummary = i18nHelper.getMessage(`sync_outcome_${syncStatus.outcome}`);
+      const errors = syncStatus.errors.map((error) => `- ${error.replace(/[\r\n]+/g, " ")}`).join("\n");
+      const reportInfo = syncStatus.reportErrors.length ? i18nHelper.getMessage("sync_report_failed", syncStatus.reportErrors.join("; ")) : `JSON: \`${reportPath}\``;
+      const result = `${outcomeSummary}
+
+${errors}
+
+` + i18nHelper.getMessage("110037", condition, summary, `${details + analysis}
 
 ### \u8C03\u8BD5\u62A5\u544A
 
-- JSON: \`${reportPath}\`
+- ${reportInfo}
 `);
       const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian43.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
-      yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
+      try {
+        const created = yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
+        if (!created)
+          throw new Error("Report file already exists");
+      } catch (error) {
+        syncStatus.reportErrors.push(`Markdown: ${String(error)}`);
+      }
     });
   }
   checkSyncConfig() {
@@ -32198,7 +32246,6 @@ var UserDataImporter = class {
         try {
           let changed = false;
           yield this.app.vault.process(entry.localFile, (content) => {
-            var _a5;
             let updatedContent = content;
             for (const diff of entry.fieldDiffs) {
               if (diff.strategy === "keep_local")
@@ -32208,7 +32255,7 @@ var UserDataImporter = class {
                 continue;
               let value = diff.importValue;
               if (diff.strategy === "smart_merge" && !this.isEmptyValue(localValue)) {
-                value = Array.isArray(localValue) && Array.isArray(diff.importValue) ? [...new Set([...localValue, ...diff.importValue])] : `${localValue}${diff.sectionName ? "\n\n" : " / "}${(_a5 = diff.importValue) != null ? _a5 : ""}`;
+                value = this.smartMerge(localValue, diff.importValue, diff.sectionName ? "\n\n" : " / ");
               }
               updatedContent = diff.sectionName ? this.merger.updateSection(updatedContent, diff.sectionName, String(value)) : this.merger.updateFrontmatterField(updatedContent, diff.fieldName, value);
             }
@@ -32244,6 +32291,27 @@ var UserDataImporter = class {
       }
     }
     return [...fields].sort();
+  }
+  smartMerge(local, incoming, separator) {
+    if (this.isEmptyValue(incoming))
+      return local;
+    if (Array.isArray(local) && Array.isArray(incoming)) {
+      const values = [];
+      const seen = new Set();
+      for (const value of [...local, ...incoming]) {
+        const key = JSON.stringify(value);
+        if (!seen.has(key)) {
+          seen.add(key);
+          values.push(value);
+        }
+      }
+      return values;
+    }
+    if (typeof local === "string" && typeof incoming === "string") {
+      const wrapped = separator + local + separator;
+      return wrapped.includes(separator + incoming + separator) ? local : local + separator + incoming;
+    }
+    return local;
   }
   isEmptyValue(value) {
     if (value === null || value === void 0)
@@ -32873,11 +32941,10 @@ var DoubanUrlUtil = class {
         return;
       }
       const key = `${parsed.type}:${parsed.id}`;
-      if (seen.has(parsed.id) || seen.has(key)) {
+      if (seen.has(key)) {
         duplicates.push(line);
         return;
       }
-      seen.add(parsed.id);
       seen.add(key);
       items.push(parsed);
     });
@@ -33113,7 +33180,7 @@ var DoubanPlugin = class extends import_obsidian53.Plugin {
   }
   createFile(context, result) {
     return __async(this, null, function* () {
-      var _a5;
+      var _a5, _b;
       let filePath = result.filePath ? result.filePath : DEFAULT_SETTINGS.dataFilePath;
       filePath = FileUtil.join(filePath, result.fileName);
       const syncStatus = context.syncStatusHolder && context.syncStatusHolder.syncStatus ? context.syncStatusHolder.syncStatus : null;
@@ -33135,6 +33202,8 @@ var DoubanPlugin = class extends import_obsidian53.Plugin {
         if (context.syncStatusHolder.syncStatus.syncConfig.force) {
           const existingFilePath = syncStatus.getExistingFilePath(subject.id);
           let localUserData = null;
+          let originalContent = null;
+          let finalContent = content;
           let backupPath = null;
           if (existingFilePath) {
             try {
@@ -33150,9 +33219,15 @@ var DoubanPlugin = class extends import_obsidian53.Plugin {
             }
             try {
               const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+              if (!(existingFile instanceof import_obsidian54.TFile))
+                throw new Error("Original file unavailable");
               if (existingFile instanceof import_obsidian54.TFile) {
+                originalContent = yield this.app.vault.read(existingFile);
                 const extractor = new UserDataExtractor(this.app);
                 localUserData = yield extractor.extractFromFileAsync(existingFile);
+                if (((_a5 = context.syncConfig) == null ? void 0 : _a5.inheritOldFields) && !localUserData) {
+                  throw new Error("Unable to extract protected data from original file");
+                }
               }
             } catch (error) {
               const detail = `\u8BFB\u53D6\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF1A${existingFilePath}`;
@@ -33162,41 +33237,41 @@ var DoubanPlugin = class extends import_obsidian53.Plugin {
               return false;
             }
           }
+          try {
+            if (localUserData && ((_b = context.syncConfig) == null ? void 0 : _b.inheritOldFields)) {
+              finalContent = new UserDataMerger().mergeUserData(content, localUserData, this.settings.dataProtection);
+            }
+          } catch (error) {
+            const detail = "\u7EE7\u627F\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF0C\u5DF2\u505C\u6B62\u66FF\u6362\uFF1A" + subject.title;
+            context.importError = detail;
+            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
+            log.error(detail, error);
+            return false;
+          }
           let exists = false;
           try {
-            exists = yield this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
+            exists = yield this.fileHandler.createOrReplaceNewNoteWithData(filePath, finalContent, context.showAfterCreate);
           } catch (error) {
-            if (backupPath && existingFilePath === fullFilePath) {
-              yield this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+            try {
+              if (originalContent !== null && existingFilePath === fullFilePath) {
+                const originalFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+                if (!(originalFile instanceof import_obsidian54.TFile))
+                  throw new Error("Original file unavailable for rollback");
+                yield this.app.vault.modify(originalFile, originalContent);
+              } else if (existingFilePath && existingFilePath !== fullFilePath) {
+                yield this.fileHandler.deleteFile(fullFilePath);
+              }
+            } catch (rollbackError) {
+              const detail2 = "\u5199\u5165\u5931\u8D25\u4E14\u56DE\u6EDA\u5931\u8D25\uFF0C\u8BF7\u4EBA\u5DE5\u68C0\u67E5\uFF1A" + fullFilePath;
+              context.importError = detail2;
+              syncStatus == null ? void 0 : syncStatus.manualReview(subject.id, subject.title, fullFilePath, detail2 + (backupPath ? "\uFF1B\u5907\u4EFD\uFF1A" + backupPath : ""));
+              log.error(detail2, rollbackError);
+              return false;
             }
             const detail = `\u5199\u5165\u65B0\u6587\u4EF6\u5931\u8D25\uFF1A${fullFilePath}`;
             context.importError = detail;
             syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
             log.error(`Failed to write synced file: ${fullFilePath}`, error);
-            return false;
-          }
-          try {
-            if (localUserData && ((_a5 = context.syncConfig) == null ? void 0 : _a5.inheritOldFields)) {
-              const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-              if (newFile instanceof import_obsidian54.TFile) {
-                const merger = new UserDataMerger();
-                const currentContent = yield this.app.vault.read(newFile);
-                const mergedContent = merger.mergeUserData(currentContent, localUserData, this.settings.dataProtection);
-                if (mergedContent !== currentContent) {
-                  yield this.app.vault.process(newFile, () => mergedContent);
-                }
-              }
-            }
-          } catch (error) {
-            if (backupPath && existingFilePath === fullFilePath) {
-              yield this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
-            } else if (existingFilePath && existingFilePath !== fullFilePath) {
-              yield this.fileHandler.deleteFile(fullFilePath);
-            }
-            const detail = `\u7EE7\u627F\u65E7\u6587\u4EF6\u6570\u636E\u5931\u8D25\uFF0C\u5DF2\u505C\u6B62\u66FF\u6362\uFF1A${subject.title}`;
-            context.importError = detail;
-            syncStatus == null ? void 0 : syncStatus.fail(subject.id, subject.title, detail);
-            log.error(`Failed to merge protected user data for ${subject.title}`, error);
             return false;
           }
           if (existingFilePath && existingFilePath !== fullFilePath) {
@@ -33519,8 +33594,10 @@ var DoubanPlugin = class extends import_obsidian53.Plugin {
         context.syncStatusHolder.initHandledData();
         this.showStatus(i18nHelper.getMessage("140203", SyncTypeRecords[syncConfig.syncType]));
         const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
-        yield syncHandler.sync();
-        new import_obsidian53.Notice(i18nHelper.getMessage("140302"));
+        const outcome = yield syncHandler.sync();
+        const reportErrors = context.syncStatusHolder.syncStatus.reportErrors;
+        const reportWarning = reportErrors.length ? "\n" + i18nHelper.getMessage("sync_report_failed", reportErrors.join("; ")) : "";
+        new import_obsidian53.Notice(i18nHelper.getMessage(`sync_outcome_${outcome}`) + reportWarning);
       } catch (e) {
         log.error(i18nHelper.getMessage("140206", e.message), e);
       } finally {

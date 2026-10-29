@@ -11,7 +11,9 @@ import {i18nHelper} from "../../../lang/helper";
 import {DoubanTeleplaySyncHandler} from "./DoubanTeleplaySyncHandler";
 import {SyncConditionType, SyncItemStatus} from "../../../constant/Constsant";
 import {DoubanGameSyncHandler} from "./DoubanGameSyncHandler";
+import {scanVaultForDoubanIds} from "../../../utils/VaultUtil";
 import {FileUtil} from "../../../utils/FileUtil";
+import {SyncOutcome} from "../model/SyncStatusHolder";
 
 export default class SyncHandler {
 	private app: App;
@@ -40,20 +42,32 @@ export default class SyncHandler {
 		];
 	}
 
-	async sync() {
-		if (this.syncConfig && this.syncConfig.syncType && this.syncConfig.scope) {
-			if(this.checkSyncConfig()) {
-				this.context.syncStatusHolder.syncStatus.setMessage(this.checkSyncConfig());
-				return;
-			}
-			const syncHandler = this.syncHandlers.find(handler => handler.support(this.syncConfig.syncType));
-			if (syncHandler) {
-				await syncHandler.sync(this.syncConfig, this.context);
+	async sync(): Promise<SyncOutcome> {
+		const status = this.context.syncStatusHolder.syncStatus;
+		try {
+			if (this.syncConfig && this.syncConfig.syncType && this.syncConfig.scope) {
+				if(this.checkSyncConfig()) {
+					throw new Error(this.checkSyncConfig());
+				}
+				const syncHandler = this.syncHandlers.find(handler => handler.support(this.syncConfig.syncType));
+				if (syncHandler) {
+					await syncHandler.sync(this.syncConfig, this.context);
+				} else {
+					await this.defaultSyncHandler.sync(this.syncConfig, this.context);
+				}
 			} else {
-				await this.defaultSyncHandler.sync(this.syncConfig, this.context);
+				throw new Error('Missing sync type or scope');
 			}
+		} catch (error) {
+			status.recordError(error);
 		}
-		await this.showResult();
+		const outcome = status.finish(!this.plugin.statusHolder.syncing());
+		try {
+			await this.showResult();
+		} catch (error) {
+			status.reportErrors.push(String(error));
+		}
+		return outcome;
 	}
 
 	async showResult() {
@@ -67,7 +81,7 @@ export default class SyncHandler {
 		if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
 			extendCondition = `${syncConfig.syncConditionCountFromValue} - ${syncConfig.syncConditionCountToValue}`;
 		} else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
-			extendCondition = `${syncConfig.syncConditionDateFromValue.toISOString().substring(0, 10)} - ${syncConfig.syncConditionDateToValue.toISOString().substring(0, 10)}`;
+			extendCondition = `${syncConfig.syncConditionDateFromValue?.toISOString().substring(0, 10) || '*'} - ${syncConfig.syncConditionDateToValue?.toISOString().substring(0, 10) || '*'}`;
 		}
 
 
@@ -131,58 +145,54 @@ export default class SyncHandler {
 		}
 		const reportTime = moment(new Date()).format('YYYYMMDDHHmmss');
 		const reportPath = `${this.plugin.fileHandler.getTmpPath()}/sync-report-${reportTime}.json`;
-		await this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
-			generatedAt: new Date().toISOString(),
-			condition: {
-				type: syncStatus.getTypeName(),
-				scope: syncStatus.getScopeName(),
-				syncCondition: syncStatus.getSyncConditionName(),
-				incrementalUpdate: syncConfig.incrementalUpdate,
-				force: syncConfig.force,
-			},
-			summary: Object.fromEntries(statusHandleMap.entries()),
-			results: Array.from(syncResultMap.values()),
-		}, null, 2));
+		try {
+			await this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
+				generatedAt: new Date().toISOString(),
+				outcome: syncStatus.outcome,
+				errors: syncStatus.errors,
+				condition: {
+					type: syncStatus.getTypeName(),
+					scope: syncStatus.getScopeName(),
+					syncCondition: syncStatus.getSyncConditionName(),
+					incrementalUpdate: syncConfig.incrementalUpdate,
+					force: syncConfig.force,
+				},
+				summary: Object.fromEntries(statusHandleMap.entries()),
+				results: Array.from(syncResultMap.values()),
+			}, null, 2));
+		} catch (error) {
+			syncStatus.reportErrors.push(`JSON: ${String(error)}`);
+		}
 		// 同步结束后分析本地文件数量与同步统计的差异
 		let analysis = '';
 		try {
-			const folderPath = this.syncConfig.dataFilePath || '';
-			const allMdFiles = this.app.vault.getMarkdownFiles();
-			const normalizedFolder = folderPath.replace(/\\/g, '/');
-			const actualFileCount = allMdFiles.filter(f => {
-				const fp = f.path.replace(/\\/g, '/');
-				return normalizedFolder ? fp.startsWith(normalizedFolder + '/') || fp.startsWith(normalizedFolder) : true;
-			}).length;
-			const createdCount = statusHandleMap.get(SyncItemStatus.create) || 0;
-			const replacedCount = statusHandleMap.get(SyncItemStatus.replace) || 0;
-			const existsCount = statusHandleMap.get(SyncItemStatus.exists) || 0;
-			const failCount = statusHandleMap.get(SyncItemStatus.fail) || 0;
-			const diffTypeCount = statusHandleMap.get(SyncItemStatus.failByDiffType) || 0;
-			const expectedCreated = createdCount + replacedCount + existsCount;
-			if (expectedCreated !== actualFileCount) {
-				const diff = expectedCreated - actualFileCount;
+			const entries = scanVaultForDoubanIds(this.app, this.syncConfig.dataFilePath || '');
+			const expected = Array.from(syncResultMap.values()).filter(item =>
+				[SyncItemStatus.create, SyncItemStatus.replace, SyncItemStatus.exists].includes(item.status));
+			const paths = new Set(this.app.vault.getMarkdownFiles().map(file => file.path));
+			// Fresh writes may not yet be visible in Obsidian's metadata cache.
+			const missing = expected.filter(item => item.fileName
+				? !paths.has(item.fileName) : !entries.has(item.id));
+			if (missing.length) {
 				analysis = '\n### 文件数量分析\n\n';
-				analysis += `- 预期本地条目文件数: **${expectedCreated}**（创建 ${createdCount} + 替换 ${replacedCount} + 已存在 ${existsCount}）\n`;
-				analysis += `- 实际本地文件数: **${actualFileCount}**\n`;
-				analysis += `- 差额: **${diff}** 个\n`;
-				if (diff === diffTypeCount + failCount) {
-					analysis += `\n差额与失败条目数一致（类型不匹配 ${diffTypeCount} + 失败 ${failCount}），原因：\n`;
-					if (diffTypeCount > 0) {
-						analysis += `- 类型不匹配的 ${diffTypeCount} 个条目已被跳过（详见上方明细中标记为 [类型不匹配] 的条目）\n`;
-					}
-					if (failCount > 0) {
-						analysis += `- ${failCount} 个条目同步失败（详见上方明细中标记为 [已失败] 的条目）\n`;
-					}
-				} else {
-					analysis += `\n差额与失败统计不完全匹配，可能原因：\n`;
-					analysis += `- 部分条目生成的文件名可能与现有文件冲突或被覆盖\n`;
-					analysis += `- 手动删除或移动过部分条目文件\n`;
-				}
+				analysis += '- 本次预期条目文件数: **' + expected.length + '**\n';
+				analysis += '- 本次核验存在条目数: **' + (expected.length - missing.length) + '**\n';
+				analysis += '- 未找到文件的豆瓣 ID: ' + missing.map(item => item.id).join(', ') + '\n';
 			}
 		} catch (_) { /* ignore count errors */ }
-		const result = i18nHelper.getMessage('110037', condition, summary, `${details + analysis}\n\n### 调试报告\n\n- JSON: \`${reportPath}\`\n`);
+		const outcomeSummary = i18nHelper.getMessage(`sync_outcome_${syncStatus.outcome}`);
+		const errors = syncStatus.errors.map(error => `- ${error.replace(/[\r\n]+/g, ' ')}`).join('\n');
+		const reportInfo = syncStatus.reportErrors.length
+			? i18nHelper.getMessage('sync_report_failed', syncStatus.reportErrors.join('; '))
+			: `JSON: \`${reportPath}\``;
+		const result = `${outcomeSummary}\n\n${errors}\n\n` + i18nHelper.getMessage('110037', condition, summary, `${details + analysis}\n\n### 调试报告\n\n- ${reportInfo}\n`);
 		const resultFileName = `${i18nHelper.getMessage('110038')}_${moment(new Date()).format('YYYYMMDDHHmmss')}`
-		await this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
+		try {
+			const created = await this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
+			if (!created) throw new Error('Report file already exists');
+		} catch (error) {
+			syncStatus.reportErrors.push(`Markdown: ${String(error)}`);
+		}
 	}
 
 	private checkSyncConfig() {
