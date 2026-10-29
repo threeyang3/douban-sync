@@ -4224,6 +4224,7 @@ __export(exports, {
 
 // src/org/wanxp/lang/locale/en.ts
 var en_default = {
+  "sync_report_failed": "Report could not be saved: {0}",
   "sync_outcome_success": "Sync completed",
   "sync_outcome_partial": "Sync partially completed; see errors in the sync report",
   "sync_outcome_failed": "Sync failed; see errors in the sync report",
@@ -4996,6 +4997,7 @@ PS: This file could be delete if you want to.
 
 // src/org/wanxp/lang/locale/zh-cn.ts
 var zh_cn_default = {
+  "sync_report_failed": "\u540C\u6B65\u62A5\u544A\u4FDD\u5B58\u5931\u8D25\uFF1A{0}",
   "sync_outcome_success": "\u540C\u6B65\u5B8C\u6210",
   "sync_outcome_partial": "\u540C\u6B65\u90E8\u5206\u5B8C\u6210\uFF0C\u8BF7\u67E5\u770B\u540C\u6B65\u62A5\u544A\u4E2D\u7684\u9519\u8BEF",
   "sync_outcome_failed": "\u540C\u6B65\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u540C\u6B65\u62A5\u544A\u4E2D\u7684\u9519\u8BEF",
@@ -29518,6 +29520,7 @@ var SyncStatusHolder = class {
   constructor(syncConfig, app) {
     this.outcome = "success";
     this.errors = [];
+    this.reportErrors = [];
     this.syncResultMap = new Map();
     this.statusHandleMap = new Map([
       [SyncItemStatus.exists, 0],
@@ -29795,6 +29798,7 @@ function isPreviewMode(context) {
 }
 var DoubanAbstractSyncHandler = class {
   constructor(plugin, doubanSubjectLoadHandler, doubanListHandlers) {
+    this.scopeRuns = new WeakMap();
     this.plugin = plugin;
     this.doubanSubjectLoadHandler = doubanSubjectLoadHandler;
     this.doubanListHandlers = doubanListHandlers;
@@ -29808,7 +29812,17 @@ var DoubanAbstractSyncHandler = class {
         syncConfig,
         syncPreviewMode: true
       });
-      const items = yield this.collectItems(syncConfig, previewContext);
+      const items = [];
+      const seen = new Set();
+      yield this.visitScopes(syncConfig, previewContext, (scopedContext) => __async(this, null, function* () {
+        for (const item of yield this.collectItems(syncConfig, scopedContext)) {
+          const key = `${this.getSyncType()}:${item.id}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            items.push(item);
+          }
+        }
+      }));
       const previewStatus = new SyncStatusHolder(syncConfig, this.plugin.app);
       previewStatus.initSyncHandledData(this.plugin.settings.syncHandledDataArray);
       yield previewStatus.buildExistingFilesCache((syncConfig == null ? void 0 : syncConfig.dataFilePath) || "");
@@ -29863,6 +29877,40 @@ var DoubanAbstractSyncHandler = class {
     });
   }
   sync(syncConfig, context) {
+    return __async(this, null, function* () {
+      yield this.visitScopes(syncConfig, context, (scopedContext) => this.syncScope(syncConfig, scopedContext));
+    });
+  }
+  visitScopes(syncConfig, context, visit) {
+    return __async(this, null, function* () {
+      var _a5;
+      const handlers = this.doubanListHandlers.filter((handler) => handler.support(syncConfig));
+      if (!handlers.length)
+        throw new Error(`No list handler for scope ${syncConfig.scope}`);
+      const shared = { seen: new Set(), sourceTotals: [], selectedTotals: [], duplicates: 0 };
+      if (!isPreviewMode(context)) {
+        yield context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || "");
+      }
+      for (let index2 = 0; index2 < handlers.length; index2++) {
+        if (this.isStopped(context))
+          break;
+        const handler = handlers[index2];
+        const scopedContext = __spreadProps(__spreadValues({}, context), { syncConfig, syncOffset: 0 });
+        this.scopeRuns.set(scopedContext, { handler, index: index2, shared });
+        try {
+          yield visit(scopedContext);
+        } catch (error) {
+          const detail = `Scope ${((_a5 = handler.getDoType) == null ? void 0 : _a5.call(handler)) || index2 + 1}: ${error instanceof Error ? error.message : String(error)}`;
+          if (isPreviewMode(context) || handlers.length === 1)
+            throw new Error(detail);
+          context.syncStatusHolder.syncStatus.recordError(detail);
+        } finally {
+          this.scopeRuns.delete(scopedContext);
+        }
+      }
+    });
+  }
+  syncScope(syncConfig, context) {
     return __async(this, null, function* () {
       if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
         yield this.syncByTimeLimit(syncConfig, context);
@@ -29943,14 +29991,21 @@ var DoubanAbstractSyncHandler = class {
   getItems(syncConfig, context) {
     return __async(this, null, function* () {
       var _a5;
-      const supportHandlers = this.doubanListHandlers.filter((h) => h.support(syncConfig));
-      const handler = supportHandlers[0];
+      const run = this.scopeRuns.get(context);
+      const handler = (run == null ? void 0 : run.handler) || this.doubanListHandlers.find((handler2) => handler2.support(syncConfig));
+      if (!handler)
+        throw new Error(`No list handler for scope ${syncConfig.scope}`);
       if (this.isStopped(context)) {
         return SearchPage.emptyWithNoType();
       }
       const item = yield handler.getPageData(context);
       if (this.isStopped(context)) {
         return SearchPage.emptyWithNoType();
+      }
+      if (!isPreviewMode(context) && item) {
+        if (run)
+          run.shared.sourceTotals[run.index] = item.total;
+        context.syncStatusHolder.syncStatus.setAllTotal(run ? run.shared.sourceTotals.reduce((sum, total) => sum + total, 0) : item.total);
       }
       return item ? new SearchPageTypeOf(item.total, item.pageNum, item.pageSize, item.type, ((_a5 = item.list) == null ? void 0 : _a5.filter((entry) => entry == null ? void 0 : entry.id)) || []) : SearchPage.emptyWithNoType();
     });
@@ -29965,16 +30020,28 @@ var DoubanAbstractSyncHandler = class {
   }
   handleItems(searchPage, items, context, cacheReady = false) {
     return __async(this, null, function* () {
-      if (!items || items.length == 0) {
-        return;
-      }
       const { syncStatus } = context.syncStatusHolder;
       const { syncConfig } = context;
-      syncStatus.totalNum(searchPage.total);
+      const run = this.scopeRuns.get(context);
+      let total = searchPage.total;
+      if (run) {
+        run.shared.selectedTotals[run.index] = total;
+        items = items.filter((item) => {
+          const key = `${this.getSyncType()}:${item.id}`;
+          if (run.shared.seen.has(key)) {
+            run.shared.duplicates++;
+            return false;
+          }
+          run.shared.seen.add(key);
+          return true;
+        });
+        total = run.shared.selectedTotals.reduce((sum, value) => sum + value, 0) - run.shared.duplicates;
+      }
+      syncStatus.totalNum(total);
       const needHandled = syncStatus.getTotal() - syncStatus.getHasHandle();
       syncStatus.setNeedHandled(needHandled);
       const dataFilePath = (syncConfig == null ? void 0 : syncConfig.dataFilePath) || "";
-      if (!cacheReady)
+      if (!cacheReady && !run)
         yield syncStatus.buildExistingFilesCache(dataFilePath);
       for (const item of items) {
         if (this.isStopped(context)) {
@@ -30075,7 +30142,9 @@ var DoubanAbstractSyncHandler = class {
   }
   syncAll(syncConfig, context) {
     return __async(this, null, function* () {
-      yield context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || "");
+      if (!this.scopeRuns.has(context)) {
+        yield context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || "");
+      }
       yield this.collectAll(syncConfig, context, (page) => __async(this, null, function* () {
         yield this.handleItems(page, page.list, context, true);
       }));
@@ -30158,9 +30227,6 @@ var DoubanAbstractListHandler = class {
         return SearchPage.emptyWithNoType();
       }
       let subjectListItemSearchPageTypeOf = yield this.getPageList(url, context);
-      if (subjectListItemSearchPageTypeOf && context.plugin.statusHolder.syncStatus) {
-        context.plugin.statusHolder.syncStatus.setAllTotal(subjectListItemSearchPageTypeOf.total);
-      }
       return subjectListItemSearchPageTypeOf;
     });
   }
@@ -30216,7 +30282,13 @@ var DoubanAbstractListHandler = class {
     }).filter((item) => item !== null);
     const subjectNumText = dataHtml(".subject-num").text().trim();
     const totalNumMatch = subjectNumText.match(/\/\s*(\d+)/);
+    if (!totalNumMatch && (rawItems.length > 0 || subjectNumText !== "0")) {
+      throw new Error("Unable to read Douban list pagination total");
+    }
     const totalNum = totalNumMatch ? parseInt(totalNumMatch[1], 10) : 0;
+    if (!Number.isSafeInteger(totalNum) || rawItems.length > 0 && totalNum < context.syncOffset + rawItems.length) {
+      throw new Error("Inconsistent Douban list pagination total");
+    }
     if (rawItems.length && !items.length || !rawItems.length && totalNum > context.syncOffset) {
       throw new Error("Douban list contains no readable entries before the expected end");
     }
@@ -31123,7 +31195,11 @@ var SyncHandler = class {
         status.recordError(error);
       }
       const outcome = status.finish(!this.plugin.statusHolder.syncing());
-      yield this.showResult();
+      try {
+        yield this.showResult();
+      } catch (error) {
+        status.reportErrors.push(String(error));
+      }
       return outcome;
     });
   }
@@ -31189,20 +31265,24 @@ var SyncHandler = class {
       }
       const reportTime = (0, import_obsidian43.moment)(new Date()).format("YYYYMMDDHHmmss");
       const reportPath = `${this.plugin.fileHandler.getTmpPath()}/sync-report-${reportTime}.json`;
-      yield this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
-        generatedAt: new Date().toISOString(),
-        outcome: syncStatus.outcome,
-        errors: syncStatus.errors,
-        condition: {
-          type: syncStatus.getTypeName(),
-          scope: syncStatus.getScopeName(),
-          syncCondition: syncStatus.getSyncConditionName(),
-          incrementalUpdate: syncConfig.incrementalUpdate,
-          force: syncConfig.force
-        },
-        summary: Object.fromEntries(statusHandleMap.entries()),
-        results: Array.from(syncResultMap.values())
-      }, null, 2));
+      try {
+        yield this.plugin.fileHandler.writeTextFile(reportPath, JSON.stringify({
+          generatedAt: new Date().toISOString(),
+          outcome: syncStatus.outcome,
+          errors: syncStatus.errors,
+          condition: {
+            type: syncStatus.getTypeName(),
+            scope: syncStatus.getScopeName(),
+            syncCondition: syncStatus.getSyncConditionName(),
+            incrementalUpdate: syncConfig.incrementalUpdate,
+            force: syncConfig.force
+          },
+          summary: Object.fromEntries(statusHandleMap.entries()),
+          results: Array.from(syncResultMap.values())
+        }, null, 2));
+      } catch (error) {
+        syncStatus.reportErrors.push(`JSON: ${String(error)}`);
+      }
       let analysis = "";
       try {
         const entries = scanVaultForDoubanIds(this.app, this.syncConfig.dataFilePath || "");
@@ -31219,6 +31299,7 @@ var SyncHandler = class {
       }
       const outcomeSummary = i18nHelper.getMessage(`sync_outcome_${syncStatus.outcome}`);
       const errors = syncStatus.errors.map((error) => `- ${error.replace(/[\r\n]+/g, " ")}`).join("\n");
+      const reportInfo = syncStatus.reportErrors.length ? i18nHelper.getMessage("sync_report_failed", syncStatus.reportErrors.join("; ")) : `JSON: \`${reportPath}\``;
       const result = `${outcomeSummary}
 
 ${errors}
@@ -31227,10 +31308,16 @@ ${errors}
 
 ### \u8C03\u8BD5\u62A5\u544A
 
-- JSON: \`${reportPath}\`
+- ${reportInfo}
 `);
       const resultFileName = `${i18nHelper.getMessage("110038")}_${(0, import_obsidian43.moment)(new Date()).format("YYYYMMDDHHmmss")}`;
-      yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
+      try {
+        const created = yield this.plugin.fileHandler.createNewNoteWithData(`${this.syncConfig.dataFilePath}/${resultFileName}`, result, true);
+        if (!created)
+          throw new Error("Report file already exists");
+      } catch (error) {
+        syncStatus.reportErrors.push(`Markdown: ${String(error)}`);
+      }
     });
   }
   checkSyncConfig() {
@@ -32854,11 +32941,10 @@ var DoubanUrlUtil = class {
         return;
       }
       const key = `${parsed.type}:${parsed.id}`;
-      if (seen.has(parsed.id) || seen.has(key)) {
+      if (seen.has(key)) {
         duplicates.push(line);
         return;
       }
-      seen.add(parsed.id);
       seen.add(key);
       items.push(parsed);
     });
@@ -33509,7 +33595,9 @@ var DoubanPlugin = class extends import_obsidian53.Plugin {
         this.showStatus(i18nHelper.getMessage("140203", SyncTypeRecords[syncConfig.syncType]));
         const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
         const outcome = yield syncHandler.sync();
-        new import_obsidian53.Notice(i18nHelper.getMessage(`sync_outcome_${outcome}`));
+        const reportErrors = context.syncStatusHolder.syncStatus.reportErrors;
+        const reportWarning = reportErrors.length ? "\n" + i18nHelper.getMessage("sync_report_failed", reportErrors.join("; ")) : "";
+        new import_obsidian53.Notice(i18nHelper.getMessage(`sync_outcome_${outcome}`) + reportWarning);
       } catch (e) {
         log.error(i18nHelper.getMessage("140206", e.message), e);
       } finally {

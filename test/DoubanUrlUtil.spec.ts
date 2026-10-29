@@ -3,6 +3,16 @@ import DoubanPageTypeDetector from '../src/org/wanxp/utils/DoubanPageTypeDetecto
 import {SupportType} from '../src/org/wanxp/constant/Constsant';
 
 describe('Douban batch URL parsing', () => {
+	it('keeps equal numeric IDs from different types and deduplicates within each type', () => {
+		const result = DoubanUrlUtil.parseLines([
+			'https://book.douban.com/subject/1234567/',
+			'https://movie.douban.com/subject/1234567/',
+			'https://music.douban.com/subject/1234567/',
+			'https://book.douban.com/subject/1234567/?from=search',
+		]);
+		expect(result.items.map(item => `${item.type}:${item.id}`)).toEqual(['book:1234567', 'movie:1234567', 'music:1234567']);
+		expect(result.duplicates).toHaveLength(1);
+	});
 	it.each([
 		['https://book.douban.com/subject/1234567/', SupportType.book],
 		['https://music.douban.com/subject/1234568/', SupportType.music],

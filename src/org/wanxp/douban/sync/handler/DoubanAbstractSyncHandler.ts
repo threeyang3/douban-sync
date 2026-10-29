@@ -24,12 +24,24 @@ function isPreviewMode(context: HandleContext): boolean {
 	return !!context.syncPreviewMode;
 }
 
+interface ScopeRun {
+	handler: DoubanListHandler;
+	index: number;
+	shared: {
+		seen: Set<string>;
+		sourceTotals: number[];
+		selectedTotals: number[];
+		duplicates: number;
+	};
+}
+
 export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	implements DoubanSyncHandler
 {
 	private plugin: DoubanPlugin;
 	private doubanSubjectLoadHandler: DoubanSubjectLoadHandler<T>;
 	private doubanListHandlers: DoubanListHandler[];
+	private scopeRuns = new WeakMap<HandleContext, ScopeRun>();
 
 	constructor(
 		plugin: DoubanPlugin,
@@ -53,7 +65,14 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 			syncConfig,
 			syncPreviewMode: true,
 		};
-		const items = await this.collectItems(syncConfig, previewContext);
+		const items: SubjectListItem[] = [];
+		const seen = new Set<string>();
+		await this.visitScopes(syncConfig, previewContext, async scopedContext => {
+			for (const item of await this.collectItems(syncConfig, scopedContext)) {
+				const key = `${this.getSyncType()}:${item.id}`;
+				if (!seen.has(key)) { seen.add(key); items.push(item); }
+			}
+		});
 		const previewStatus = new SyncStatusHolder(syncConfig, this.plugin.app);
 		previewStatus.initSyncHandledData(this.plugin.settings.syncHandledDataArray);
 		await previewStatus.buildExistingFilesCache(syncConfig?.dataFilePath || '');
@@ -113,6 +132,35 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	}
 
 	async sync(syncConfig: SyncConfig, context: HandleContext): Promise<void> {
+		await this.visitScopes(syncConfig, context, scopedContext => this.syncScope(syncConfig, scopedContext));
+	}
+
+	private async visitScopes(syncConfig: SyncConfig, context: HandleContext,
+		visit: (scopedContext: HandleContext) => Promise<void>): Promise<void> {
+		const handlers = this.doubanListHandlers.filter(handler => handler.support(syncConfig));
+		if (!handlers.length) throw new Error(`No list handler for scope ${syncConfig.scope}`);
+		const shared: ScopeRun['shared'] = {seen: new Set(), sourceTotals: [], selectedTotals: [], duplicates: 0};
+		if (!isPreviewMode(context)) {
+			await context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || '');
+		}
+		for (let index = 0; index < handlers.length; index++) {
+			if (this.isStopped(context)) break;
+			const handler = handlers[index];
+			const scopedContext = {...context, syncConfig, syncOffset: 0};
+			this.scopeRuns.set(scopedContext, {handler, index, shared});
+			try {
+				await visit(scopedContext);
+			} catch (error) {
+				const detail = `Scope ${handler.getDoType?.() || index + 1}: ${error instanceof Error ? error.message : String(error)}`;
+				if (isPreviewMode(context) || handlers.length === 1) throw new Error(detail);
+				context.syncStatusHolder.syncStatus.recordError(detail);
+			} finally {
+				this.scopeRuns.delete(scopedContext);
+			}
+		}
+	}
+
+	private async syncScope(syncConfig: SyncConfig, context: HandleContext): Promise<void> {
 		if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_TIME) {
 			await this.syncByTimeLimit(syncConfig, context);
 		} else if (syncConfig.syncConditionType == SyncConditionType.CUSTOM_ITEM) {
@@ -201,14 +249,20 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		syncConfig: SyncConfig,
 		context: HandleContext,
 	): Promise<SearchPageTypeOf<SubjectListItem>> {
-		const supportHandlers: DoubanListHandler[] = this.doubanListHandlers.filter((h) => h.support(syncConfig));
-		const handler = supportHandlers[0];
+		const run = this.scopeRuns.get(context);
+		const handler = run?.handler || this.doubanListHandlers.find(handler => handler.support(syncConfig));
+		if (!handler) throw new Error(`No list handler for scope ${syncConfig.scope}`);
 		if (this.isStopped(context)) {
 			return SearchPage.emptyWithNoType();
 		}
 		const item = await handler.getPageData(context);
 		if (this.isStopped(context)) {
 			return SearchPage.emptyWithNoType();
+		}
+		if (!isPreviewMode(context) && item) {
+			if (run) run.shared.sourceTotals[run.index] = item.total;
+			context.syncStatusHolder.syncStatus.setAllTotal(run
+				? run.shared.sourceTotals.reduce((sum, total) => sum + total, 0) : item.total);
 		}
 		return item ? new SearchPageTypeOf(item.total, item.pageNum, item.pageSize, item.type,
 			item.list?.filter(entry => entry?.id) || []) : SearchPage.emptyWithNoType();
@@ -231,17 +285,26 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 		context: HandleContext,
 		cacheReady = false,
 	): Promise<void> {
-		if (!items || items.length == 0) {
-			return;
-		}
 		const {syncStatus} = context.syncStatusHolder;
 		const {syncConfig} = context;
-		syncStatus.totalNum(searchPage.total);
+		const run = this.scopeRuns.get(context);
+		let total = searchPage.total;
+		if (run) {
+			run.shared.selectedTotals[run.index] = total;
+			items = items.filter(item => {
+				const key = `${this.getSyncType()}:${item.id}`;
+				if (run.shared.seen.has(key)) { run.shared.duplicates++; return false; }
+				run.shared.seen.add(key);
+				return true;
+			});
+			total = run.shared.selectedTotals.reduce((sum, value) => sum + value, 0) - run.shared.duplicates;
+		}
+		syncStatus.totalNum(total);
 		const needHandled: number = syncStatus.getTotal() - syncStatus.getHasHandle();
 		syncStatus.setNeedHandled(needHandled);
 
 		const dataFilePath = syncConfig?.dataFilePath || '';
-		if (!cacheReady) await syncStatus.buildExistingFilesCache(dataFilePath);
+		if (!cacheReady && !run) await syncStatus.buildExistingFilesCache(dataFilePath);
 
 		for (const item of items) {
 			if (this.isStopped(context)) {
@@ -354,7 +417,9 @@ export abstract class DoubanAbstractSyncHandler<T extends DoubanSubject>
 	}
 
 	private async syncAll(syncConfig: SyncConfig, context: HandleContext) {
-		await context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || '');
+		if (!this.scopeRuns.has(context)) {
+			await context.syncStatusHolder.syncStatus.buildExistingFilesCache(syncConfig.dataFilePath || '');
+		}
 		await this.collectAll(syncConfig, context, async page => {
 			await this.handleItems(page, page.list, context, true);
 		});

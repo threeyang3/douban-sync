@@ -24,6 +24,42 @@ function fixture(cancelled = false) {
 describe('sync failure propagation', () => {
 	afterEach(() => jest.restoreAllMocks());
 
+	it.each(['JSON', 'Markdown', 'both'])('preserves a successful sync outcome when %s report saving fails', async target => {
+		const f = fixture();
+		(f.handler as any).syncHandlers = [{support: () => true, sync: async () => { f.status.create('123', 'Demo'); }}];
+		if (target !== 'Markdown') f.plugin.fileHandler.writeTextFile.mockRejectedValue(new Error('disk full'));
+		if (target !== 'JSON') f.plugin.fileHandler.createNewNoteWithData.mockRejectedValue(new Error('file conflict'));
+		expect(await f.handler.sync()).toBe('success');
+		expect(f.status.errors).toEqual([]);
+		expect(f.status.reportErrors).toHaveLength(target === 'both' ? 2 : 1);
+		expect(f.plugin.fileHandler.createNewNoteWithData).toHaveBeenCalled();
+	});
+
+	it('handles a report filename collision returned without throwing', async () => {
+		const f = fixture();
+		(f.handler as any).syncHandlers = [{support: () => true, sync: async () => {}}];
+		f.plugin.fileHandler.createNewNoteWithData.mockResolvedValue(false);
+		expect(await f.handler.sync()).toBe('success');
+		expect(f.status.reportErrors[0]).toContain('Report file already exists');
+	});
+
+	it('shows both actual outcome and report save failure in the final notification', async () => {
+		const f = fixture();
+		const plugin = Object.assign(Object.create(DoubanPlugin.prototype), f.plugin, {
+			checkLogin: async () => true, showStatus: jest.fn(), clearStatusBarDelay: jest.fn(),
+		});
+		plugin.statusHolder.completeSync = jest.fn(async () => {});
+		const context = {...f.context, plugin, syncStatusHolder: {...f.context.syncStatusHolder, initHandledData: jest.fn()}};
+		jest.spyOn(SyncHandler.prototype, 'sync').mockImplementation(async () => {
+			f.status.reportErrors.push('Markdown: disk full');
+			return 'success';
+		});
+		(Notice as unknown as jest.Mock).mockClear();
+		await plugin.sync(context);
+		expect((Notice as unknown as jest.Mock).mock.calls.map(call => call[0]))
+			.toContain('Sync completed\nReport could not be saved: Markdown: disk full');
+	});
+
 	it('rejects list fetch errors instead of returning a normal empty page', async () => {
 		jest.spyOn(DoubanHttpUtil, 'httpRequestGet').mockRejectedValue(new Error('network unavailable'));
 		const list = DoubanAbstractListHandler.create(SyncType.movie, 'collect') as DoubanAbstractListHandler;

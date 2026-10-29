@@ -29,9 +29,6 @@ export default abstract class DoubanAbstractListHandler
 			return SearchPage.emptyWithNoType();
 		}
 		let subjectListItemSearchPageTypeOf = await this.getPageList(url, context);
-		if (subjectListItemSearchPageTypeOf && context.plugin.statusHolder.syncStatus) {
-			context.plugin.statusHolder.syncStatus.setAllTotal(subjectListItemSearchPageTypeOf.total)
-		}
 		return subjectListItemSearchPageTypeOf;
 	}
 
@@ -117,7 +114,13 @@ export default abstract class DoubanAbstractListHandler
 			.filter((item): item is SubjectListItem => item !== null);
 		const subjectNumText = dataHtml(".subject-num").text().trim();
 		const totalNumMatch = subjectNumText.match(/\/\s*(\d+)/);
+		if (!totalNumMatch && (rawItems.length > 0 || subjectNumText !== '0')) {
+			throw new Error('Unable to read Douban list pagination total');
+		}
 		const totalNum = totalNumMatch ? parseInt(totalNumMatch[1], 10) : 0;
+		if (!Number.isSafeInteger(totalNum) || (rawItems.length > 0 && totalNum < context.syncOffset + rawItems.length)) {
+			throw new Error('Inconsistent Douban list pagination total');
+		}
 		if ((rawItems.length && !items.length) || (!rawItems.length && totalNum > context.syncOffset)) {
 			throw new Error('Douban list contains no readable entries before the expected end');
 		}

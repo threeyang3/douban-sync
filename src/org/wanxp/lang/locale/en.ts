@@ -1,5 +1,6 @@
 //简体中文
 export default {
+	'sync_report_failed': 'Report could not be saved: {0}',
 	'sync_outcome_success': "Sync completed",
 	'sync_outcome_partial': "Sync partially completed; see errors in the sync report",
 	'sync_outcome_failed': "Sync failed; see errors in the sync report",

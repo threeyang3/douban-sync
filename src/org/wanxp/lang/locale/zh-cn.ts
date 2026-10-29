@@ -4,6 +4,7 @@
 import {SyncItemStatus} from "../../constant/Constsant";
 
 export default {
+	'sync_report_failed': '同步报告保存失败：{0}',
 	'sync_outcome_success': "同步完成",
 	'sync_outcome_partial': "同步部分完成，请查看同步报告中的错误",
 	'sync_outcome_failed': "同步失败，请查看同步报告中的错误",

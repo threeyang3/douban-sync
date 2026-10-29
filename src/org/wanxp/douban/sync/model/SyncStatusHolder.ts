@@ -16,6 +16,7 @@ export type SyncOutcome = 'success' | 'partial' | 'failed' | 'cancelled';
 export default class SyncStatusHolder {
 	public outcome: SyncOutcome = 'success';
 	public errors: string[] = [];
+	public reportErrors: string[] = [];
 
 	recordError(error: unknown) {
 		const detail = error instanceof Error ? error.message : String(error);

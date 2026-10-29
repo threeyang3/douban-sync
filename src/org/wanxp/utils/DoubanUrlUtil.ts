@@ -59,11 +59,10 @@ export default class DoubanUrlUtil {
 				return;
 			}
 			const key = `${parsed.type}:${parsed.id}`;
-			if (seen.has(parsed.id) || seen.has(key)) {
+			if (seen.has(key)) {
 				duplicates.push(line);
 				return;
 			}
-			seen.add(parsed.id);
 			seen.add(key);
 			items.push(parsed);
 		});

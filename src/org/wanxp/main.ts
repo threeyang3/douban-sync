@@ -562,7 +562,10 @@ export default class DoubanPlugin extends Plugin {
 			this.showStatus(i18nHelper.getMessage('140203', SyncTypeRecords[syncConfig.syncType]));
 			const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
 			const outcome = await syncHandler.sync();
-			new Notice(i18nHelper.getMessage(`sync_outcome_${outcome}`));
+			const reportErrors = context.syncStatusHolder.syncStatus.reportErrors;
+			const reportWarning = reportErrors.length
+				? '\n' + i18nHelper.getMessage('sync_report_failed', reportErrors.join('; ')) : '';
+			new Notice(i18nHelper.getMessage(`sync_outcome_${outcome}`) + reportWarning);
 		} catch (e) {
 			log.error(i18nHelper.getMessage('140206', e.message), e);
 		} finally {

@@ -46,7 +46,7 @@ describe('date range pagination', () => {
 
 	it.each(['<a>Missing URL</a>', '<a href="https://movie.douban.com/subject/no-id/">Missing ID</a>'])('filters invalid list links at the parsing boundary: %s', invalid => {
 		const handler = DoubanAbstractListHandler.create(SyncType.movie, 'collect') as DoubanAbstractListHandler;
-		const page = handler.parseSubjectFromHtml(load(`<div class="item-show"><div class="title">${invalid}</div></div><div class="item-show"><div class="title"><a href="https://movie.douban.com/subject/1234567/">Demo</a></div></div>`), {syncOffset: 0} as any);
+		const page = handler.parseSubjectFromHtml(load(`<span class="subject-num">1-2 / 2</span><div class="item-show"><div class="title">${invalid}</div></div><div class="item-show"><div class="title"><a href="https://movie.douban.com/subject/1234567/">Demo</a></div></div>`), {syncOffset: 0} as any);
 		expect(page.list.map(i => i.id)).toEqual(['1234567']);
 	});
 
@@ -54,6 +54,11 @@ describe('date range pagination', () => {
 		const handler = DoubanAbstractListHandler.create(SyncType.movie, 'collect') as DoubanAbstractListHandler;
 		expect(() => handler.parseSubjectFromHtml(load('<div class="new-layout">Unknown</div>'), {syncOffset: 0} as any)).toThrow('Unrecognized');
 		expect(handler.parseSubjectFromHtml(load('<span class="subject-num">0 / 0</span>'), {syncOffset: 0} as any).list).toEqual([]);
+	});
+	it.each(['', '<span class="subject-num">unknown</span>'])('rejects a nonempty list without a readable pagination total: %s', counter => {
+		const handler = DoubanAbstractListHandler.create(SyncType.movie, 'collect') as DoubanAbstractListHandler;
+		const html = `${counter}<div class="item-show"><div class="title"><a href="https://movie.douban.com/subject/1234567/">Demo</a></div></div>`;
+		expect(() => handler.parseSubjectFromHtml(load(html), {syncOffset: 0} as any)).toThrow('pagination total');
 	});
 	it('sets fixed offsets, includes both boundaries and excludes invalid dates and duplicate IDs', async () => {
 		const f = fixture([
