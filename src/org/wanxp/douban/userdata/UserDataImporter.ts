@@ -209,9 +209,7 @@ export class UserDataImporter {
 						if (JSON.stringify(localValue) === JSON.stringify(diff.importValue)) continue;
 						let value = diff.importValue;
 						if (diff.strategy === 'smart_merge' && !this.isEmptyValue(localValue)) {
-							value = Array.isArray(localValue) && Array.isArray(diff.importValue)
-								? [...new Set([...localValue, ...diff.importValue])]
-								: `${localValue}${diff.sectionName ? '\n\n' : ' / '}${diff.importValue ?? ''}`;
+							value = this.smartMerge(localValue, diff.importValue, diff.sectionName ? '\n\n' : ' / ');
 						}
 						updatedContent = diff.sectionName
 							? this.merger.updateSection(updatedContent, diff.sectionName, String(value))
@@ -252,6 +250,25 @@ export class UserDataImporter {
 			}
 		}
 		return [...fields].sort();
+	}
+
+	/** Scalars and objects keep their types; overwrite is an explicit user choice. */
+	private smartMerge(local: unknown, incoming: unknown, separator: string): unknown {
+		if (this.isEmptyValue(incoming)) return local;
+		if (Array.isArray(local) && Array.isArray(incoming)) {
+			const values: unknown[] = [];
+			const seen = new Set<string>();
+			for (const value of [...local, ...incoming]) {
+				const key = JSON.stringify(value);
+				if (!seen.has(key)) { seen.add(key); values.push(value); }
+			}
+			return values;
+		}
+		if (typeof local === 'string' && typeof incoming === 'string') {
+			const wrapped = separator + local + separator;
+			return wrapped.includes(separator + incoming + separator) ? local : local + separator + incoming;
+		}
+		return local;
 	}
 
 	private isEmptyValue(value: unknown): boolean {

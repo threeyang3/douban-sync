@@ -655,7 +655,8 @@ export default abstract class DoubanAbstractLoadHandler<T extends DoubanSubject>
 			fileNameSuffix = '.jpg';
 		}
 		fileName = this.parsePartPath(fileName, extract, context, variableMap)
-		fileName = fileName + fileNameSuffix;
+		// A title or custom filename alone cannot identify the owner of a cover.
+		fileName = fileName + (extract.id ? ` (${extract.id})` : '') + fileNameSuffix;
 		const overwriteCoverImage = syncConfig ? (syncConfig.overwriteCoverImage ?? false) : context.settings.overwriteCoverImage;
 		// 封面已存在且未勾选覆盖时跳过下载，加速替换同步
 		if (!overwriteCoverImage) {

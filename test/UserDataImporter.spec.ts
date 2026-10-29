@@ -23,6 +23,36 @@ function fixture(frontmatter: Record<string, unknown> = {}, body = '') {
 }
 
 describe('user data import preview', () => {
+	it('makes repeated property and multi-paragraph section imports idempotent', async () => {
+		const f = fixture({rating: 'local'}, '## 记录\n\nLocal record\n');
+		const diffs = await f.importer.buildDiffs(f.data({rating: 'import'}, {record: 'First paragraph\n\nSecond paragraph'}));
+		await f.importer.applyDiffs(diffs);
+		const first = f.content();
+		const second = await f.importer.applyDiffs(diffs);
+		expect(f.content()).toBe(first);
+		expect(second.skipped).toBe(1);
+	});
+
+	it.each([[3, 4], [false, true], [{a: 1}, {b: 2}], ['text', [1]]])('preserves local type on scalar or incompatible smart merge (%p)', async (local, incoming) => {
+		const f = fixture({rating: local});
+		const yaml = require('js-yaml');
+		await f.app.vault.process({} as any, () => `---\ndoubanId: 123\n${yaml.dump({rating: local})}---\n`);
+		const diffs = await f.importer.buildDiffs(f.data({rating: incoming}));
+		await f.importer.applyDiffs(diffs);
+		const fm = f.content().split('---')[1];
+		expect(yaml.load(fm).rating).toEqual(local);
+	});
+
+	it('deduplicates array values including nested objects across repeated imports', async () => {
+		const f = fixture({rating: [{a: 1}]});
+		await f.app.vault.process({} as any, () => '---\ndoubanId: 123\nrating:\n  - a: 1\n---\n');
+		const diffs = await f.importer.buildDiffs(f.data({rating: [{a: 1}, {b: 2}]}));
+		await f.importer.applyDiffs(diffs);
+		const first = f.content();
+		await f.importer.applyDiffs(diffs);
+		expect(f.content()).toBe(first);
+		expect(require('js-yaml').load(first.split('---')[1]).rating).toEqual([{a: 1}, {b: 2}]);
+	});
 	it('maps an import alias to the local field instead of creating the source field', async () => {
 		const f = fixture({rating: 'local'});
 		const diffs = await f.importer.buildDiffs(f.data({评语: 'import'}), {ignoredFields: [], fieldAliases: {评语: ' rating '}});

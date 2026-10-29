@@ -10,6 +10,17 @@ import {
 import HttpUtil from '../src/org/wanxp/utils/HttpUtil';
 
 describe('HTTP request policy', () => {
+	it.each([
+		['https://book.douban.com/a', 'http://book.douban.com/b'],
+		['https://book.douban.com/a', 'http://accounts.douban.com/b'],
+		['http://book.douban.com/a', 'https://book.douban.com/b'],
+		['https://book.douban.com/a', 'invalid URL'],
+		['https://book.douban.com/a', 'https://douban.com.attacker.test/b'],
+	])('strips credentials from unsafe redirect %s → %s', (from, to) => {
+		const headers = {cOoKiE: 'secret', AUTHORIZATION: 'secret', 'Proxy-Authorization': 'secret', Accept: 'text/html'};
+		expect(sanitizeRedirectHeaders(headers, from, to)).toEqual({Accept: 'text/html'});
+		expect(headers.cOoKiE).toBe('secret');
+	});
 	it('only classifies GET and HEAD as idempotent', () => {
 		expect(isIdempotentHttpMethod('get')).toBe(true);
 		expect(isIdempotentHttpMethod('HEAD')).toBe(true);

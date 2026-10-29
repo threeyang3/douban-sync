@@ -129,7 +129,7 @@ describe('Sync preview', () => {
 		const plugin = createPlugin(markdownFiles, {
 			'movies/legacy.md': { id: '4' },
 			'movies/normal.md': { doubanId: '5' },
-		});
+		}, ['4']);
 		const handler = new FakeSyncHandler(plugin, items);
 
 		const preview = await handler.preview(createConfig(true, true), {
@@ -142,9 +142,10 @@ describe('Sync preview', () => {
 			syncPreviewMode: true,
 		} as any);
 
-		expect(preview.replaceCount).toBe(2);
+		expect(preview.replaceCount).toBe(1);
+		expect(preview.unHandleCount).toBe(1);
 		expect(preview.backupEnabled).toBe(true);
 		expect(preview.inheritSummary).toEqual(['frontmatter 自定义属性', '## 记录']);
-		expect(preview.entries.every((entry) => entry.action === 'replace')).toBe(true);
+		expect(preview.entries.map(entry => entry.action)).toEqual(['unHandle', 'replace']);
 	});
 });

@@ -81,24 +81,26 @@ export default class FileHandler {
 		const {dir, name} = FileUtil.parse(prependDirInput);
 		const filePath = FileUtil.join(dir, `${name}`);
 
-		try {
-			const fileExists = await adapter.exists(filePath);
-			if (fileExists) {
-				if (overwrite) {
-					await adapter.remove(filePath);
-				} else {
-					return ;
+		const fileExists = await adapter.exists(filePath);
+		if (fileExists) {
+			if (!overwrite) return;
+			const file = vault.getAbstractFileByPath(filePath);
+			if (!(file instanceof TFile)) throw new Error(`Attachment is not a file: ${filePath}`);
+			const original = await vault.readBinary(file);
+			try {
+				await vault.modifyBinary(file, data);
+			} catch (error) {
+				try {
+					await vault.modifyBinary(file, original);
+				} catch (rollbackError) {
+					throw new Error(`Attachment write and rollback failed: ${filePath}: ${String(error)}; ${String(rollbackError)}`);
 				}
+				throw error;
 			}
-			if (dir !== '') {
-				// If `input` includes a directory part, create it
-				await this.createDirectory(dir);
-			}
-			await vault.createBinary(filePath, data);
-			// Create the file and open it in the active leaf
-		} catch (error) {
-			log.error(error.toString(), error);
+			return;
 		}
+		if (dir !== '') await this.createDirectory(dir);
+		await vault.createBinary(filePath, data);
 	}
 
 	/**

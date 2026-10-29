@@ -1,6 +1,27 @@
 import SyncStatusHolder from '../src/org/wanxp/douban/sync/model/SyncStatusHolder';
 
 describe('SyncStatusHolder file ownership cache', () => {
+	it('keeps incremental history skipping even with replacement enabled', () => {
+		const config = {dataFilePath: 'Movies', incrementalUpdate: true, force: false};
+		const status = new SyncStatusHolder(config as any, {} as any);
+		status.initSyncHandledData([{key: status.getKey(config as any), value: ['123']}]);
+		expect(status.shouldSync('123')).toBe(false);
+		config.force = true;
+		expect(status.shouldSync('123')).toBe(false);
+		config.incrementalUpdate = false;
+		status.initSyncHandledData([{key: status.getKey(config as any), value: ['123']}]);
+		expect(status.shouldSync('123')).toBe(true);
+	});
+
+	it('counts an ID once when the status is reported repeatedly or changes', () => {
+		const status = new SyncStatusHolder({} as any, {} as any);
+		status.create('123', 'demo');
+		status.create('123', 'demo');
+		status.fail('123', 'demo');
+		expect(status.getHasHandle()).toBe(1);
+		expect(status.statusHandleMap.get('create' as any)).toBe(0);
+		expect(status.statusHandleMap.get('fail' as any)).toBe(1);
+	});
 	it('tracks and removes the Douban ID that owns each local path', async () => {
 		const app = {
 			vault: {

@@ -11,7 +11,27 @@ import {SyncHandledData} from "../../setting/model/SyncHandledData";
 import {DoubanSubjectStateRecords_SYNC} from "../../../constant/DoubanUserState";
 import { extractDoubanId } from "../../../utils/VaultUtil";
 
+export type SyncOutcome = 'success' | 'partial' | 'failed' | 'cancelled';
+
 export default class SyncStatusHolder {
+	public outcome: SyncOutcome = 'success';
+	public errors: string[] = [];
+
+	recordError(error: unknown) {
+		const detail = error instanceof Error ? error.message : String(error);
+		this.errors.push(detail);
+		this.setMessage(detail);
+	}
+
+	finish(cancelled: boolean): SyncOutcome {
+		const results = Array.from(this.syncResultMap.values());
+		const failed = this.errors.length > 0 || results.some(item =>
+			[SyncItemStatus.fail, SyncItemStatus.manualReview, SyncItemStatus.failByDiffType].includes(item.status));
+		const succeeded = results.some(item =>
+			[SyncItemStatus.create, SyncItemStatus.replace, SyncItemStatus.exists, SyncItemStatus.unHandle].includes(item.status));
+		this.outcome = cancelled ? 'cancelled' : failed ? (succeeded ? 'partial' : 'failed') : 'success';
+		return this.outcome;
+	}
 
 	private app: App;
 
@@ -135,9 +155,13 @@ export default class SyncStatusHolder {
 	}
 
 	private updateResult(id:string, title:string, status:SyncItemStatus, fileName?:string, detailMsg?: string) {
+		const previous = this.syncResultMap.get(id);
+		if (previous) {
+			this.statusHandleMap.set(previous.status, this.statusHandleMap.get(previous.status) - 1);
+		}
 		this.syncResultMap.set(id, {id: id,title:title,status:status, fileName: fileName, detailMsg: detailMsg});
 		this.statusHandleMap.set(status, this.statusHandleMap.get(status) + 1);
-		this.handled(1);
+		if (!previous) this.handled(1);
 	}
 
 	public setTotal(total:number) {
@@ -157,7 +181,7 @@ export default class SyncStatusHolder {
 	}
 
 	shouldSync(id: string) {
-		return this.handledData.get(this.key)?!this.handledData.get(this.key).has(id):true;
+		return !this.handledData?.get(this.key)?.has(id);
 	}
 
 	/**

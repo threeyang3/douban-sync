@@ -153,6 +153,8 @@ export default class DoubanPlugin extends Plugin {
 			if (context.syncStatusHolder.syncStatus.syncConfig.force) {
 				const existingFilePath = syncStatus.getExistingFilePath(subject.id);
 				let localUserData = null;
+				let originalContent: string | null = null;
+				let finalContent = content;
 				let backupPath: string | null = null;
 				if (existingFilePath) {
 					try {
@@ -172,9 +174,14 @@ export default class DoubanPlugin extends Plugin {
 
 					try {
 						const existingFile = this.app.vault.getAbstractFileByPath(existingFilePath);
+						if (!(existingFile instanceof TFile)) throw new Error('Original file unavailable');
 						if (existingFile instanceof TFile) {
+							originalContent = await this.app.vault.read(existingFile);
 							const extractor = new UserDataExtractor(this.app);
 							localUserData = await extractor.extractFromFileAsync(existingFile);
+							if (context.syncConfig?.inheritOldFields && !localUserData) {
+								throw new Error('Unable to extract protected data from original file');
+							}
 						}
 					} catch (error) {
 						const detail = `读取旧文件数据失败：${existingFilePath}`;
@@ -185,44 +192,42 @@ export default class DoubanPlugin extends Plugin {
 					}
 				}
 
+				// Complete inheritance before changing the original file, even without backups.
+				try {
+					if (localUserData && context.syncConfig?.inheritOldFields) {
+						finalContent = new UserDataMerger().mergeUserData(content, localUserData, this.settings.dataProtection);
+					}
+				} catch (error) {
+					const detail = '继承旧文件数据失败，已停止替换：' + subject.title;
+					context.importError = detail;
+					syncStatus?.fail(subject.id, subject.title, detail);
+					log.error(detail, error);
+					return false;
+				}
+
 				let exists = false;
 				try {
-					exists = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, content, context.showAfterCreate);
+					exists = await this.fileHandler.createOrReplaceNewNoteWithData(filePath, finalContent, context.showAfterCreate);
 				} catch (error) {
-					if (backupPath && existingFilePath === fullFilePath) {
-						await this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
+					try {
+						if (originalContent !== null && existingFilePath === fullFilePath) {
+							const originalFile = this.app.vault.getAbstractFileByPath(fullFilePath);
+							if (!(originalFile instanceof TFile)) throw new Error('Original file unavailable for rollback');
+							await this.app.vault.modify(originalFile, originalContent);
+						} else if (existingFilePath && existingFilePath !== fullFilePath) {
+							await this.fileHandler.deleteFile(fullFilePath);
+						}
+					} catch (rollbackError) {
+						const detail = '写入失败且回滚失败，请人工检查：' + fullFilePath;
+						context.importError = detail;
+						syncStatus?.manualReview(subject.id, subject.title, fullFilePath, detail + (backupPath ? '；备份：' + backupPath : ''));
+						log.error(detail, rollbackError);
+						return false;
 					}
 					const detail = `写入新文件失败：${fullFilePath}`;
 					context.importError = detail;
 					syncStatus?.fail(subject.id, subject.title, detail);
 					log.error(`Failed to write synced file: ${fullFilePath}`, error);
-					return false;
-				}
-
-				try {
-					if (localUserData && context.syncConfig?.inheritOldFields) {
-						const newFile = this.app.vault.getAbstractFileByPath(fullFilePath);
-						if (newFile instanceof TFile) {
-							const merger = new UserDataMerger();
-							const currentContent = await this.app.vault.read(newFile);
-							const mergedContent = merger.mergeUserData(
-								currentContent, localUserData, this.settings.dataProtection,
-							);
-							if (mergedContent !== currentContent) {
-								await this.app.vault.process(newFile, () => mergedContent);
-							}
-						}
-					}
-				} catch (error) {
-					if (backupPath && existingFilePath === fullFilePath) {
-						await this.fileHandler.restoreMarkdownFile(fullFilePath, backupPath);
-					} else if (existingFilePath && existingFilePath !== fullFilePath) {
-						await this.fileHandler.deleteFile(fullFilePath);
-					}
-					const detail = `继承旧文件数据失败，已停止替换：${subject.title}`;
-					context.importError = detail;
-					syncStatus?.fail(subject.id, subject.title, detail);
-					log.error(`Failed to merge protected user data for ${subject.title}`, error);
 					return false;
 				}
 
@@ -556,8 +561,8 @@ export default class DoubanPlugin extends Plugin {
 			// @ts-ignore
 			this.showStatus(i18nHelper.getMessage('140203', SyncTypeRecords[syncConfig.syncType]));
 			const syncHandler = new SyncHandler(this.app, this, syncConfig, context);
-			await syncHandler.sync();
-			new Notice(i18nHelper.getMessage('140302'));
+			const outcome = await syncHandler.sync();
+			new Notice(i18nHelper.getMessage(`sync_outcome_${outcome}`));
 		} catch (e) {
 			log.error(i18nHelper.getMessage('140206', e.message), e);
 		} finally {
